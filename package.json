@@ -1,0 +1,27 @@
+{
+  "name": "visitor-mgmt",
+  "version": "1.0.0",
+  "description": "Backend for managing visitors at gated societies",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankitsejwal/visitor-mgmt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ankitsejwal/visitor-mgmt/issues"
+  },
+  "homepage": "https://github.com/ankitsejwal/visitor-mgmt#readme",
+  "dependencies": {
+    "config": "^3.3.9",
+    "debug": "^4.3.4",
+    "express": "^4.18.2",
+    "mongoose": "^7.1.0",
+    "morgan": "^1.10.0"
+  }
+}
