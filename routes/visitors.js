@@ -34,8 +34,24 @@ router.post('/', async (req, res) => {
   res.status(200).send(visitor);
 });
 
+// update a visitor
 router.put('/:id', async (req, res) => {
-  res.status().send();
+  try {
+    let visitor = await Visitor.findById(req.params.id);
+    if (!visitor) res.status(404).send('visitor not found');
+
+    visitor.name = req.body.name;
+    visitor.phone = req.body.phone;
+    visitor.hasVehicle = req.body.hasVehicle;
+    visitor.vehicleType = req.body.vehicleType;
+    visitor.vehicleNumber = req.body.vehicleNumber;
+    visitor.visiting = req.body.visiting;
+
+    visitor = await visitor.save();
+    res.status(500).send(visitor);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
 router.delete('/:id', async (req, res) => {
