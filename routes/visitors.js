@@ -3,10 +3,13 @@ const Visitor = require('../models/visitors');
 
 const router = express.Router();
 
+// get all the visitors
 router.get('/', async (req, res) => {
-  res.status().send();
+  const visitors = await Visitor.find();
+  res.status(200).send(visitors);
 });
 
+// get a visitor
 router.get('/:id', async (req, res) => {
   try {
     const visitor = await Visitor.findById(req.params.id);
@@ -17,6 +20,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// add a visitor
 router.post('/', async (req, res) => {
   let visitor = new Visitor({
     name: req.body.name,
