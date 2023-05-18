@@ -53,6 +53,17 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// delete security guard
+router.delete('/:id', async (req, res) => {
+  try {
+    const securityGuard = await SecurityGuard.findByIdAndRemove(req.params.id);
+    if (!securityGuard) res.status(404).send('no security guard found');
+    res.status(200).send(securityGuard);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
 module.exports = router;
 
 // todo:
