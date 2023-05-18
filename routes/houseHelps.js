@@ -1,5 +1,5 @@
 const express = require('express');
-const HouseHelp = require('../models/houseHelp');
+const HouseHelp = require('../models/houseHelps');
 const router = express.Router();
 
 // return all house helps
