@@ -2,6 +2,12 @@ const express = require('express');
 const SecurityGuard = require('../models/securityGuards');
 const router = express.Router();
 
+// get all security guard
+router.get('/', async (req, res) => {
+  const securityGuard = await SecurityGuard.find();
+  res.status(200).send(securityGuard);
+});
+
 // get a security guard
 router.get('/:id', async (req, res) => {
   try {
