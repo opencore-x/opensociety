@@ -10,7 +10,9 @@ mongoose
   .then(() => console.log('connected to mongodb'))
   .catch((err) => console.log(err));
 
-// todo: change add primary and secondary phone
+// todo:
+// full name
+// change add primary and secondary phone
 // worksAt set to house object
 // report entry time
 const houseHelpSchema = new mongoose.Schema({
