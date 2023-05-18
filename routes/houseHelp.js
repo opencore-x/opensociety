@@ -2,9 +2,13 @@ const express = require('express');
 const HouseHelp = require('../models/houseHelp');
 const router = express.Router();
 
-router.get('/', async (req, res) => {});
+// return all house helps
+router.get('/', async (req, res) => {
+  const houseHelp = await HouseHelp.find();
+  res.status(200).send(houseHelp);
+});
 
-// get a house help
+// return a particular house help
 router.get('/:id', async (req, res) => {
   try {
     const houseHelp = await HouseHelp.findById(req.params.id);
