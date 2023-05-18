@@ -1,7 +1,7 @@
 const express = require('express');
 const users = require('./routes/users');
 const visitors = require('./routes/visitors');
-const houseHelp = require('./routes/houseHelp');
+const houseHelp = require('./routes/houseHelps');
 
 const app = express();
 app.use(express.json());
