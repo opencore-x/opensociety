@@ -1,3 +1,3 @@
-# visitor-mgmt
+# society social
 
-Backend for managing visitors at gated societies
+Under-development
