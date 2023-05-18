@@ -18,4 +18,4 @@ const securitySchema = new mongoose.Schema({
   password: { type: String, required: true, max: 40 },
 });
 
-module.exports = mongoose.model('Security', securitySchema);
+module.exports = mongoose.model('SecurityGuard', securitySchema);
