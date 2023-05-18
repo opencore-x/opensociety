@@ -32,4 +32,35 @@ router.post('/', async (req, res) => {
   res.status(200).send(houseHelp);
 });
 
+// update house help details
+router.put('/:id', async (req, res) => {
+  try {
+    let houseHelp = await HouseHelp.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: req.body.name,
+        phone: req.body.phone,
+        worksAt: req.body.worksAt,
+        duties: req.body.duties,
+      },
+      { new: true }
+    );
+    if (!houseHelp) res.status(404).send('house help not found');
+    res.status(200).send(houseHelp);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+// delete house help
+router.delete('/:id', async (req, res) => {
+  try {
+    const houseHelp = await HouseHelp.findByIdAndDelete(req.params.id);
+    if (!houseHelp) res.status(404).send('house help not found');
+    res.status(200).send(houseHelp);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
 module.exports = router;
