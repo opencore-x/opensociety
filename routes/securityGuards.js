@@ -32,4 +32,28 @@ router.post('/', async (req, res) => {
   res.status(200).send(securityGuard);
 });
 
+// update security guard
+router.put('/:id', async (req, res) => {
+  try {
+    const securityGuard = await SecurityGuard.findByIdAndUpdate(
+      req.params.id,
+      {
+        firstName: req.body.firstName,
+        middleName: req.body.middleName,
+        lastName: req.body.lastName,
+        phone: req.body.phone,
+        password: req.body.password,
+      },
+      { new: true }
+    );
+    if (!securityGuard) res.status(404).send('no security guard found');
+    res.status(200).send(securityGuard);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
 module.exports = router;
+
+// todo:
+// add password encryption
