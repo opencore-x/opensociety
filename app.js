@@ -3,6 +3,7 @@ const users = require('./routes/users');
 const visitors = require('./routes/visitors');
 
 const app = express();
+app.use(express.json());
 
 app.use('/api/users', users);
 app.use('/api/visitors', visitors);
