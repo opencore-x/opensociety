@@ -41,17 +41,22 @@ router.post('/', async (req, res) => {
 // update a visitor
 router.put('/:id', async (req, res) => {
   try {
-    let visitor = await Visitor.findById(req.params.id);
+    let visitor = {
+      name: req.body.name,
+      phone: req.body.phone,
+      hasVehicle: req.body.hasVehicle,
+      vehicleType: req.body.vehicleType,
+      vehicleNumber: req.body.vehicleNumber,
+      visiting: req.body.visiting,
+    };
+
+    const { value, error } = validateVisitor(visitor);
+    if (error) return res.status(500).send(error.details[0].message);
+
+    visitor = await Visitor.findByIdAndUpdate(req.params.id, value, {
+      new: true,
+    });
     if (!visitor) res.status(404).send('visitor not found');
-
-    visitor.name = req.body.name;
-    visitor.phone = req.body.phone;
-    visitor.hasVehicle = req.body.hasVehicle;
-    visitor.vehicleType = req.body.vehicleType;
-    visitor.vehicleNumber = req.body.vehicleNumber;
-    visitor.visiting = req.body.visiting;
-
-    visitor = await visitor.save();
     res.status(500).send(visitor);
   } catch (err) {
     res.status(500).send(err);
