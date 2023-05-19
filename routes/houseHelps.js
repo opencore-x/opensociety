@@ -1,5 +1,5 @@
 const express = require('express');
-const HouseHelp = require('../models/houseHelps');
+const { HouseHelp, validateHouseHelp } = require('../models/houseHelps');
 const router = express.Router();
 
 // return all house helps
@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const houseHelp = await HouseHelp.findById(req.params.id);
-    if (!houseHelp) res.status(404).send('house help not found');
+    if (!houseHelp) return res.status(404).send('house help not found');
     res.status(200).send(houseHelp);
   } catch (err) {
     res.status(500).send(err);
@@ -21,13 +21,17 @@ router.get('/:id', async (req, res) => {
 
 // add a new house help
 router.post('/', async (req, res) => {
-  let houseHelp = new HouseHelp({
+  let houseHelp = {
     name: req.body.name,
     phone: req.body.phone,
     worksAt: req.body.worksAt,
     duties: req.body.duties,
-  });
+  };
 
+  const { value, error } = validateHouseHelp(houseHelp);
+  if (error) return res.status(500).send(error.details[0].message);
+
+  houseHelp = new HouseHelp(value);
   houseHelp = await houseHelp.save();
   res.status(200).send(houseHelp);
 });
@@ -35,17 +39,20 @@ router.post('/', async (req, res) => {
 // update house help details
 router.put('/:id', async (req, res) => {
   try {
-    let houseHelp = await HouseHelp.findByIdAndUpdate(
-      req.params.id,
-      {
-        name: req.body.name,
-        phone: req.body.phone,
-        worksAt: req.body.worksAt,
-        duties: req.body.duties,
-      },
-      { new: true }
-    );
-    if (!houseHelp) res.status(404).send('house help not found');
+    let houseHelp = {
+      name: req.body.name,
+      phone: req.body.phone,
+      worksAt: req.body.worksAt,
+      duties: req.body.duties,
+    };
+
+    const { value, error } = validateHouseHelp(houseHelp);
+    if (error) return res.status(500).send(error.details[0].message);
+
+    houseHelp = await HouseHelp.findByIdAndUpdate(req.params.id, value, {
+      new: true,
+    });
+    if (!houseHelp) return res.status(404).send('house help not found');
     res.status(200).send(houseHelp);
   } catch (err) {
     res.status(500).send(err);
@@ -56,7 +63,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const houseHelp = await HouseHelp.findByIdAndDelete(req.params.id);
-    if (!houseHelp) res.status(404).send('house help not found');
+    if (!houseHelp) return res.status(404).send('house help not found');
     res.status(200).send(houseHelp);
   } catch (err) {
     res.status(500).send(err);
@@ -64,3 +71,6 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+// todo
+// add fullname to househelp

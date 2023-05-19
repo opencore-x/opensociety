@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Joi = require('joi');
 const config = require('config');
 
 mongoose
@@ -24,5 +25,20 @@ const houseHelpSchema = new mongoose.Schema({
     enum: ['diswashing', 'cleaning', 'dusting', 'cooking'],
   },
 });
+function validateHouseHelp(houseHelp) {
+  const schema = Joi.object({
+    name: Joi.string().lowercase().min(3).max(20).required(),
+    phone: Joi.string().lowercase().length(10).required(),
+    worksAt: Joi.array().items(Joi.string()),
+    duties: Joi.string().valid('dishwashing', 'cleaning', 'dusting', 'cooking'),
+  });
+  return schema.validate(houseHelp);
+}
 
-module.exports = mongoose.model('HouseHelp', houseHelpSchema);
+const HouseHelp = mongoose.model('HouseHelp', houseHelpSchema);
+
+module.exports = { HouseHelp, validateHouseHelp };
+
+// todo
+// change phone .length to 10
+// duties can be array
