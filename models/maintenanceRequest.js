@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Joi = require('joi');
 const config = require('config');
 
 mongoose
@@ -26,17 +27,17 @@ const maintenanceRequestSchema = new mongoose.Schema({
     required: function () {
       return this.work === 'other' ? true : false;
     },
-    detail: {
-      type: String,
-      required: true,
-      min: 6,
-      max: 255,
-      lowercase: true,
-    },
-    resolved: {
-      type: Boolean,
-      default: false,
-    },
+  },
+  detail: {
+    type: String,
+    required: true,
+    min: 6,
+    max: 255,
+    lowercase: true,
+  },
+  status: {
+    resolved: { type: Boolean, default: false },
+    time: Date,
   },
 });
 
@@ -45,4 +46,19 @@ const MaintenanceRequest = mongoose.model(
   maintenanceRequestSchema
 );
 
-module.exports = { MaintenanceRequest };
+function validateMaintenanceRequest(maintenanceRequest) {
+  const schema = Joi.object({
+    apartment: Joi.string(),
+    lodged: Joi.date(),
+    work: Joi.string().valid('electrician', 'plumber', 'other'),
+    detail: Joi.string().min(6).max(255).lowercase().required(),
+    status: Joi.object({
+      resolved: Joi.boolean().default(false),
+      time: Joi.date(),
+    }),
+  });
+
+  return schema.validate(maintenanceRequest);
+}
+
+module.exports = { MaintenanceRequest, validateMaintenanceRequest };
