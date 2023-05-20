@@ -13,10 +13,6 @@ mongoose
 
 const maintenanceRequestSchema = new mongoose.Schema({
   apartment: String,
-  lodged: {
-    type: Date,
-    default: Date.now(),
-  },
   work: {
     type: String,
     required: true,
@@ -37,7 +33,8 @@ const maintenanceRequestSchema = new mongoose.Schema({
   },
   status: {
     resolved: { type: Boolean, default: false },
-    time: Date,
+    timeAdded: { type: Date, default: Date.now() },
+    timeResolved: { type: Date },
   },
 });
 
@@ -49,12 +46,12 @@ const MaintenanceRequest = mongoose.model(
 function validateMaintenanceRequest(maintenanceRequest) {
   const schema = Joi.object({
     apartment: Joi.string(),
-    lodged: Joi.date(),
     work: Joi.string().valid('electrician', 'plumber', 'other'),
     detail: Joi.string().min(6).max(255).lowercase().required(),
     status: Joi.object({
       resolved: Joi.boolean().default(false),
-      time: Joi.date(),
+      timeAdded: Joi.date().default(date.now()),
+      timeResolved: Joi.date(),
     }),
   });
 
