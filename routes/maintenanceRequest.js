@@ -67,4 +67,15 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// delete a maintenance request
+router.delete('/:id', async (req, res) => {
+  try {
+    const maintenanceRequest = await MaintenanceRequest.findByIdAndRemove(req.params.id);
+    if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
+    res.status(200).send(maintenanceRequest);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 module.exports = router;
