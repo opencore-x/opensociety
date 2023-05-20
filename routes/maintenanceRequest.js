@@ -2,6 +2,17 @@ const express = require('express');
 const { MaintenanceRequest, validateMaintenanceRequest } = require('../models/maintenanceRequest.js');
 const router = express.Router();
 
+// get a specific maintenance request
+router.get('/:id', async (req, res) => {
+  try {
+    const maintenanceRequest = await MaintenanceRequest.findById(req.params.id);
+    if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
+    res.status(200).send(maintenanceRequest);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 // add a new maintenance request
 router.post('/', async (req, res) => {
   let maintenanceRequest = {
