@@ -15,10 +15,10 @@ router.post('/', async (req, res) => {
   };
 
   const { value, error } = validateMaintenanceRequest(maintenanceRequest);
-  if (error) return res.status(500).send(error);
+  if (error) return res.status(500).send(error.details[0].message);
 
   maintenanceRequest = new MaintenanceRequest(value);
-  maintenanceRequest = maintenanceRequest.save();
+  maintenanceRequest = await maintenanceRequest.save();
   res.status(200).send(maintenanceRequest);
 });
 

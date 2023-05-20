@@ -38,10 +38,7 @@ const maintenanceRequestSchema = new mongoose.Schema({
   },
 });
 
-const MaintenanceRequest = mongoose.model(
-  'MaintenanceRequest',
-  maintenanceRequestSchema
-);
+const MaintenanceRequest = mongoose.model('MaintenanceRequest', maintenanceRequestSchema);
 
 function validateMaintenanceRequest(maintenanceRequest) {
   const schema = Joi.object({
@@ -50,7 +47,7 @@ function validateMaintenanceRequest(maintenanceRequest) {
     detail: Joi.string().min(6).max(255).lowercase().required(),
     status: Joi.object({
       resolved: Joi.boolean().default(false),
-      timeAdded: Joi.date().default(date.now()),
+      timeAdded: Joi.date(),
       timeResolved: Joi.date(),
     }),
   });
