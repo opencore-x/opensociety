@@ -57,4 +57,15 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// delete an apartment
+router.delete('/:id', async (req, res) => {
+  try {
+    const apartment = await Apartment.findByIdAndRemove(req.params.id);
+    if (!apartment) return res.status(200).send('apartment not found');
+    res.status(200).send(apartment);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 module.exports = router;
