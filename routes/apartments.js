@@ -9,6 +9,17 @@ router.get('/', async (req, res) => {
   res.status(200).send(apartment);
 });
 
+// get an apartment
+router.get('/:id', async (req, res) => {
+  try {
+    const apartment = await Apartment.findById(req.params.id);
+    if (!apartment) return res.status(404).send('not apartment found');
+    res.status(200).send(apartment);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 // add a new aparatment
 router.post('/', async (req, res) => {
   let apartment = {
