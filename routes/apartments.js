@@ -21,7 +21,8 @@ router.post('/', async (req, res) => {
   const { value, error } = validateApartment(apartment);
   if (error) return res.status(500).send(error.details[0].message);
 
-  apartment = await new Apartment(value);
+  apartment = new Apartment(value);
+  apartment = await apartment.save();
   res.status(200).send(apartment);
 });
 
