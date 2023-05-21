@@ -3,6 +3,12 @@ const { Apartment, validateApartment } = require('../models/apartments');
 
 const router = express.Router();
 
+// get all apartments
+router.get('/', async (req, res) => {
+  const apartment = await Apartment.find();
+  res.status(200).send(apartment);
+});
+
 // add a new aparatment
 router.post('/', async (req, res) => {
   let apartment = {
