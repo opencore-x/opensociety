@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Joi = require('joi');
 const config = require('config');
 
 mongoose
@@ -18,4 +19,21 @@ const securitySchema = new mongoose.Schema({
   password: { type: String, required: true, max: 40 },
 });
 
-module.exports = mongoose.model('SecurityGuard', securitySchema);
+function validateSecurityGuard(securityGuard) {
+  const schema = Joi.object({
+    firstName: Joi.string().min(3).max(20).required(),
+    middleName: Joi.string().min(3).max(20),
+    lastName: Joi.string().min(3).max(20).required(),
+    phone: Joi.string().length(10).required(),
+    password: Joi.string().min(6).max(50).require(),
+  });
+
+  return schema.validate(securityGuard);
+}
+
+const SecurityGuard = mongoose.model('SecurityGuard', securitySchema);
+
+module.exports = { SecurityGuard, validateSecurityGuard };
+
+// todo
+// remove middlename option
