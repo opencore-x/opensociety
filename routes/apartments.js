@@ -15,8 +15,8 @@ router.post('/', async (req, res) => {
   const { value, error } = validateApartment(apartment);
   if (error) return res.status(500).send(error.details[0].message);
 
-  aparatment = await new Apartment(value);
-  res.status(200).send(aparatment);
+  apartment = await new Apartment(value);
+  res.status(200).send(apartment);
 });
 
 module.exports = router;

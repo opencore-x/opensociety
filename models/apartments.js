@@ -25,8 +25,10 @@ function validateApartment(apartment) {
     name: Joi.string().required(),
     owner: Joi.string().min(3).max(20),
     tenant: Joi.string().min(3).max(20),
-    occupants: Joi.array(Joi.string()),
+    occupants: Joi.array().items(Joi.string()),
   });
+
+  return schema.validate(apartment);
 }
 
 module.exports = { Apartment, validateApartment };
