@@ -35,7 +35,7 @@ function validateResident(resident) {
     email: Joi.string().email().min(5).max(30),
     apartment: Joi.string(),
     status: Joi.string().valid('owner', 'tenant').required(),
-    nationality: Joi.string().min(2).max(20).required(),
+    nationality: Joi.string().min(3).max(20).required(),
   });
 
   return schema.validate(resident);
