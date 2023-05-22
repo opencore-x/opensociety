@@ -60,7 +60,7 @@ router.put('/:id', async (req, res, next) => {
 // delete a visitor
 router.delete('/:id', async (req, res) => {
   const visitor = await Visitor.findByIdAndRemove(req.params.id);
-  if (!visitor) res.status(404).send('visitor not found');
+  if (!visitor) return res.status(404).send('visitor not found');
   res.status(200).send(visitor);
 });
 

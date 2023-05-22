@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
 // get a security guard
 router.get('/:id', async (req, res) => {
   const securityGuard = await SecurityGuard.findById(req.params.id);
-  if (!securityGuard) res.status(404).send('security guard not found');
+  if (!securityGuard) return res.status(404).send('security guard not found');
   res.status(200).send(securityGuard);
 });
 
@@ -41,14 +41,14 @@ router.put('/:id', async (req, res) => {
     },
     { new: true }
   );
-  if (!securityGuard) res.status(404).send('no security guard found');
+  if (!securityGuard) return res.status(404).send('no security guard found');
   res.status(200).send(securityGuard);
 });
 
 // delete security guard
 router.delete('/:id', async (req, res) => {
   const securityGuard = await SecurityGuard.findByIdAndRemove(req.params.id);
-  if (!securityGuard) res.status(404).send('no security guard found');
+  if (!securityGuard) return res.status(404).send('no security guard found');
   res.status(200).send(securityGuard);
 });
 
