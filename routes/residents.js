@@ -49,4 +49,15 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// delete a resident
+router.delete('/:id', async (req, res) => {
+  try {
+    const resident = await Resident.findByIdAndRemove(req.params.id);
+    if (!resident) return res.status(404).send('resident not found');
+    res.status(200).send(resident);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 module.exports = router;
