@@ -1,4 +1,6 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const config = require('config');
 const users = require('./routes/users');
 const visitors = require('./routes/visitors');
 const houseHelp = require('./routes/houseHelps');
@@ -8,8 +10,17 @@ const apartments = require('./routes/apartments');
 const residents = require('./routes/residents');
 
 const app = express();
-app.use(express.json());
 
+mongoose
+  .connect(
+    `mongodb+srv://${config.get('MONGO_USERNAME')}:${config.get(
+      'MONGO_PASSWORD'
+    )}@vidly.zivn542.mongodb.net/vidly`
+  )
+  .then(() => console.log('connected to mongodb'))
+  .catch((err) => console.log(err));
+
+app.use(express.json());
 app.use('/api/users', users);
 app.use('/api/visitors', visitors);
 app.use('/api/househelp', houseHelp);

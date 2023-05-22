@@ -1,15 +1,5 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
-const config = require('config');
-
-mongoose
-  .connect(
-    `mongodb+srv://${config.get('MONGO_USERNAME')}:${config.get(
-      'MONGO_PASSWORD'
-    )}@vidly.zivn542.mongodb.net/vidly`
-  )
-  .then(() => console.log('connected to mongodb'))
-  .catch((err) => console.log(err));
 
 const visitorSchema = new mongoose.Schema({
   name: { type: String, required: true, min: 3, max: 20, lowercase: true },
@@ -39,10 +29,7 @@ function validateVisitor(visitor) {
     hasVehicle: Joi.boolean().required(),
     vehicleType: Joi.string().when('hasVehicle', {
       is: true,
-      then: Joi.string()
-        .lowercase()
-        .valid('bus', 'car', 'truck', 'bike', 'auto', 'bicycle')
-        .required(),
+      then: Joi.string().lowercase().valid('bus', 'car', 'truck', 'bike', 'auto', 'bicycle').required(),
       otherwise: Joi.string().optional(),
     }),
     vehicleNumber: Joi.string().when('hasVehicle', {
