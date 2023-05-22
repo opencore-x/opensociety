@@ -19,40 +19,21 @@ router.get('/:id', async (req, res, next) => {
 
 // add a visitor
 router.post('/', async (req, res) => {
-  console.log('in the block');
-
-  let visitor = {
-    name: req.body.name,
-    phone: req.body.phone,
-    hasVehicle: req.body.hasVehicle,
-    vehicleType: req.body.vehicleType,
-    vehicleNumber: req.body.vehicleNumber,
-    visiting: req.body.visiting,
-  };
-  const { value, error } = validateVisitor(visitor);
+  const { value, error } = validateVisitor(req.body);
   if (error) return res.status(500).send(error.details[0].message);
 
-  visitor = new Visitor(value);
+  const visitor = new Visitor(value);
   await visitor.save();
   res.status(200).send(visitor);
 });
 
 // update a visitor
 router.put('/:id', async (req, res, next) => {
-  let visitor = {
-    name: req.body.name,
-    phone: req.body.phone,
-    hasVehicle: req.body.hasVehicle,
-    vehicleType: req.body.vehicleType,
-    vehicleNumber: req.body.vehicleNumber,
-    visiting: req.body.visiting,
-  };
-
-  const { value, error } = validateVisitor(visitor);
+  const { value, error } = validateVisitor(req.body);
   if (error) return res.status(500).send(error.details[0].message);
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
 
-  visitor = await Visitor.findByIdAndUpdate(req.params.id, value, {
+  const visitor = await Visitor.findByIdAndUpdate(req.params.id, value, {
     new: true,
   });
   if (!visitor) return res.status(404).send('visitor not found');

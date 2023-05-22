@@ -18,43 +18,21 @@ router.get('/:id', async (req, res) => {
 
 // add a new maintenance request
 router.post('/', async (req, res) => {
-  let maintenanceRequest = {
-    apartment: req.body.apartment,
-    work: req.body.work,
-    detail: req.body.detail,
-    status: {
-      resolved: req.body.status.resolved,
-      timeAdded: req.body.status.timeAdded,
-      timeResolved: req.body.status.timeResolved,
-    },
-  };
-
-  const { value, error } = validateMaintenanceRequest(maintenanceRequest);
+  const { value, error } = validateMaintenanceRequest(req.body);
   if (error) return res.status(500).send(error.details[0].message);
 
-  maintenanceRequest = new MaintenanceRequest(value);
+  const maintenanceRequest = new MaintenanceRequest(value);
   await maintenanceRequest.save();
   res.status(200).send(maintenanceRequest);
 });
 
 // edit an existing maintenance request
 router.put('/:id', async (req, res) => {
-  let maintenanceRequest = {
-    apartment: req.body.apartment,
-    work: req.body.work,
-    detail: req.body.detail,
-    status: {
-      resolved: req.body.status.resolved,
-      timeAdded: req.body.status.timeAdded,
-      timeResolved: req.body.status.timeResolved,
-    },
-  };
-
-  const { value, error } = validateMaintenanceRequest(maintenanceRequest);
+  const { value, error } = validateMaintenanceRequest(req.body);
   if (error) return res.status(500).send(error.details[0].message);
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
 
-  maintenanceRequest = await MaintenanceRequest.findByIdAndUpdate(req.params.id, maintenanceRequest, {
+  const maintenanceRequest = await MaintenanceRequest.findByIdAndUpdate(req.params.id, maintenanceRequest, {
     new: true,
   });
   if (!maintenanceRequest) return res.status(404).send('Maintenance request not found');

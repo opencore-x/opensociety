@@ -18,35 +18,21 @@ router.get('/:id', async (req, res) => {
 
 // add a new house help
 router.post('/', async (req, res) => {
-  let houseHelp = {
-    name: req.body.name,
-    phone: req.body.phone,
-    worksAt: req.body.worksAt,
-    duties: req.body.duties,
-  };
-
-  const { value, error } = validateHouseHelp(houseHelp);
+  const { value, error } = validateHouseHelp(req.body);
   if (error) return res.status(500).send(error.details[0].message);
 
-  houseHelp = new HouseHelp(value);
+  const houseHelp = new HouseHelp(value);
   await houseHelp.save();
   res.status(200).send(houseHelp);
 });
 
 // update house help details
 router.put('/:id', async (req, res) => {
-  let houseHelp = {
-    name: req.body.name,
-    phone: req.body.phone,
-    worksAt: req.body.worksAt,
-    duties: req.body.duties,
-  };
-
-  const { value, error } = validateHouseHelp(houseHelp);
+  const { value, error } = validateHouseHelp(req.body);
   if (error) return res.status(500).send(error.details[0].message);
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
 
-  houseHelp = await HouseHelp.findByIdAndUpdate(req.params.id, value, {
+  const houseHelp = await HouseHelp.findByIdAndUpdate(req.params.id, value, {
     new: true,
   });
   if (!houseHelp) return res.status(404).send('house help not found');

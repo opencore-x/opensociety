@@ -19,35 +19,21 @@ router.get('/:id', async (req, res) => {
 
 // add a new aparatment
 router.post('/', async (req, res) => {
-  let apartment = {
-    name: req.body.name,
-    owner: req.body.owner,
-    tenant: req.body.tenant,
-    occupants: req.body.occupants,
-  };
-
-  const { value, error } = validateApartment(apartment);
+  const { value, error } = validateApartment(req.body);
   if (error) return res.status(500).send(error.details[0].message);
 
-  apartment = new Apartment(value);
+  const apartment = new Apartment(value);
   await apartment.save();
   res.status(200).send(apartment);
 });
 
 // update an apartment
 router.put('/:id', async (req, res) => {
-  let apartment = {
-    name: req.body.name,
-    owner: req.body.owner,
-    tenant: req.body.tenant,
-    occupants: req.body.occupants,
-  };
-
-  const { value, error } = validateApartment(apartment);
+  const { value, error } = validateApartment(req.body);
   if (error) return res.status(500).send(error.details[0].message);
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
 
-  apartment = await Apartment.findByIdAndUpdate(req.params.id, value, { new: true });
+  const apartment = await Apartment.findByIdAndUpdate(req.params.id, value, { new: true });
   if (!apartment) return res.status(404).send('apartment not found');
   res.status(200).send(apartment);
 });
