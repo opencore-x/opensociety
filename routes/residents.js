@@ -2,6 +2,12 @@ const express = require('express');
 const { residents, validateResident, Resident } = require('../models/residents');
 const router = express.Router();
 
+// get all the residents
+router.get('/', async (req, res) => {
+  const resident = await Resident.find();
+  res.status(200).send(resident);
+});
+
 // add a new resident
 router.post('/', async (req, res) => {
   let resident = {
