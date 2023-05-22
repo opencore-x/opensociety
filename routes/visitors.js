@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
   if (error) return res.status(500).send(error.details[0].message);
 
   visitor = new Visitor(value);
-  visitor = await visitor.save();
+  await visitor.save();
   res.status(200).send(visitor);
 });
 

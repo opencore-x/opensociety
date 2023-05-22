@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
     phone: req.body.phone,
     password: req.body.password,
   });
-  securityGuard = await securityGuard.save();
+  await securityGuard.save();
   res.status(200).send(securityGuard);
 });
 

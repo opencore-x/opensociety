@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
   if (error) return res.status(500).send(error.details[0].message);
 
   maintenanceRequest = new MaintenanceRequest(value);
-  maintenanceRequest = await maintenanceRequest.save();
+  await maintenanceRequest.save();
   res.status(200).send(maintenanceRequest);
 });
 

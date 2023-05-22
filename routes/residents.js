@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
   const { value, error } = validateResident(resident);
   if (error) return res.status(500).send(error.details[0].message);
   resident = new Resident(value);
-  resident = await resident.save();
+  await resident.save();
   res.status(200).send(resident);
 });
 

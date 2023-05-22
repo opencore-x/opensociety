@@ -33,7 +33,7 @@ router.post('/', async (req, res) => {
   if (error) return res.status(500).send(error.details[0].message);
 
   apartment = new Apartment(value);
-  apartment = await apartment.save();
+  await apartment.save();
   res.status(200).send(apartment);
 });
 

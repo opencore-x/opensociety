@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
   if (error) return res.status(500).send(error.details[0].message);
 
   houseHelp = new HouseHelp(value);
-  houseHelp = await houseHelp.save();
+  await houseHelp.save();
   res.status(200).send(houseHelp);
 });
 
