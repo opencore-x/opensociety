@@ -8,6 +8,17 @@ router.get('/', async (req, res) => {
   res.status(200).send(resident);
 });
 
+// get a resident
+router.get('/:id', async (req, res) => {
+  try {
+    const resident = await Resident.findById(req.params.id);
+    if (!resident) return res.status(404).send('resident not found');
+    res.status(200).send(resident);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 // add a new resident
 router.post('/', async (req, res) => {
   let resident = {
