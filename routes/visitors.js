@@ -11,13 +11,9 @@ router.get('/', async (req, res) => {
 
 // get a visitor
 router.get('/:id', async (req, res, next) => {
-  try {
-    const visitor = await Visitor.findById(req.params.id);
-    if (visitor) res.status(200).send(visitor);
-    res.status(404).send('incorrect ID');
-  } catch (ex) {
-    next(ex);
-  }
+  const visitor = await Visitor.findById(req.params.id);
+  if (!visitor) return res.status(404).send('incorrect ID');
+  res.status(200).send(visitor);
 });
 
 // add a visitor
@@ -42,38 +38,30 @@ router.post('/', async (req, res) => {
 
 // update a visitor
 router.put('/:id', async (req, res, next) => {
-  try {
-    let visitor = {
-      name: req.body.name,
-      phone: req.body.phone,
-      hasVehicle: req.body.hasVehicle,
-      vehicleType: req.body.vehicleType,
-      vehicleNumber: req.body.vehicleNumber,
-      visiting: req.body.visiting,
-    };
+  let visitor = {
+    name: req.body.name,
+    phone: req.body.phone,
+    hasVehicle: req.body.hasVehicle,
+    vehicleType: req.body.vehicleType,
+    vehicleNumber: req.body.vehicleNumber,
+    visiting: req.body.visiting,
+  };
 
-    const { value, error } = validateVisitor(visitor);
-    if (error) return res.status(500).send(error.details[0].message);
+  const { value, error } = validateVisitor(visitor);
+  if (error) return res.status(500).send(error.details[0].message);
 
-    visitor = await Visitor.findByIdAndUpdate(req.params.id, value, {
-      new: true,
-    });
-    if (!visitor) return res.status(404).send('visitor not found');
-    res.status(500).send(visitor);
-  } catch (ex) {
-    next(ex);
-  }
+  visitor = await Visitor.findByIdAndUpdate(req.params.id, value, {
+    new: true,
+  });
+  if (!visitor) return res.status(404).send('visitor not found');
+  res.status(500).send(visitor);
 });
 
 // delete a visitor
 router.delete('/:id', async (req, res) => {
-  try {
-    const visitor = await Visitor.findByIdAndRemove(req.params.id);
-    if (!visitor) res.status(404).send('visitor not found');
-    res.status(200).send(visitor);
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  const visitor = await Visitor.findByIdAndRemove(req.params.id);
+  if (!visitor) res.status(404).send('visitor not found');
+  res.status(200).send(visitor);
 });
 
 module.exports = router;

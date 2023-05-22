@@ -10,13 +10,9 @@ router.get('/', async (req, res) => {
 
 // return a particular house help
 router.get('/:id', async (req, res) => {
-  try {
-    const houseHelp = await HouseHelp.findById(req.params.id);
-    if (!houseHelp) return res.status(404).send('house help not found');
-    res.status(200).send(houseHelp);
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  const houseHelp = await HouseHelp.findById(req.params.id);
+  if (!houseHelp) return res.status(404).send('house help not found');
+  res.status(200).send(houseHelp);
 });
 
 // add a new house help
@@ -38,36 +34,28 @@ router.post('/', async (req, res) => {
 
 // update house help details
 router.put('/:id', async (req, res) => {
-  try {
-    let houseHelp = {
-      name: req.body.name,
-      phone: req.body.phone,
-      worksAt: req.body.worksAt,
-      duties: req.body.duties,
-    };
+  let houseHelp = {
+    name: req.body.name,
+    phone: req.body.phone,
+    worksAt: req.body.worksAt,
+    duties: req.body.duties,
+  };
 
-    const { value, error } = validateHouseHelp(houseHelp);
-    if (error) return res.status(500).send(error.details[0].message);
+  const { value, error } = validateHouseHelp(houseHelp);
+  if (error) return res.status(500).send(error.details[0].message);
 
-    houseHelp = await HouseHelp.findByIdAndUpdate(req.params.id, value, {
-      new: true,
-    });
-    if (!houseHelp) return res.status(404).send('house help not found');
-    res.status(200).send(houseHelp);
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  houseHelp = await HouseHelp.findByIdAndUpdate(req.params.id, value, {
+    new: true,
+  });
+  if (!houseHelp) return res.status(404).send('house help not found');
+  res.status(200).send(houseHelp);
 });
 
 // delete house help
 router.delete('/:id', async (req, res) => {
-  try {
-    const houseHelp = await HouseHelp.findByIdAndDelete(req.params.id);
-    if (!houseHelp) return res.status(404).send('house help not found');
-    res.status(200).send(houseHelp);
-  } catch (err) {
-    res.status(500).send(err);
-  }
+  const houseHelp = await HouseHelp.findByIdAndDelete(req.params.id);
+  if (!houseHelp) return res.status(404).send('house help not found');
+  res.status(200).send(houseHelp);
 });
 
 module.exports = router;

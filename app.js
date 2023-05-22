@@ -1,4 +1,5 @@
 const express = require('express');
+require('express-async-errors');
 const mongoose = require('mongoose');
 const config = require('config');
 const error = require('./middleware/error');

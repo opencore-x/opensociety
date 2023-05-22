@@ -10,13 +10,9 @@ router.get('/', async (req, res) => {
 
 // get a specific maintenance request
 router.get('/:id', async (req, res) => {
-  try {
-    const maintenanceRequest = await MaintenanceRequest.findById(req.params.id);
-    if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
-    res.status(200).send(maintenanceRequest);
-  } catch (error) {
-    res.status(500).send(error);
-  }
+  const maintenanceRequest = await MaintenanceRequest.findById(req.params.id);
+  if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
+  res.status(200).send(maintenanceRequest);
 });
 
 // add a new maintenance request
@@ -56,26 +52,18 @@ router.put('/:id', async (req, res) => {
   const { value, error } = validateMaintenanceRequest(maintenanceRequest);
   if (error) return res.status(500).send(error.details[0].message);
 
-  try {
-    maintenanceRequest = await MaintenanceRequest.findByIdAndUpdate(req.params.id, maintenanceRequest, {
-      new: true,
-    });
-    if (!maintenanceRequest) return res.status(404).send('Maintenance request not found');
-    res.status(200).send(maintenanceRequest);
-  } catch (error) {
-    res.status(500).send(error);
-  }
+  maintenanceRequest = await MaintenanceRequest.findByIdAndUpdate(req.params.id, maintenanceRequest, {
+    new: true,
+  });
+  if (!maintenanceRequest) return res.status(404).send('Maintenance request not found');
+  res.status(200).send(maintenanceRequest);
 });
 
 // delete a maintenance request
 router.delete('/:id', async (req, res) => {
-  try {
-    const maintenanceRequest = await MaintenanceRequest.findByIdAndRemove(req.params.id);
-    if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
-    res.status(200).send(maintenanceRequest);
-  } catch (error) {
-    res.status(500).send(error);
-  }
+  const maintenanceRequest = await MaintenanceRequest.findByIdAndRemove(req.params.id);
+  if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
+  res.status(200).send(maintenanceRequest);
 });
 
 module.exports = router;

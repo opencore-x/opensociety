@@ -11,13 +11,9 @@ router.get('/', async (req, res) => {
 
 // get an apartment
 router.get('/:id', async (req, res) => {
-  try {
-    const apartment = await Apartment.findById(req.params.id);
-    if (!apartment) return res.status(404).send('apartment not found');
-    res.status(200).send(apartment);
-  } catch (error) {
-    res.status(500).send(error);
-  }
+  const apartment = await Apartment.findById(req.params.id);
+  if (!apartment) return res.status(404).send('apartment not found');
+  res.status(200).send(apartment);
 });
 
 // add a new aparatment
@@ -48,24 +44,17 @@ router.put('/:id', async (req, res) => {
 
   const { value, error } = validateApartment(apartment);
   if (error) return res.status(500).send(error.details[0].message);
-  try {
-    apartment = await Apartment.findByIdAndUpdate(req.params.id, value, { new: true });
-    if (!apartment) return res.status(404).send('apartment not found');
-    res.status(200).send(apartment);
-  } catch (error) {
-    res.status(500).send(error);
-  }
+
+  apartment = await Apartment.findByIdAndUpdate(req.params.id, value, { new: true });
+  if (!apartment) return res.status(404).send('apartment not found');
+  res.status(200).send(apartment);
 });
 
 // delete an apartment
 router.delete('/:id', async (req, res) => {
-  try {
-    const apartment = await Apartment.findByIdAndRemove(req.params.id);
-    if (!apartment) return res.status(200).send('apartment not found');
-    res.status(200).send(apartment);
-  } catch (error) {
-    res.status(500).send(error);
-  }
+  const apartment = await Apartment.findByIdAndRemove(req.params.id);
+  if (!apartment) return res.status(200).send('apartment not found');
+  res.status(200).send(apartment);
 });
 
 module.exports = router;
