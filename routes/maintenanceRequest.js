@@ -10,6 +10,7 @@ router.get('/', async (req, res) => {
 
 // get a specific maintenance request
 router.get('/:id', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
   const maintenanceRequest = await MaintenanceRequest.findById(req.params.id);
   if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
   res.status(200).send(maintenanceRequest);
@@ -51,6 +52,7 @@ router.put('/:id', async (req, res) => {
 
   const { value, error } = validateMaintenanceRequest(maintenanceRequest);
   if (error) return res.status(500).send(error.details[0].message);
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
 
   maintenanceRequest = await MaintenanceRequest.findByIdAndUpdate(req.params.id, maintenanceRequest, {
     new: true,
@@ -61,6 +63,7 @@ router.put('/:id', async (req, res) => {
 
 // delete a maintenance request
 router.delete('/:id', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
   const maintenanceRequest = await MaintenanceRequest.findByIdAndRemove(req.params.id);
   if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
   res.status(200).send(maintenanceRequest);

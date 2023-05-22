@@ -1,5 +1,6 @@
 const express = require('express');
 const { residents, validateResident, Resident } = require('../models/residents');
+const { default: mongoose } = require('mongoose');
 const router = express.Router();
 
 // get all the residents
@@ -10,6 +11,7 @@ router.get('/', async (req, res) => {
 
 // get a resident
 router.get('/:id', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
   const resident = await Resident.findById(req.params.id);
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);
@@ -53,6 +55,7 @@ router.put('/:id', async (req, res) => {
   const { value, error } = validateResident(resident);
   if (error) return res.status(500).send(error.details[0].message);
 
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
   resident = await Resident.findByIdAndUpdate(req.params.id, value, { new: true });
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);
@@ -60,6 +63,7 @@ router.put('/:id', async (req, res) => {
 
 // delete a resident
 router.delete('/:id', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
   const resident = await Resident.findByIdAndRemove(req.params.id);
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);
