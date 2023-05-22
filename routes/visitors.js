@@ -10,18 +10,20 @@ router.get('/', async (req, res) => {
 });
 
 // get a visitor
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const visitor = await Visitor.findById(req.params.id);
     if (visitor) res.status(200).send(visitor);
     res.status(404).send('incorrect ID');
-  } catch (err) {
-    res.status(500).send(err.message);
+  } catch (ex) {
+    next(ex);
   }
 });
 
 // add a visitor
 router.post('/', async (req, res) => {
+  console.log('in the block');
+
   let visitor = {
     name: req.body.name,
     phone: req.body.phone,
@@ -39,7 +41,7 @@ router.post('/', async (req, res) => {
 });
 
 // update a visitor
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
   try {
     let visitor = {
       name: req.body.name,
@@ -56,10 +58,10 @@ router.put('/:id', async (req, res) => {
     visitor = await Visitor.findByIdAndUpdate(req.params.id, value, {
       new: true,
     });
-    if (!visitor) res.status(404).send('visitor not found');
+    if (!visitor) return res.status(404).send('visitor not found');
     res.status(500).send(visitor);
-  } catch (err) {
-    res.status(500).send(err);
+  } catch (ex) {
+    next(ex);
   }
 });
 

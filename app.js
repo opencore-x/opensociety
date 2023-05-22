@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const config = require('config');
+const error = require('./middleware/error');
 const users = require('./routes/users');
 const visitors = require('./routes/visitors');
 const houseHelp = require('./routes/houseHelps');
@@ -28,6 +29,7 @@ app.use('/api/securityguards', securityGuard);
 app.use('/api/maintenancerequest', maintenanceRequest);
 app.use('/api/apartments', apartments);
 app.use('/api/residents', residents);
+app.use(error);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`listening on ${port}`));
