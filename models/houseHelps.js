@@ -1,13 +1,9 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
 
-// todo:
-// full name
-// change add primary and secondary phone
-// worksAt set to house object
-// report entry time
 const houseHelpSchema = new mongoose.Schema({
-  name: { type: String, required: true, lowercase: true, min: 3, max: 20 },
+  firstName: { type: String, required: true, lowercase: true, min: 3, max: 15 },
+  lastName: { type: String, required: true, lowercase: true, min: 3, max: 15 },
   phone: { type: String, required: true, min: 9, max: 10 },
   worksAt: [String],
   duties: {
@@ -17,10 +13,11 @@ const houseHelpSchema = new mongoose.Schema({
 });
 function validateHouseHelp(houseHelp) {
   const schema = Joi.object({
-    name: Joi.string().lowercase().min(3).max(20).required(),
+    firstName: Joi.string().lowercase().min(3).max(15).required(),
+    lastName: Joi.string().lowercase().min(3).max(15).required(),
     phone: Joi.string().lowercase().length(10).required(),
     worksAt: Joi.array().items(Joi.string()),
-    duties: Joi.string().valid('dishwashing', 'cleaning', 'dusting', 'cooking'),
+    duties: Joi.array().items(Joi.string().valid('dishwashing', 'cleaning', 'dusting', 'cooking')),
   });
   return schema.validate(houseHelp);
 }
@@ -32,3 +29,7 @@ module.exports = { HouseHelp, validateHouseHelp };
 // todo
 // change phone .length to 10
 // duties can be array
+// gender
+// change add primary and secondary phone
+// worksAt set to apartment object
+// report entry time
