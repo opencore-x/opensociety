@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
+Joi.objectId = require('joi-objectid')(Joi);
 
 const maintenanceRequestSchema = new mongoose.Schema({
   apartment: String,
@@ -30,8 +31,8 @@ const maintenanceRequestSchema = new mongoose.Schema({
 
 const MaintenanceRequest = mongoose.model('MaintenanceRequest', maintenanceRequestSchema);
 
-function validateMaintenanceRequest(maintenanceRequest) {
-  const schema = Joi.object({
+function validateMaintenanceRequest(maintenanceRequest, id = false) {
+  const schema = {
     apartment: Joi.string(),
     work: Joi.string().valid('electrician', 'plumber', 'other'),
     detail: Joi.string().min(6).max(255).lowercase().required(),
@@ -40,9 +41,15 @@ function validateMaintenanceRequest(maintenanceRequest) {
       timeAdded: Joi.date(),
       timeResolved: Joi.date(),
     }),
-  });
+  };
 
-  return schema.validate(maintenanceRequest);
+  if (id) {
+    maintenanceRequest.id = id;
+    schema.id = Joi.objectId();
+  }
+
+  const maintenanceRequestSchema = Joi.object(schema);
+  return maintenanceRequestSchema.validate(maintenanceRequest);
 }
 
 module.exports = { MaintenanceRequest, validateMaintenanceRequest };
