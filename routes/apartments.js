@@ -1,6 +1,5 @@
 const express = require('express');
 const { Apartment, validateApartment } = require('../models/apartments');
-const validateObjectId = require('../modules/isValidObjectId');
 
 const router = express.Router();
 
@@ -12,6 +11,9 @@ router.get('/', async (req, res) => {
 
 // get an apartment
 router.get('/:id', async (req, res) => {
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
+
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
   const apartment = await Apartment.findById(req.params.id);
   if (!apartment) return res.status(404).send('apartment not found');
@@ -20,8 +22,8 @@ router.get('/:id', async (req, res) => {
 
 // add a new aparatment
 router.post('/', async (req, res) => {
-  const { value, error } = validateApartment(req.body);
-  if (error) return res.status(500).send(error.details[0].message);
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
 
   const apartment = new Apartment(value);
   await apartment.save();
@@ -40,8 +42,9 @@ router.put('/:id', async (req, res) => {
 
 // delete an apartment
 router.delete('/:id', async (req, res) => {
-  const { error } = validateObjectId(req.params.id);
-  if (error) return res.status(400).send('invalid object id');
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
+
   const apartment = await Apartment.findByIdAndRemove(req.params.id);
   if (!apartment) return res.status(200).send('apartment not found');
   res.status(200).send(apartment);
