@@ -11,7 +11,9 @@ router.get('/', async (req, res) => {
 
 // get a resident
 router.get('/:id', async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
+
   const resident = await Resident.findById(req.params.id);
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);
@@ -19,8 +21,9 @@ router.get('/:id', async (req, res) => {
 
 // add a new resident
 router.post('/', async (req, res) => {
-  const { value, error } = validateResident(req.body);
-  if (error) return res.status(500).send(error.details[0].message);
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
+
   const resident = new Resident(value);
   await resident.save();
   res.status(200).send(resident);
@@ -28,10 +31,9 @@ router.post('/', async (req, res) => {
 
 // edit a resident
 router.put('/:id', async (req, res) => {
-  const { value, error } = validateResident(req.body);
-  if (error) return res.status(500).send(error.details[0].message);
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
 
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
   const resident = await Resident.findByIdAndUpdate(req.params.id, value, { new: true });
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);
@@ -39,7 +41,9 @@ router.put('/:id', async (req, res) => {
 
 // delete a resident
 router.delete('/:id', async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
+
   const resident = await Resident.findByIdAndRemove(req.params.id);
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);

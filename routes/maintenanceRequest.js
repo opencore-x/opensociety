@@ -10,7 +10,9 @@ router.get('/', async (req, res) => {
 
 // get a specific maintenance request
 router.get('/:id', async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
+
   const maintenanceRequest = await MaintenanceRequest.findById(req.params.id);
   if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
   res.status(200).send(maintenanceRequest);
@@ -18,8 +20,8 @@ router.get('/:id', async (req, res) => {
 
 // add a new maintenance request
 router.post('/', async (req, res) => {
-  const { value, error } = validateMaintenanceRequest(req.body);
-  if (error) return res.status(500).send(error.details[0].message);
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
 
   const maintenanceRequest = new MaintenanceRequest(value);
   await maintenanceRequest.save();
@@ -28,9 +30,8 @@ router.post('/', async (req, res) => {
 
 // edit an existing maintenance request
 router.put('/:id', async (req, res) => {
-  const { value, error } = validateMaintenanceRequest(req.body);
-  if (error) return res.status(500).send(error.details[0].message);
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
 
   const maintenanceRequest = await MaintenanceRequest.findByIdAndUpdate(req.params.id, maintenanceRequest, {
     new: true,
@@ -41,7 +42,9 @@ router.put('/:id', async (req, res) => {
 
 // delete a maintenance request
 router.delete('/:id', async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
+  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  if (error) return res.status(400).send(error.details[0].message);
+
   const maintenanceRequest = await MaintenanceRequest.findByIdAndRemove(req.params.id);
   if (!maintenanceRequest) return res.status(404).send('maintenance request not found');
   res.status(200).send(maintenanceRequest);
