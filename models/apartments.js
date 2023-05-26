@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
 Joi.objectId = require('joi-objectid')(Joi);
-const isValidObjectId = require('../modules/isValidObjectId');
 
 const apartmentSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -13,7 +12,7 @@ const apartmentSchema = new mongoose.Schema({
 const Apartment = mongoose.model('Apartment', apartmentSchema);
 
 // validate both apartment and ObjectID
-function validateApartment({ body, id }) {
+function validate({ body, id }) {
   let schema = {
     name: Joi.string().required(),
     owner: Joi.objectId(),
@@ -33,4 +32,4 @@ function validateApartment({ body, id }) {
   return apartmentSchema.validate(body);
 }
 
-module.exports = { Apartment, validateApartment };
+module.exports = { Apartment, validate };

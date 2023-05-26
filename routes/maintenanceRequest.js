@@ -1,5 +1,6 @@
 const express = require('express');
-const { MaintenanceRequest, validateMaintenanceRequest } = require('../models/maintenanceRequest.js');
+const { MaintenanceRequest, validate } = require('../models/maintenanceRequest.js');
+
 const router = express.Router();
 
 // get all the maintenance request
@@ -10,7 +11,7 @@ router.get('/', async (req, res) => {
 
 // get a specific maintenance request
 router.get('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const maintenanceRequest = await MaintenanceRequest.findById(req.params.id);
@@ -20,7 +21,7 @@ router.get('/:id', async (req, res) => {
 
 // add a new maintenance request
 router.post('/', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const maintenanceRequest = new MaintenanceRequest(value);
@@ -30,7 +31,7 @@ router.post('/', async (req, res) => {
 
 // edit an existing maintenance request
 router.put('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const maintenanceRequest = await MaintenanceRequest.findByIdAndUpdate(req.params.id, maintenanceRequest, {
@@ -42,7 +43,7 @@ router.put('/:id', async (req, res) => {
 
 // delete a maintenance request
 router.delete('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const maintenanceRequest = await MaintenanceRequest.findByIdAndRemove(req.params.id);

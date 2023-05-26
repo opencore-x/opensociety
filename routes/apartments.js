@@ -1,5 +1,5 @@
 const express = require('express');
-const { Apartment, validateApartment } = require('../models/apartments');
+const { Apartment, validate } = require('../models/apartments');
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
 
 // get an apartment
 router.get('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const apartment = await Apartment.findById(req.params.id);
@@ -21,7 +21,7 @@ router.get('/:id', async (req, res) => {
 
 // add a new aparatment
 router.post('/', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const apartment = new Apartment(value);
@@ -31,7 +31,7 @@ router.post('/', async (req, res) => {
 
 // update an apartment
 router.put('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(500).send(error.details[0].message);
 
   const apartment = await Apartment.findByIdAndUpdate(req.params.id, value, { new: true });
@@ -41,7 +41,7 @@ router.put('/:id', async (req, res) => {
 
 // delete an apartment
 router.delete('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const apartment = await Apartment.findByIdAndRemove(req.params.id);

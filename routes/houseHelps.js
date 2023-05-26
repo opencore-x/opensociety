@@ -1,5 +1,6 @@
 const express = require('express');
-const { HouseHelp, validateHouseHelp } = require('../models/houseHelps');
+const { HouseHelp, validate } = require('../models/houseHelps');
+
 const router = express.Router();
 
 // return all house helps
@@ -10,7 +11,7 @@ router.get('/', async (req, res) => {
 
 // return a particular house help
 router.get('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const houseHelp = await HouseHelp.findById(req.params.id);
@@ -20,7 +21,7 @@ router.get('/:id', async (req, res) => {
 
 // add a new house help
 router.post('/', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const houseHelp = new HouseHelp(value);
@@ -30,7 +31,7 @@ router.post('/', async (req, res) => {
 
 // update house help details
 router.put('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
@@ -44,7 +45,7 @@ router.put('/:id', async (req, res) => {
 
 // delete house help
 router.delete('/:id', async (req, res) => {
-  const { value, error } = validateApartment({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const houseHelp = await HouseHelp.findByIdAndDelete(req.params.id);
