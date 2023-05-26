@@ -31,7 +31,7 @@ const maintenanceRequestSchema = new mongoose.Schema({
 
 const MaintenanceRequest = mongoose.model('MaintenanceRequest', maintenanceRequestSchema);
 
-function validateMaintenanceRequest(maintenanceRequest, id = false) {
+function validateMaintenanceRequest({ body, id }) {
   const schema = {
     apartment: Joi.string(),
     work: Joi.string().valid('electrician', 'plumber', 'other'),
@@ -43,13 +43,16 @@ function validateMaintenanceRequest(maintenanceRequest, id = false) {
     }),
   };
 
-  if (id) {
-    maintenanceRequest.id = id;
+  if (id && body) {
     schema.id = Joi.objectId();
+    body.id = id;
+  } else if (id) {
+    schema = { id: Joi.objectId() };
+    body = { id: id };
   }
 
   const maintenanceRequestSchema = Joi.object(schema);
-  return maintenanceRequestSchema.validate(maintenanceRequest);
+  return maintenanceRequestSchema.validate(body);
 }
 
 module.exports = { MaintenanceRequest, validateMaintenanceRequest };

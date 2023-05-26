@@ -16,7 +16,7 @@ const residentsSchema = new mongoose.Schema({
 
 const Resident = mongoose.model('Resident', residentsSchema);
 
-function validateResident(resident, id = false) {
+function validateResident({ body, id }) {
   const schema = {
     firstName: Joi.string().min(3).max(20).required(),
     lastName: Joi.string().min(3).max(20).required(),
@@ -29,13 +29,16 @@ function validateResident(resident, id = false) {
     nationality: Joi.string().min(3).max(20).required(),
   };
 
-  if (id) {
-    resident.id = id;
+  if (id && body) {
     schema.id = Joi.objectId();
+    body.id = id;
+  } else if (id) {
+    schema = { id: Joi.objectId() };
+    body = { id: id };
   }
 
   const residentsSchema = Joi.object(schema);
-  return residentsSchema.validate(resident);
+  return residentsSchema.validate(body);
 }
 
 module.exports = { Resident, validateResident };

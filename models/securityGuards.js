@@ -11,7 +11,7 @@ const securitySchema = new mongoose.Schema({
 
 const SecurityGuard = mongoose.model('SecurityGuard', securitySchema);
 
-function validateSecurityGuard(securityGuard, id = false) {
+function validateSecurityGuard({ body, id }) {
   const schema = {
     firstName: Joi.string().min(3).max(20).required(),
     lastName: Joi.string().min(3).max(20).required(),
@@ -19,13 +19,16 @@ function validateSecurityGuard(securityGuard, id = false) {
     password: Joi.string().min(6).max(50).require(),
   };
 
-  if (id) {
-    securityGuard.id = id;
+  if (id && body) {
     schema.id = Joi.objectId();
+    body.id = id;
+  } else if (id) {
+    schema = { id: Joi.objectId() };
+    body = { id: id };
   }
 
   const securitySchema = Joi.object(schema);
-  return securitySchema.validate(securityGuard);
+  return securitySchema.validate(body);
 }
 
 module.exports = { SecurityGuard, validateSecurityGuard };

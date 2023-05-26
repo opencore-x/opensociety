@@ -13,7 +13,7 @@ const houseHelpSchema = new mongoose.Schema({
   },
 });
 
-function validateHouseHelp(houseHelp, id = false) {
+function validateHouseHelp({ body, id }) {
   const schema = {
     firstName: Joi.string().lowercase().min(3).max(15).required(),
     lastName: Joi.string().lowercase().min(3).max(15).required(),
@@ -22,17 +22,19 @@ function validateHouseHelp(houseHelp, id = false) {
     duties: Joi.array().items(Joi.string().valid('dishwashing', 'cleaning', 'dusting', 'cooking')),
   };
 
-  if (id) {
-    houseHelp.id = id;
+  if (id && body) {
     schema.id = Joi.objectId();
+    body.id = id;
+  } else if (id) {
+    schema = { id: Joi.objectId() };
+    body = { id: id };
   }
 
   const houseHelpSchema = Joi.object(schema);
-  return houseHelpSchema.validate(houseHelp);
+  return houseHelpSchema.validate(body);
 }
 
 const HouseHelp = mongoose.model('HouseHelp', houseHelpSchema);
-
 module.exports = { HouseHelp, validateHouseHelp };
 
 // todo

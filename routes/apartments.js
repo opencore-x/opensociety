@@ -14,7 +14,6 @@ router.get('/:id', async (req, res) => {
   const { value, error } = validateApartment({ body: req.body, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
   const apartment = await Apartment.findById(req.params.id);
   if (!apartment) return res.status(404).send('apartment not found');
   res.status(200).send(apartment);

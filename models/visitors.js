@@ -25,7 +25,7 @@ const visitorSchema = new mongoose.Schema({
 
 const Visitor = mongoose.model('Visitor', visitorSchema);
 
-function validateVisitor(visitor, id = false) {
+function validateVisitor({ body, id }) {
   const schema = {
     name: Joi.string().lowercase().min(3).max(20).required(),
     phone: Joi.string().length(10).required(),
@@ -43,13 +43,16 @@ function validateVisitor(visitor, id = false) {
     visiting: Joi.string().required().lowercase(),
   };
 
-  if (id) {
-    visitor.id = id;
+  if (id && body) {
     schema.id = Joi.objectId();
+    body.id = id;
+  } else if (id) {
+    schema = { id: Joi.objectId() };
+    body = { id: id };
   }
 
   const visitorSchema = Joi.object(schema);
-  return visitorSchema.validate(visitor);
+  return visitorSchema.validate(body);
 }
 
 module.exports = { Visitor, validateVisitor };
