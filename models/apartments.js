@@ -21,8 +21,8 @@ function validateApartment({ body, id }) {
     occupants: Joi.array().items(Joi.objectId()),
   };
 
-  if (id) schema = { id: Joi.objectId() };
-  else if (id && body) schema.id = Joi.objectId();
+  if (id && body) schema.id = Joi.objectId();
+  else if (id) schema = { id: Joi.objectId() };
 
   const apartmentSchema = Joi.object(schema);
   return apartmentSchema.validate(body);
