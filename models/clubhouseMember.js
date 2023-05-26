@@ -9,19 +9,22 @@ const clubhouseMemberSchema = new mongoose.Schema({
 
 const ClubhouseMember = mongoose.model('ClubhouseMember', clubhouseMemberSchema);
 
-function validateClubhouseMember(member, id = false) {
+function validateClubhouseMember({ body, id }) {
   const schema = {
     resident: Joi.objectId(),
     joinDate: Joi.date().optional(),
   };
 
-  if (id) {
-    member.id = id;
+  if (id && body) {
     schema.id = Joi.objectId();
+    body.id = id;
+  } else if (id) {
+    schema = { id: Joi.objectId() };
+    body = { id: id };
   }
 
   const clubhouseMemberSchema = Joi.object(schema);
-  return clubhouseMemberSchema.validate(member);
+  return clubhouseMemberSchema.validate(body);
 }
 
 module.exports = { ClubhouseMember, clubhouseMemberSchema };
