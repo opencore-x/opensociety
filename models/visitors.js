@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
+Joi.objectId = require('joi-objectid')(Joi);
 
 const visitorSchema = new mongoose.Schema({
   name: { type: String, required: true, min: 3, max: 20, lowercase: true },
@@ -22,8 +23,10 @@ const visitorSchema = new mongoose.Schema({
   visiting: { type: String, required: true },
 });
 
-function validateVisitor(visitor) {
-  const joiSchema = Joi.object({
+const Visitor = mongoose.model('Visitor', visitorSchema);
+
+function validateVisitor(visitor, id = false) {
+  const schema = {
     name: Joi.string().lowercase().min(3).max(20).required(),
     phone: Joi.string().length(10).required(),
     hasVehicle: Joi.boolean().required(),
@@ -38,11 +41,15 @@ function validateVisitor(visitor) {
       otherwise: Joi.string().optional(),
     }),
     visiting: Joi.string().required().lowercase(),
-  });
+  };
 
-  return joiSchema.validate(visitor);
+  if (id) {
+    visitor.id = id;
+    schema.id = Joi.objectId();
+  }
+
+  const visitorSchema = Joi.object(schema);
+  return visitorSchema.validate(visitor);
 }
-
-const Visitor = mongoose.model('Visitor', visitorSchema);
 
 module.exports = { Visitor, validateVisitor };
