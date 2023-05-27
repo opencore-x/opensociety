@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
 
 // get a security guard
 router.get('/:id', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: null, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const securityGuard = await SecurityGuard.findById(req.params.id);
@@ -21,7 +21,7 @@ router.get('/:id', async (req, res) => {
 
 // add new security guard
 router.post('/', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: null });
   if (error) return res.status(400).send(error.details[0].message);
 
   const securityGuard = new SecurityGuard(value);
@@ -41,7 +41,7 @@ router.put('/:id', async (req, res) => {
 
 // delete security guard
 router.delete('/:id', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: null, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const securityGuard = await SecurityGuard.findByIdAndRemove(req.params.id);

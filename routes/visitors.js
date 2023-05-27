@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
 
 // get a visitor
 router.get('/:id', async (req, res, next) => {
-  const { value, error } = validate({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: null, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const visitor = await Visitor.findById(req.params.id);
@@ -21,7 +21,7 @@ router.get('/:id', async (req, res, next) => {
 
 // add a visitor
 router.post('/', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: req.body, id: null });
   if (error) return res.status(400).send(error.details[0].message);
 
   const visitor = new Visitor(value);
@@ -43,7 +43,7 @@ router.put('/:id', async (req, res, next) => {
 
 // delete a visitor
 router.delete('/:id', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: req.params.id });
+  const { value, error } = validate({ body: null, id: req.params.id });
   if (error) return res.status(400).send(error.details[0].message);
 
   const visitor = await Visitor.findByIdAndRemove(req.params.id);
