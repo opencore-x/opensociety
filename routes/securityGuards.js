@@ -1,5 +1,5 @@
 const express = require('express');
-const { SecurityGuard, validate } = require('../models/securityGuards');
+const { SecurityGuard, validate } = require('../models/SecurityGuard');
 
 const router = express.Router();
 

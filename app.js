@@ -23,6 +23,7 @@ app.use('/api/securityguards', securityGuard);
 app.use('/api/maintenancerequest', maintenanceRequest);
 app.use('/api/apartments', apartments);
 app.use('/api/residents', residents);
+// activate clubhouseMember
 app.use(error);
 
 const port = process.env.PORT || 3000;

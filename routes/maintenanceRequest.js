@@ -1,5 +1,5 @@
 const express = require('express');
-const { MaintenanceRequest, validate } = require('../models/maintenanceRequest.js');
+const { MaintenanceRequest, validate } = require('../models/MaintenanceRequest.js');
 
 const router = express.Router();
 
