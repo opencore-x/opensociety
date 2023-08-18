@@ -1,7 +1,7 @@
 const express = require('express');
 require('express-async-errors');
-const mongoose = require('mongoose');
-const config = require('config');
+const checkEnvVariables = require('./utils/checkEnvVariables');
+const dbConnect = require('./utils/dbConnect');
 const error = require('./middleware/error');
 const users = require('./routes/users');
 const visitors = require('./routes/visitors');
@@ -11,16 +11,9 @@ const maintenanceRequest = require('./routes/maintenanceRequest');
 const apartments = require('./routes/apartments');
 const residents = require('./routes/residents');
 
+checkEnvVariables();
+dbConnect();
 const app = express();
-
-mongoose
-  .connect(
-    `mongodb+srv://${config.get('MONGO_USERNAME')}:${config.get(
-      'MONGO_PASSWORD'
-    )}@vidly.zivn542.mongodb.net/vidly`
-  )
-  .then(() => console.log('connected to mongodb'))
-  .catch((err) => console.log(err));
 
 app.use(express.json());
 app.use('/api/users', users);

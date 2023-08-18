@@ -4,7 +4,7 @@
   "description": "Backend for managing visitors at gated societies",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon app.js"
+    "dev": "nodemon --require dotenv/config app.js"
   },
   "repository": {
     "type": "git",
@@ -18,8 +18,8 @@
   },
   "homepage": "https://github.com/ankitsejwal/visitor-mgmt#readme",
   "dependencies": {
-    "config": "^3.3.9",
     "debug": "^4.3.4",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-async-errors": "^3.1.1",
     "joi": "^17.9.2",
