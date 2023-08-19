@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
+Joi.objectid = require('joi-objectid')(Joi);
 
 const houseHelpSchema = new mongoose.Schema({
   firstName: { type: String, required: true, lowercase: true, min: 3, max: 15 },
@@ -13,29 +13,17 @@ const houseHelpSchema = new mongoose.Schema({
   },
 });
 
-function validateHouseHelp({ body, id }) {
-  const schema = {
-    firstName: Joi.string().lowercase().min(3).max(15).required(),
-    lastName: Joi.string().lowercase().min(3).max(15).required(),
-    phone: Joi.string().lowercase().length(10).required(),
-    worksAt: Joi.array().items(Joi.string()),
-    duties: Joi.array().items(Joi.string().valid('dishwashing', 'cleaning', 'dusting', 'cooking')),
-  };
-
-  if (id && body) {
-    schema.id = Joi.objectId();
-    body.id = id;
-  } else if (id) {
-    schema = { id: Joi.objectId() };
-    body = { id: id };
-  }
-
-  const houseHelpSchema = Joi.object(schema);
-  return houseHelpSchema.validate(body);
-}
+const joiSchema = {
+  firstName: Joi.string().lowercase().min(3).max(15).required(),
+  lastName: Joi.string().lowercase().min(3).max(15).required(),
+  phone: Joi.string().lowercase().length(10).required(),
+  worksAt: Joi.array().items(Joi.string()),
+  duties: Joi.array().items(Joi.string().valid('dishwashing', 'cleaning', 'dusting', 'cooking')),
+};
 
 const HouseHelp = mongoose.model('HouseHelp', houseHelpSchema);
-module.exports = { HouseHelp, validateHouseHelp };
+
+module.exports = { HouseHelp, joiSchema };
 
 // todo
 // change phone .length to 10

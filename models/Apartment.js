@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
+Joi.objectid = require('joi-objectid')(Joi);
 
 const apartmentSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -11,25 +11,11 @@ const apartmentSchema = new mongoose.Schema({
 
 const Apartment = mongoose.model('Apartment', apartmentSchema);
 
-// validate both apartment and ObjectID
-function validate({ body, id }) {
-  let schema = {
-    name: Joi.string().required(),
-    owner: Joi.objectId(),
-    tenant: Joi.objectId(),
-    occupants: Joi.array().items(Joi.objectId()),
-  };
+let joiSchema = {
+  name: Joi.string().required(),
+  owner: Joi.objectid(),
+  tenant: Joi.objectid(),
+  occupants: Joi.array().items(Joi.objectid()),
+};
 
-  if (id && body) {
-    schema.id = Joi.objectId();
-    body.id = id;
-  } else if (id) {
-    schema = { id: Joi.objectId() };
-    body = { id: id };
-  }
-
-  const apartmentSchema = Joi.object(schema);
-  return apartmentSchema.validate(body);
-}
-
-module.exports = { Apartment, validate };
+module.exports = { Apartment, joiSchema };

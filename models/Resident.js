@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
+Joi.objectid = require('joi-objectid')(Joi);
 
 const residentsSchema = new mongoose.Schema({
   firstName: { type: String, min: 3, max: 20, required: true },
@@ -14,34 +14,21 @@ const residentsSchema = new mongoose.Schema({
   nationality: { type: String, min: 3, max: 20 },
 });
 
+const joiSchema = {
+  firstName: Joi.string().min(3).max(20).required(),
+  lastName: Joi.string().min(3).max(20).required(),
+  dob: Joi.string().required(),
+  gender: Joi.string().valid('male', 'female', 'prefer not to say').required(),
+  phone: Joi.string().length(10).required(),
+  email: Joi.string().email().min(5).max(30),
+  apartment: Joi.string(),
+  status: Joi.string().valid('owner', 'tenant').required(),
+  nationality: Joi.string().min(3).max(20).required(),
+};
+
 const Resident = mongoose.model('Resident', residentsSchema);
 
-function validateResident({ body, id }) {
-  const schema = {
-    firstName: Joi.string().min(3).max(20).required(),
-    lastName: Joi.string().min(3).max(20).required(),
-    dob: Joi.string().required(),
-    gender: Joi.string().valid('male', 'female', 'prefer not to say').required(),
-    phone: Joi.string().length(10).required(),
-    email: Joi.string().email().min(5).max(30),
-    apartment: Joi.string(),
-    status: Joi.string().valid('owner', 'tenant').required(),
-    nationality: Joi.string().min(3).max(20).required(),
-  };
-
-  if (id && body) {
-    schema.id = Joi.objectId();
-    body.id = id;
-  } else if (id) {
-    schema = { id: Joi.objectId() };
-    body = { id: id };
-  }
-
-  const residentsSchema = Joi.object(schema);
-  return residentsSchema.validate(body);
-}
-
-module.exports = { Resident, validateResident };
+module.exports = { Resident, joiSchema };
 
 // todo
 // change dob type to Date
