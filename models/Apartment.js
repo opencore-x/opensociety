@@ -9,13 +9,13 @@ const apartmentSchema = new mongoose.Schema({
   occupants: [String],
 });
 
-const Apartment = mongoose.model('Apartment', apartmentSchema);
-
-let joiSchema = {
+const joiSchema = {
   name: Joi.string().required(),
   owner: Joi.objectid(),
   tenant: Joi.objectid(),
   occupants: Joi.array().items(Joi.objectid()),
 };
+
+const Apartment = mongoose.model('Apartment', apartmentSchema);
 
 module.exports = { Apartment, joiSchema };

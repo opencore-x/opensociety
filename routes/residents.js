@@ -1,7 +1,6 @@
-const express = require('express');
-const { Resident, validate } = require('../models/Resident');
-
-const router = express.Router();
+const router = require('express').Router();
+const { Resident, joiSchema } = require('../models/Resident');
+const validate = require('../middleware/validate');
 
 // get all the residents
 router.get('/', async (req, res) => {
@@ -10,40 +9,28 @@ router.get('/', async (req, res) => {
 });
 
 // get a resident
-router.get('/:id', async (req, res) => {
-  const { value, error } = validate({ body: null, id: req.params.id });
-  if (error) return res.status(400).send(error.details[0].message);
-
+router.get('/:id', validate('id'), async (req, res) => {
   const resident = await Resident.findById(req.params.id);
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);
 });
 
 // add a new resident
-router.post('/', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: null });
-  if (error) return res.status(400).send(error.details[0].message);
-
-  const resident = new Resident(value);
+router.post('/', validate(joiSchema), async (req, res) => {
+  const resident = new Resident(req.body);
   await resident.save();
   res.status(200).send(resident);
 });
 
 // edit a resident
-router.put('/:id', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: req.params.id });
-  if (error) return res.status(400).send(error.details[0].message);
-
-  const resident = await Resident.findByIdAndUpdate(req.params.id, value, { new: true });
+router.put('/:id', validate('id'), validate(joiSchema), async (req, res) => {
+  const resident = await Resident.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);
 });
 
 // delete a resident
-router.delete('/:id', async (req, res) => {
-  const { value, error } = validate({ body: null, id: req.params.id });
-  if (error) return res.status(400).send(error.details[0].message);
-
+router.delete('/:id', validate('id'), async (req, res) => {
   const resident = await Resident.findByIdAndRemove(req.params.id);
   if (!resident) return res.status(404).send('resident not found');
   res.status(200).send(resident);

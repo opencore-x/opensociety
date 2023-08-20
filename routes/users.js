@@ -1,6 +1,4 @@
-const express = require('express');
-
-const router = express.Router();
+const router = require('express').Router();
 
 router.get('/', async (req, res) => {
   res.status().send();

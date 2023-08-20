@@ -1,5 +1,6 @@
 const express = require('express');
-const { HouseHelp, validate } = require('../models/HouseHelp');
+const { HouseHelp, joiSchema } = require('../models/HouseHelp');
+const validate = require('../middleware/validate');
 
 const router = express.Router();
 
@@ -10,33 +11,22 @@ router.get('/', async (req, res) => {
 });
 
 // return a particular house help
-router.get('/:id', async (req, res) => {
-  const { value, error } = validate({ body: null, id: req.params.id });
-  if (error) return res.status(400).send(error.details[0].message);
-
+router.get('/:id', validate('id'), async (req, res) => {
   const houseHelp = await HouseHelp.findById(req.params.id);
   if (!houseHelp) return res.status(404).send('house help not found');
   res.status(200).send(houseHelp);
 });
 
 // add a new house help
-router.post('/', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: null });
-  if (error) return res.status(400).send(error.details[0].message);
-
-  const houseHelp = new HouseHelp(value);
+router.post('/', validate(joiSchema), async (req, res) => {
+  const houseHelp = new HouseHelp(req.body);
   await houseHelp.save();
   res.status(200).send(houseHelp);
 });
 
 // update house help details
-router.put('/:id', async (req, res) => {
-  const { value, error } = validate({ body: req.body, id: req.params.id });
-  if (error) return res.status(400).send(error.details[0].message);
-
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).send('invalid object id');
-
-  const houseHelp = await HouseHelp.findByIdAndUpdate(req.params.id, value, {
+router.put('/:id', validate('id'), validate(joiSchema), async (req, res) => {
+  const houseHelp = await HouseHelp.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
   if (!houseHelp) return res.status(404).send('house help not found');
@@ -44,10 +34,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // delete house help
-router.delete('/:id', async (req, res) => {
-  const { value, error } = validate({ body: null, id: req.params.id });
-  if (error) return res.status(400).send(error.details[0].message);
-
+router.delete('/:id', validate('id'), async (req, res) => {
   const houseHelp = await HouseHelp.findByIdAndDelete(req.params.id);
   if (!houseHelp) return res.status(404).send('house help not found');
   res.status(200).send(houseHelp);
