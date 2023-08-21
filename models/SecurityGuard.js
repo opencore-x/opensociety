@@ -14,6 +14,7 @@ const joiSchema = {
   lastName: Joi.string().min(3).max(20).required(),
   phone: Joi.string().length(10).required(),
   password: Joi.string().min(6).max(50).required(),
+  repeatPassword: Joi.string().valid(Joi.ref('password')).required(),
 };
 
 const SecurityGuard = mongoose.model('SecurityGuard', securitySchema);
