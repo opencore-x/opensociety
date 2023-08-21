@@ -17,7 +17,9 @@ router.get('/:id', validate('id'), async (req, res) => {
 
 // add a new resident
 router.post('/', validate(joiSchema), async (req, res) => {
-  const resident = new Resident(req.body);
+  let resident = Resident.findOne({ email: req.body.email });
+  if (resident) return res.status(400).json({ message: 'Resident with this email already exists' });
+  resident = new Resident(req.body);
   await resident.save();
   res.status(200).json(resident);
 });

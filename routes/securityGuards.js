@@ -18,9 +18,12 @@ router.get('/:id', validate('id'), async (req, res) => {
 
 // add new security guard
 router.post('/', validate(joiSchema), async (req, res) => {
+  let securityGuard = SecurityGuard.findOne({ phone: req.body.phone });
+  if (securityGuard)
+    return res.status(400).json({ message: 'security guard with this phone no. already exist' });
   // encrypt password
   req.body.password = await bcrypt.hash(req.body.password, 10);
-  const securityGuard = new SecurityGuard(req.body);
+  securityGuard = new SecurityGuard(req.body);
   await securityGuard.save();
   res.status(200).json(securityGuard);
 });
@@ -40,6 +43,3 @@ router.delete('/:id', validate('id'), async (req, res) => {
 });
 
 module.exports = router;
-
-// todo:
-// add password encryption

@@ -17,7 +17,9 @@ router.get('/:id', validate('id'), async (req, res) => {
 
 // add a new house help
 router.post('/', validate(joiSchema), async (req, res) => {
-  const houseHelp = new HouseHelp(req.body);
+  let houseHelp = HouseHelp.findOne({ phone: req.body.phone });
+  if (houseHelp) return res.status(400).json('house help with this phone no. already exists');
+  houseHelp = new HouseHelp(req.body);
   await houseHelp.save();
   res.status(200).json(houseHelp);
 });
