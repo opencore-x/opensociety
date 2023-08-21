@@ -13,7 +13,7 @@ const joiSchema = {
   firstName: Joi.string().min(3).max(20).required(),
   lastName: Joi.string().min(3).max(20).required(),
   phone: Joi.string().length(10).required(),
-  password: Joi.string().min(6).max(50).require(),
+  password: Joi.string().min(6).max(50).required(),
 };
 
 const SecurityGuard = mongoose.model('SecurityGuard', securitySchema);

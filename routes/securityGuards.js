@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const bcrypt = require('bcrypt');
 const { SecurityGuard, joiSchema } = require('../models/SecurityGuard');
 const validate = require('../middleware/validate');
 
@@ -17,6 +18,8 @@ router.get('/:id', validate('id'), async (req, res) => {
 
 // add new security guard
 router.post('/', validate(joiSchema), async (req, res) => {
+  // encrypt password
+  req.body.password = await bcrypt.hash(req.body.password, 10);
   const securityGuard = new SecurityGuard(req.body);
   await securityGuard.save();
   res.status(200).json(securityGuard);
