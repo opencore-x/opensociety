@@ -20,7 +20,7 @@ const visitorSchema = new mongoose.Schema({
     },
     lowercase: true,
   },
-  visiting: { type: String, required: true },
+  apartment: { type: mongoose.Schema.Types.ObjectId, ref: 'Apartment', required: true },
 });
 
 const joiSchema = {
@@ -37,7 +37,7 @@ const joiSchema = {
     then: Joi.string().lowercase().required(),
     otherwise: Joi.string().optional(),
   }),
-  visiting: Joi.string().required().lowercase(),
+  apartment: Joi.objectid(),
 };
 
 const Visitor = mongoose.model('Visitor', visitorSchema);

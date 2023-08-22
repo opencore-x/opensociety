@@ -9,7 +9,7 @@ const residentsSchema = new mongoose.Schema({
   gender: { type: String, required: true, enum: ['male', 'female', 'prefer not to say'] },
   phone: { type: String, required: true },
   email: { type: String, required: true, min: 5, max: 30 },
-  apartment: String,
+  apartment: { type: mongoose.Schema.Types.ObjectId, ref: 'Apartment', required: true },
   status: { type: String, required: true, enum: ['owner', 'tenant'] },
   nationality: { type: String, min: 3, max: 20 },
 });
@@ -21,7 +21,7 @@ const joiSchema = {
   gender: Joi.string().valid('male', 'female', 'prefer not to say').required(),
   phone: Joi.string().length(10).required(),
   email: Joi.string().email().min(5).max(30),
-  apartment: Joi.string(),
+  apartment: Joi.objectid().required(),
   status: Joi.string().valid('owner', 'tenant').required(),
   nationality: Joi.string().min(3).max(20).required(),
 };

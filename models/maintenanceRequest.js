@@ -3,7 +3,7 @@ const Joi = require('joi');
 Joi.objectid = require('joi-objectid')(Joi);
 
 const maintenanceRequestSchema = new mongoose.Schema({
-  apartment: String,
+  apartment: { type: mongoose.Schema.Types.ObjectId, ref: 'Apartment', required: true },
   work: {
     type: String,
     required: true,
@@ -30,7 +30,7 @@ const maintenanceRequestSchema = new mongoose.Schema({
 });
 
 const joiSchema = {
-  apartment: Joi.string(),
+  apartment: Joi.objectid(),
   work: Joi.string().valid('electrician', 'plumber', 'other'),
   detail: Joi.string().min(6).max(255).lowercase().required(),
   status: Joi.object({
