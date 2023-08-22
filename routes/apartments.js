@@ -15,16 +15,19 @@ router.get('/:id', validate('id'), async (req, res) => {
   res.status(200).json(apartment);
 });
 
-// add a new aparatment
+// add a new apartment
 router.post('/', validate(joiSchema), async (req, res) => {
-  const apartment = new Apartment(value);
+  const apartmentName = req.body.tower + req.body.apartmentNo;
+  let apartment = await Apartment.findOne({ name: apartmentName });
+  if (apartment) return res.status(400).json({ message: 'Apartment already exists' });
+  apartment = new Apartment(req.body);
   await apartment.save();
   res.status(200).json(apartment);
 });
 
 // update an apartment
 router.put('/:id', validate('id'), validate(joiSchema), async (req, res) => {
-  const apartment = await Apartment.findByIdAndUpdate(req.params.id, value, { new: true });
+  const apartment = await Apartment.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if (!apartment) return res.status(404).json({ message: 'apartment not found' });
   res.status(200).json(apartment);
 });
