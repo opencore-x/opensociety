@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Joi = require('joi');
 Joi.objectid = require('joi-objectid')(Joi);
 
-const residentsSchema = new mongoose.Schema({
+const residentSchema = new mongoose.Schema({
   firstName: { type: String, min: 3, max: 20, required: true },
   lastName: { type: String, min: 3, max: 20, required: true },
   dob: { type: String, required: true },
@@ -26,7 +26,7 @@ const joiSchema = {
   nationality: Joi.string().min(3).max(20).required(),
 };
 
-const Resident = mongoose.model('Resident', residentsSchema);
+const Resident = mongoose.model('Resident', residentSchema);
 
 module.exports = { Resident, joiSchema };
 

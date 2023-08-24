@@ -21,6 +21,7 @@ const visitorSchema = new mongoose.Schema({
     lowercase: true,
   },
   apartment: { type: mongoose.Schema.Types.ObjectId, ref: 'Apartment', required: true },
+  notes: { type: String },
 });
 
 const joiSchema = {
@@ -38,8 +39,9 @@ const joiSchema = {
     otherwise: Joi.string().optional(),
   }),
   apartment: Joi.objectid(),
+  notes: Joi.string().optional(),
 };
 
-const Visitor = mongoose.model('Visitor', visitorSchema);
+const Visitor = mongoose.model('Visitor', joiSchema);
 
 module.exports = { Visitor, joiSchema };
