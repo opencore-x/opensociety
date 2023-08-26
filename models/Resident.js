@@ -23,6 +23,7 @@ const joiSchema = {
   phone: Joi.string().length(10).required(),
   email: Joi.string().email().min(5).max(30),
   password: Joi.string().min(6).required(),
+  repeatPassword: Joi.string().valid(Joi.ref('password')).required(),
   apartment: Joi.objectid().required(),
   status: Joi.string().valid('owner', 'tenant').required(),
   nationality: Joi.string().min(3).max(20).required(),

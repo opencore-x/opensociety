@@ -16,6 +16,7 @@ const joiSchema = {
   phone: Joi.string().length(10).required(),
   email: Joi.string().email().required(),
   password: Joi.string().required(),
+  repeatPassword: Joi.string().valid(Joi.ref('password')).required(),
   role: Joi.string().required(),
 };
 
