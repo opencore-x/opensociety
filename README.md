@@ -1,6 +1,8 @@
-### gatedsociety
+### mysociety
 
-gatedsociety is an open-source and resident centric society management alternative to paid services like nobrokerhood.com and mygate.com
+mysociety is an open-source and resident centric society management alternative to paid services like nobrokerhood.com and mygate.com
+
+Check project tab to see the timeline and product backlog.
 
 Backend is powered by Node:
 
