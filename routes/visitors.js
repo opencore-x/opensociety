@@ -28,7 +28,7 @@ router.put('/:id', validate('id'), validate(joiSchema), async (req, res, next) =
     new: true,
   });
   if (!visitor) return res.status(404).json({ message: 'visitor not found' });
-  res.status(500).json(visitor);
+  res.status(200).json(visitor);
 });
 
 // delete a visitor
