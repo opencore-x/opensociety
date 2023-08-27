@@ -33,7 +33,7 @@ router.delete('/:id', validate('id'), async (req, res) => {
   res.status(200).json(staff);
 });
 
-router.module.exports = router;
+module.exports = router;
 
 // todo: omit password before returning staff object to client
 // fix status(400) message throughout the application
