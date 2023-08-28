@@ -11,6 +11,7 @@ const houseHelpSchema = new mongoose.Schema({
     type: String,
     enum: ['diswashing', 'cleaning', 'dusting', 'cooking'],
   },
+  role: { type: String, default: 'houseHelp' },
 });
 
 const joiSchema = {

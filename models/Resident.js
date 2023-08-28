@@ -11,7 +11,7 @@ const residentSchema = new mongoose.Schema({
   email: { type: String, required: true, min: 5, max: 30 },
   password: { type: String, required: true, min: 6 },
   apartment: { type: mongoose.Schema.Types.ObjectId, ref: 'Apartment', required: true },
-  status: { type: String, required: true, enum: ['owner', 'tenant'] },
+  role: { type: String, required: true, enum: ['owner', 'tenant'] },
   nationality: { type: String, min: 3, max: 20 },
 });
 
@@ -25,7 +25,7 @@ const joiSchema = {
   password: Joi.string().min(6).required(),
   repeatPassword: Joi.string().valid(Joi.ref('password')).required(),
   apartment: Joi.objectid().required(),
-  status: Joi.string().valid('owner', 'tenant').required(),
+  role: Joi.string().valid('owner', 'tenant').required(),
   nationality: Joi.string().min(3).max(20).required(),
 };
 

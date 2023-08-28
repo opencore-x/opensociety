@@ -7,6 +7,7 @@ const securitySchema = new mongoose.Schema({
   lastName: { type: String, required: true, min: 3, max: 20 },
   phone: { type: String, required: true, min: 9, max: 100 },
   password: { type: String, required: true, max: 40 },
+  role: { type: String, default: 'security' },
 });
 
 const joiSchema = {
