@@ -3,27 +3,32 @@ require('express-async-errors');
 const checkEnvVariables = require('./utils/checkEnvVariables');
 const dbConnect = require('./utils/dbConnect');
 const error = require('./middleware/error');
-const users = require('./routes/users');
 const visitors = require('./routes/visitors');
-const houseHelp = require('./routes/houseHelps');
-const securityGuard = require('./routes/securityGuards');
-const maintenanceRequest = require('./routes/maintenanceRequest');
+const houseHelps = require('./routes/houseHelps');
+const securityGuards = require('./routes/securityGuards');
+const maintenanceRequests = require('./routes/maintenanceRequests');
+const clubhouseMembers = require('./routes/clubhouseMembers');
 const apartments = require('./routes/apartments');
 const residents = require('./routes/residents');
+const vehicles = require('./routes/vehicles');
+const staffs = require('./routes/staffs');
+const auth = require('./routes/auth');
 
 checkEnvVariables();
 dbConnect();
 const app = express();
 
 app.use(express.json());
-app.use('/api/users', users);
+app.use('/api/staffs', staffs);
 app.use('/api/visitors', visitors);
-app.use('/api/househelp', houseHelp);
-app.use('/api/securityguards', securityGuard);
-app.use('/api/maintenancerequest', maintenanceRequest);
+app.use('/api/househelps', houseHelps);
+app.use('/api/securityguards', securityGuards);
+app.use('/api/maintenancerequests', maintenanceRequests);
+app.use('/api/clubhousemembers', clubhouseMembers);
 app.use('/api/apartments', apartments);
 app.use('/api/residents', residents);
-// activate clubhouseMember
+app.use('/api/vehicles', vehicles);
+app.use('/api/auth', auth);
 app.use(error);
 
 const port = process.env.PORT || 3000;

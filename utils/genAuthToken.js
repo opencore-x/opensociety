@@ -13,5 +13,5 @@ module.exports = function (user) {
     audience: 'api.mysociety',
   };
 
-  return jwt.sign(payload, 'secret', options);
+  return jwt.sign(payload, process.env.JWT_PVT_KEY, options);
 };

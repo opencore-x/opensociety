@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const { MaintenanceRequest, joiSchema } = require('../models/MaintenanceRequest.js');
-const validate = require('../middleware/validate');
+const validate = require('../middleware/validate.js');
 
 // get all the maintenance request
 router.get('/', async (req, res) => {
