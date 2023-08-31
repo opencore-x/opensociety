@@ -5,7 +5,7 @@ const validate = require('../middleware/validate');
 // get all the visitors
 router.get('/', async (req, res) => {
   const visitors = await Visitor.find();
-  res.status(200).json(visitors);
+  res.status(200).json({ visitors });
 });
 
 // get a visitor

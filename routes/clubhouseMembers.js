@@ -7,7 +7,7 @@ const notFoundResponse = (res) =>
 
 router.get('/', async (req, res) => {
   const clubhouseMembers = await ClubhouseMember.find();
-  res.status(200).json(clubhouseMembers);
+  res.status(200).json({ clubhouseMembers });
 });
 
 router.get('/:id', validate('id'), async (req, res) => {

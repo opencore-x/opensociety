@@ -7,7 +7,7 @@ const notFound = (res) => res.status(404).json({ message: 'vehicle with given id
 
 router.get('/', async (req, res) => {
   const vehicles = await Vehicle.find();
-  res.status(200).json(vehicles);
+  res.status(200).json({ vehicles });
 });
 
 router.get('/:id', validate('id'), async (req, res) => {

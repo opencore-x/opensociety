@@ -13,7 +13,7 @@ const notFoundResponse = (res) => res.status(404).json({ message: 'resident with
 // get all the residents
 router.get('/', async (req, res) => {
   const resident = await Resident.find();
-  res.status(200).json(resident);
+  res.status(200).json({ resident });
 });
 
 // get a resident

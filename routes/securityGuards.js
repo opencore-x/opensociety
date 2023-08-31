@@ -15,7 +15,7 @@ const sendOkResponse = (res, securityGuard) => {
 // get all security guard
 router.get('/', async (req, res) => {
   const securityGuard = await SecurityGuard.find();
-  res.status(200).json(securityGuard);
+  res.status(200).json({ securityGuard });
 });
 
 // get a security guard

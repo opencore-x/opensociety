@@ -45,5 +45,4 @@ router.post('/security', async (req, res) => {
 
 module.exports = router;
 
-// check for router import in app.js
 // add joiSchema for auth and validate

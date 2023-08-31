@@ -5,7 +5,7 @@ const validate = require('../middleware/validate');
 // get all apartments
 router.get('/', async (req, res) => {
   const apartment = await Apartment.find();
-  res.status(200).json(apartment);
+  res.status(200).json({ apartment });
 });
 
 // get an apartment

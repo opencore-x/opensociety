@@ -12,7 +12,7 @@ const NotFoundResponse = (res) => res.status(404).json({ message: 'staff with gi
 
 router.get('/', async (req, res) => {
   const staffs = await Staff.find();
-  res.status(200).json(staffs);
+  res.status(200).json({ staffs });
 });
 
 router.get('/:id', validate('id'), async (req, res) => {

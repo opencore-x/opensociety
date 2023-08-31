@@ -5,7 +5,7 @@ const validate = require('../middleware/validate.js');
 // get all the maintenance request
 router.get('/', async (req, res) => {
   const maintenanceRequest = await MaintenanceRequest.find();
-  res.status(200).json(maintenanceRequest);
+  res.status(200).json({ maintenanceRequest });
 });
 
 // get a specific maintenance request

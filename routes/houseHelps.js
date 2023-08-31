@@ -5,7 +5,7 @@ const validate = require('../middleware/validate');
 // return all house helps
 router.get('/', async (req, res) => {
   const houseHelp = await HouseHelp.find();
-  res.status(200).json(houseHelp);
+  res.status(200).json({ houseHelp });
 });
 
 // return a particular house help
