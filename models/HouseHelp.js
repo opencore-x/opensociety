@@ -5,8 +5,9 @@ Joi.objectid = require('joi-objectid')(Joi);
 const houseHelpSchema = new mongoose.Schema({
   firstName: { type: String, required: true, lowercase: true, min: 3, max: 15 },
   lastName: { type: String, required: true, lowercase: true, min: 3, max: 15 },
-  phone: { type: String, required: true, min: 9, max: 10 },
-  worksAt: [String],
+  phone: { type: String, required: true, min: 10, max: 10 },
+  gender: { type: String, enum: ['male', 'female'] },
+  worksAt: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Apartment' }],
   duties: {
     type: String,
     enum: ['diswashing', 'cleaning', 'dusting', 'cooking'],
@@ -18,7 +19,8 @@ const joiSchema = {
   firstName: Joi.string().lowercase().min(3).max(15).required(),
   lastName: Joi.string().lowercase().min(3).max(15).required(),
   phone: Joi.string().lowercase().length(10).required(),
-  worksAt: Joi.array().items(Joi.string()),
+  gender: Joi.string().valid('male', 'female'),
+  worksAt: Joi.array().items(Joi.objectid()),
   duties: Joi.array().items(Joi.string().valid('dishwashing', 'cleaning', 'dusting', 'cooking')),
 };
 
@@ -27,9 +29,5 @@ const HouseHelp = mongoose.model('HouseHelp', houseHelpSchema);
 module.exports = { HouseHelp, joiSchema };
 
 // todo
-// change phone .length to 10
-// duties can be array
-// gender
-// change add primary and secondary phone
-// worksAt set to apartment object
+// create a new duties model - to have all the duties
 // report entry time
