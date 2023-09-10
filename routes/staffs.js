@@ -4,8 +4,8 @@ const { Staff, joiSchema } = require('../models/Staff');
 const validate = require('../middleware/validate');
 
 const sendStaff = (res, staff) => {
-  const staff = _.omit(staff.toObject(), ['password']);
-  res.status(200).json(staff);
+  const staffWithoutPassword = _.omit(staff.toObject(), ['password']);
+  res.status(200).json(staffWithoutPassword);
 };
 
 const NotFoundResponse = (res) => res.status(404).json({ message: 'staff with given id does not exist' });

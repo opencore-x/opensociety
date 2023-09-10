@@ -4,8 +4,8 @@ const { Resident, joiSchema } = require('../models/Resident');
 const validate = require('../middleware/validate');
 
 const sendOkResponse = (res, resident) => {
-  const resident = _.omit(resident.toObject(), ['password']);
-  res.status(200).json(resident);
+  const residentWithoutPassword = _.omit(resident.toObject(), ['password']);
+  res.status(200).json(residentWithoutPassword);
 };
 
 const notFoundResponse = (res) => res.status(404).json({ message: 'resident with given id did not found' });

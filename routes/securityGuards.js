@@ -8,8 +8,8 @@ const notFoundResponse = (res) =>
   res.status(404).json({ message: 'security guard with the given id was not found' });
 
 const sendOkResponse = (res, securityGuard) => {
-  const securityGuard = _.omit(securityGuard.toObject(), ['password']);
-  res.status(200).json(securityGuard);
+  const securityGuardWithoutPassword = _.omit(securityGuard.toObject(), ['password']);
+  res.status(200).json(securityGuardWithoutPassword);
 };
 
 // get all security guard
