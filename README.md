@@ -1,23 +1,17 @@
 ### opensociety
 
-**opensociety** is an open-source and resident centric society management alternative to paid services like nobrokerhood.com and mygate.com
+**opensociety** is an open-source and resident centric society management alternative to services like mygate.com and nobrokerhood.com
+
+Tech stack (Overview):
+
+- Node
+- Svelte
+- Hono
+- Drizzle ORM
+- Typescript
+- Postgres
+- Better-Auth
+
+---
 
 Check project tab to see the timeline and product backlog.
-
-Backend is powered by Node:
-
-Special thanks to the hard work of thousands of open source contributors and projects that enables this project. Some notable mentions:
-
-- Express
-- MongoDB
-- joi
-- joi-objectid
-- bcrypt
-- json-web-token
-- dotenv
-- debug
-- mongoose
-- morgan
-
-Feel free to get in touch, contribute or exchange ideas.
-Happy Open Sourcing.
