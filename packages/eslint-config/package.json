@@ -1,10 +1,8 @@
 {
-  "name": "@repo/eslint-config",
+  "name": "@opensociety/eslint-config",
   "version": "0.0.0",
+  "private": true,
   "type": "module",
-  "publishConfig": {
-    "access": "public"
-  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.34.0",
