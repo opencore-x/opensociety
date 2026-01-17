@@ -1,10 +1,6 @@
 {
-  "name": "@repo/typescript-config",
+  "name": "@opensociety/typescript-config",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  }
+  "type": "module"
 }
