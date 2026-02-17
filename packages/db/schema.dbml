@@ -1,0 +1,793 @@
+// OpenSociety Database Schema
+// Last updated: 2026-02-14
+
+Project opensociety {
+  database_type: 'PostgreSQL'
+  Note: 'Open-source society management platform'
+}
+
+// ===== Core Identity & Authentication =====
+
+Table users {
+  id uuid [pk]
+  phone varchar(10) [unique, not null]
+  email varchar(100) [unique]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  password_hash varchar(255) [not null]
+  role user_role [not null, default: 'RESIDENT']
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    phone
+    email
+    (role, is_active)
+  }
+
+  Note: 'Base user accounts for authentication. Phone is primary login.'
+}
+
+Enum user_role {
+  RESIDENT
+  GUARD
+  ADMIN
+  STAFF
+}
+
+// ===== Physical Infrastructure =====
+
+Table apartments {
+  id uuid [pk]
+  tower varchar(50) [not null]
+  apartment_no varchar(20) [not null]
+  floor integer
+  bhk_type bhk_type
+  carpet_area integer
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (tower, apartment_no) [unique]
+  }
+
+  Note: 'Physical apartment units in the society'
+}
+
+Enum bhk_type {
+  "1BHK"
+  "2BHK"
+  "3BHK"
+  "4BHK"
+  VILLA
+  OTHER
+}
+
+// ===== Relationships =====
+
+Table residencies {
+  id uuid [pk]
+  user_id uuid [ref: > users.id, not null]
+  apartment_id uuid [ref: > apartments.id, not null]
+  residency_type residency_type [not null]
+  relation_to_owner varchar(50)
+  start_date date [not null]
+  end_date date
+  is_emergency_contact boolean [default: false]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (apartment_id, end_date)
+    user_id
+  }
+
+  Note: 'Links users to apartments with roles. Handles owners, tenants, family members.'
+}
+
+Enum residency_type {
+  OWNER
+  TENANT
+  FAMILY_MEMBER
+}
+
+// ===== Security Personnel =====
+
+Table guards {
+  id uuid [pk]
+  user_id uuid [ref: > users.id, not null]
+  assigned_tower varchar(50)
+  contract_agency varchar(100)
+  shift_timing shift_timing
+  joining_date date
+  exit_date date
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    user_id
+    (is_active, assigned_tower)
+  }
+
+  Note: 'Security guards. All guards must have user account for single sign-in app. Name/phone stored in users table.'
+}
+
+Enum shift_timing {
+  MORNING
+  EVENING
+  NIGHT
+  ROTATING
+}
+
+// ===== House Help Management =====
+
+Table house_helps {
+  id uuid [pk]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  phone varchar(10) [not null]
+  gender gender
+  photo_url text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    phone
+  }
+
+  Note: 'Domestic workers (maids, cooks, drivers) registered with society'
+}
+
+Enum gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+Table house_help_assignments {
+  id uuid [pk]
+  house_help_id uuid [ref: > house_helps.id, not null]
+  apartment_id uuid [ref: > apartments.id, not null]
+  duties duty_type[]
+  working_days weekday[]
+  start_time time
+  end_time time
+  start_date date [not null]
+  end_date date
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (house_help_id, apartment_id)
+    apartment_id
+  }
+
+  Note: 'Junction table linking house help to apartments they work at'
+}
+
+Enum duty_type {
+  CLEANING
+  COOKING
+  DISHWASHING
+  DUSTING
+  LAUNDRY
+  OTHER
+}
+
+Enum weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+// ===== Visitor Management (Core Feature) =====
+
+Table visitor_entries {
+  id uuid [pk]
+  apartment_id uuid [ref: > apartments.id, not null]
+
+  // Visitor details
+  visitor_name varchar(100) [not null]
+  visitor_phone varchar(10)
+  visitor_photo_url text
+  purpose_of_visit visit_purpose [not null]
+  purpose_details text
+
+  // Vehicle
+  has_vehicle boolean [default: false]
+  vehicle_type vehicle_type
+  vehicle_number varchar(20)
+
+  // Pre-approval link
+  pre_approval_id uuid [ref: > visitor_pre_approvals.id]
+
+  // Workflow
+  status entry_status [not null, default: 'PENDING']
+  approved_by uuid [ref: > users.id]
+  denied_reason text
+
+  // Guard tracking
+  check_in_by uuid [ref: > guards.id]
+  check_out_by uuid [ref: > guards.id]
+
+  // Timestamps
+  request_time timestamp [default: `now()`]
+  approval_time timestamp
+  check_in_time timestamp
+  check_out_time timestamp
+  expected_checkout_time timestamp
+
+  notes text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (apartment_id, status, request_time)
+    (status, request_time)
+    (check_in_time, status)
+    pre_approval_id
+  }
+
+  Note: 'Core table for visitor entry/exit workflow and approvals'
+}
+
+Table visitor_pre_approvals {
+  id uuid [pk]
+  apartment_id uuid [ref: > apartments.id, not null]
+  created_by uuid [ref: > users.id, not null]
+
+  visitor_name varchar(100)
+  visitor_phone varchar(10)
+
+  purpose_of_visit visit_purpose [not null]
+  purpose_details text
+
+  approval_code varchar(6) [unique, not null]
+  qr_code_data text [unique, not null]
+
+  valid_from timestamp [default: `now()`]
+  valid_until timestamp [not null]
+
+  status pre_approval_status [default: 'ACTIVE']
+  used_at timestamp
+  used_by uuid [ref: > guards.id]
+  visitor_entry_id uuid [ref: > visitor_entries.id]
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (approval_code, status)
+    (qr_code_data, status)
+    (apartment_id, status, valid_until)
+    (status, valid_until)
+  }
+
+  Note: 'Temporary approval tokens (QR/OTP) for pre-approved visitors. See workflows/pre-approved-visitors.md'
+}
+
+Enum visit_purpose {
+  FRIEND
+  FAMILY
+  DELIVERY
+  MAINTENANCE
+  VENDOR
+  OTHER
+}
+
+Enum entry_status {
+  PENDING
+  APPROVED
+  DENIED
+  ENTERED
+  EXITED
+  CANCELLED
+}
+
+Enum pre_approval_status {
+  ACTIVE
+  USED
+  EXPIRED
+  CANCELLED
+}
+
+Enum vehicle_type {
+  CAR
+  BIKE
+  SCOOTER
+  BICYCLE
+  AUTO
+  TRUCK
+  OTHER
+}
+
+// ===== Vehicle Management =====
+
+Table vehicles {
+  id uuid [pk]
+  apartment_id uuid [ref: > apartments.id, not null]
+  vehicle_number varchar(20) [unique, not null]
+  vehicle_type vehicle_type [not null]
+  manufacturer varchar(50)
+  model varchar(50)
+  color varchar(30)
+  primary_driver uuid [ref: > users.id]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    vehicle_number
+    apartment_id
+  }
+
+  Note: 'Vehicles registered to apartments. Linked to apartment (not user) as parking is apartment property.'
+}
+
+// ===== Parking Management =====
+
+Table parking_slots {
+  id uuid [pk]
+  slot_number varchar(20) [unique, not null]
+  slot_type parking_type [not null]
+  tower varchar(50)
+  floor integer
+  apartment_id uuid [ref: > apartments.id]
+  is_occupied boolean [default: false]
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (slot_type, is_occupied)
+  }
+
+  Note: 'Parking slot allocation and management'
+}
+
+Enum parking_type {
+  COVERED
+  OPEN
+  VISITOR
+  TWO_WHEELER
+  FOUR_WHEELER
+}
+
+// ===== Communication =====
+
+Table notices {
+  id uuid [pk]
+  title varchar(200) [not null]
+  content text [not null]
+  priority notice_priority [default: 'NORMAL']
+  category notice_category [not null]
+
+  // Targeting
+  target_audience notice_audience [default: 'ALL']
+  target_tower varchar(50)
+
+  // Attachments
+  attachment_urls text[]
+
+  // Publishing
+  published_by uuid [ref: > users.id, not null]
+  published_at timestamp [default: `now()`]
+  expires_at timestamp
+
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (published_at, is_active)
+    (priority, published_at)
+  }
+
+  Note: 'Society announcements and notices'
+}
+
+Enum notice_priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+Enum notice_category {
+  GENERAL
+  MAINTENANCE
+  EVENT
+  EMERGENCY
+  MEETING
+  FINANCIAL
+  OTHER
+}
+
+Enum notice_audience {
+  ALL
+  TOWER_SPECIFIC
+  OWNERS
+  TENANTS
+}
+
+Table notice_read_receipts {
+  id uuid [pk]
+  notice_id uuid [ref: > notices.id, not null]
+  user_id uuid [ref: > users.id, not null]
+  read_at timestamp [default: `now()`]
+
+  indexes {
+    (notice_id, user_id) [unique]
+    notice_id
+  }
+
+  Note: 'Track which residents have read which notices'
+}
+
+// ===== Maintenance Management =====
+
+Table maintenance_tickets {
+  id uuid [pk]
+  apartment_id uuid [ref: > apartments.id, not null]
+  reported_by uuid [ref: > users.id, not null]
+
+  category maintenance_category [not null]
+  title varchar(200) [not null]
+  description text [not null]
+  priority ticket_priority [default: 'MEDIUM']
+
+  status ticket_status [default: 'OPEN']
+  assigned_to uuid [ref: > users.id]
+
+  attachment_urls text[]
+
+  reported_at timestamp [default: `now()`]
+  assigned_at timestamp
+  resolved_at timestamp
+  closed_at timestamp
+
+  resolution_notes text
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (status, priority, reported_at)
+    (apartment_id, status)
+  }
+
+  Note: 'Resident-reported maintenance issues and tracking'
+}
+
+Enum maintenance_category {
+  ELECTRICAL
+  PLUMBING
+  CARPENTRY
+  PAINTING
+  CIVIL
+  OTHER
+}
+
+Enum ticket_priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+Enum ticket_status {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+// ===== System Configuration =====
+
+Table society_config {
+  id uuid [pk]
+  society_name varchar(200) [not null]
+  address text
+  city varchar(100)
+  state varchar(100)
+  pincode varchar(6)
+
+  total_towers integer
+  total_apartments integer
+
+  // Contact
+  admin_phone varchar(10)
+  admin_email varchar(100)
+  emergency_contact varchar(10)
+
+  // Feature flags
+  enable_visitor_approval boolean [default: true]
+  enable_notice_board boolean [default: true]
+  enable_maintenance_tickets boolean [default: true]
+  enable_parking boolean [default: false]
+
+  // Visitor settings
+  auto_approve_delivery boolean [default: false]
+  max_visit_duration_hours integer [default: 24]
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  Note: 'Society-wide configuration and settings (single row table)'
+}
+
+// ===== RBAC System =====
+
+Table roles {
+  id uuid [pk]
+  name varchar(50) [unique, not null]
+  display_name varchar(100) [not null]
+  description text
+  is_system_role boolean [default: false]
+  is_active boolean [default: true]
+  created_by uuid [ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    name [unique]
+    is_system_role
+  }
+
+  Note: 'System and custom roles for RBAC. System roles (super_admin, admin, security, staff, resident) cannot be deleted.'
+}
+
+Table permissions {
+  id uuid [pk]
+  role_id uuid [ref: > roles.id, not null]
+  module permission_module [not null]
+  operation permission_operation [not null]
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    (role_id, module, operation) [unique]
+    role_id
+  }
+
+  Note: 'Granular permissions per role'
+}
+
+Enum permission_module {
+  APARTMENTS
+  RESIDENTS
+  VISITORS
+  HOUSE_HELPS
+  VEHICLES
+  PARKING
+  NOTICES
+  MAINTENANCE
+  REPORTS
+  SETTINGS
+  USERS
+  ROLES
+}
+
+Enum permission_operation {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  EXPORT
+}
+
+Table user_roles {
+  id uuid [pk]
+  user_id uuid [ref: > users.id, not null]
+  role_id uuid [ref: > roles.id, not null]
+  assigned_by uuid [ref: > users.id, not null]
+  assigned_at timestamp [default: `now()`]
+
+  indexes {
+    (user_id, role_id) [unique]
+    user_id
+    role_id
+  }
+
+  Note: 'Link users to roles. A user can have multiple roles (e.g., resident + admin).'
+}
+
+// ===== House Help Ratings & Verification =====
+
+Table house_help_ratings {
+  id uuid [pk]
+  house_help_id uuid [ref: > house_helps.id, not null]
+  apartment_id uuid [ref: > apartments.id, not null]
+  rated_by uuid [ref: > users.id, not null]
+  rating integer [not null]
+  review_text text
+  is_anonymous boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (house_help_id, rating)
+    apartment_id
+    (house_help_id, apartment_id) [unique]
+  }
+
+  Note: 'Ratings (1-5 stars) and reviews for house help from residents. One rating per apartment.'
+}
+
+Table verification_documents {
+  id uuid [pk]
+  house_help_id uuid [ref: > house_helps.id, not null]
+  document_type document_type [not null]
+  document_number varchar(50)
+  document_url text
+  verified_by uuid [ref: > users.id]
+  verified_at timestamp
+  expires_at date
+  status verification_status [default: 'PENDING']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    house_help_id
+    (status, verified_at)
+  }
+
+  Note: 'Police verification and identity documents for house help'
+}
+
+Enum document_type {
+  AADHAAR
+  PAN_CARD
+  POLICE_VERIFICATION
+  ADDRESS_PROOF
+  REFERENCE_LETTER
+  OTHER
+}
+
+Enum verification_status {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+Table house_help_entry_logs {
+  id uuid [pk]
+  house_help_id uuid [ref: > house_helps.id, not null]
+  apartment_id uuid [ref: > apartments.id, not null]
+  check_in_by uuid [ref: > guards.id, not null]
+  check_out_by uuid [ref: > guards.id]
+  check_in_time timestamp [not null]
+  check_out_time timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (house_help_id, check_in_time)
+    (apartment_id, check_in_time)
+    (check_in_time, check_out_time)
+  }
+
+  Note: 'Entry and exit tracking for house help. Separate from visitor_entries due to high volume.'
+}
+
+// ===== Device Management =====
+
+Table device_registrations {
+  id uuid [pk]
+  user_id uuid [ref: > users.id, not null]
+  device_token varchar(255) [unique, not null]
+  device_type device_type [not null]
+  device_name varchar(100)
+  platform platform [not null]
+  app_version varchar(20)
+  is_active boolean [default: true]
+  last_used_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    device_token [unique]
+    user_id
+    (user_id, is_active)
+  }
+
+  Note: 'Track devices for push notifications and security. Limit 3 devices per user.'
+}
+
+Enum device_type {
+  GATE_PHONE
+  PERSONAL_PHONE
+  TABLET
+}
+
+Enum platform {
+  ANDROID
+  IOS
+}
+
+Table shift_logs {
+  id uuid [pk]
+  gate_user_id uuid [ref: > users.id, not null]
+  guard_name varchar(100) [not null]
+  guard_phone varchar(10)
+  shift_start timestamp [not null]
+  shift_end timestamp
+  signed_out_by uuid [ref: > users.id]
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    (gate_user_id, shift_start)
+    (shift_start, shift_end)
+  }
+
+  Note: 'Optional: Track which guard worked which shift on shared gate accounts for accountability'
+}
+
+// ===== Onboarding & Import =====
+
+Table bulk_import_logs {
+  id uuid [pk]
+  imported_by uuid [ref: > users.id, not null]
+  import_type import_type [not null]
+  file_name varchar(200)
+  total_rows integer [not null]
+  successful_rows integer [not null]
+  failed_rows integer [not null]
+  error_details jsonb
+  status import_status [default: 'IN_PROGRESS']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (imported_by, created_at)
+    (import_type, status)
+  }
+
+  Note: 'Track bulk imports (CSV, pattern-based) for apartments, residents, vehicles. Enables audit and rollback.'
+}
+
+Enum import_type {
+  APARTMENTS
+  RESIDENTS
+  VEHICLES
+  HOUSE_HELPS
+}
+
+Enum import_status {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  ROLLED_BACK
+}
+
+// ===== Audit & Compliance =====
+
+Table audit_logs {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  action varchar(200) [not null]
+  entity_type varchar(50) [not null]
+  entity_id uuid [not null]
+  changes jsonb
+  ip_address varchar(45)
+  user_agent text
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    (user_id, created_at)
+    (entity_type, entity_id)
+    (action, created_at)
+  }
+
+  Note: 'Audit trail for security-sensitive operations'
+}
