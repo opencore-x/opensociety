@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   Zap,
   Server,
@@ -78,6 +78,12 @@ function App() {
             >
               Documentation
             </a>
+            <Link
+              to="/admin"
+              className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
+            >
+              Open Admin Dashboard
+            </Link>
             <p className="text-gray-400 text-sm mt-2">
               Begin your TanStack Start journey by editing{' '}
               <code className="px-2 py-1 bg-slate-700 rounded text-cyan-400">
