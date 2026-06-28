@@ -6,9 +6,12 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@opensociety/shared": "workspace:*",
+    "@tanstack/react-query": "^5.66.0",
     "expo": "~54.0.31",
     "expo-router": "~6.0.23",
     "expo-status-bar": "~3.0.9",
