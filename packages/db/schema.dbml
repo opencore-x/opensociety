@@ -1,5 +1,7 @@
 // OpenSociety Database Schema
-// Last updated: 2026-02-14
+// Last updated: 2026-06-28
+// Auth: Clerk (authn-only) — identity/credentials live in Clerk; we mirror profile + role locally.
+// Tenancy: SINGLE-TENANT per society (one DB per society). Use society_config (1 row); no society_id on tables.
 
 Project opensociety {
   database_type: 'PostgreSQL'
@@ -10,23 +12,31 @@ Project opensociety {
 
 Table users {
   id uuid [pk]
-  phone varchar(10) [unique, not null]
+  clerk_id varchar(255) [unique, not null]
+  phone varchar(10) [unique]
   email varchar(100) [unique]
   first_name varchar(50) [not null]
   last_name varchar(50) [not null]
-  password_hash varchar(255) [not null]
   role user_role [not null, default: 'RESIDENT']
+  status user_status [not null, default: 'PENDING']
   is_active boolean [default: true]
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
 
   indexes {
+    clerk_id
     phone
     email
     (role, is_active)
   }
 
-  Note: 'Base user accounts for authentication. Phone is primary login.'
+  Note: 'Local mirror of Clerk-authenticated users. clerk_id links to Clerk identity. status gates app access until an admin approves and assigns a residency.'
+}
+
+Enum user_status {
+  PENDING
+  APPROVED
+  SUSPENDED
 }
 
 Enum user_role {
