@@ -1,114 +1,64 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import {
-  Zap,
-  Server,
-  Route as RouteIcon,
-  Shield,
-  Waves,
-  Sparkles,
-} from 'lucide-react'
+import { Zap, Server, Route as RouteIcon, Shield, Waves, Sparkles } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export const Route = createFileRoute('/')({ component: App })
 
-function App() {
-  const features = [
-    {
-      icon: <Zap className="w-12 h-12 text-cyan-400" />,
-      title: 'Powerful Server Functions',
-      description:
-        'Write server-side code that seamlessly integrates with your client components. Type-safe, secure, and simple.',
-    },
-    {
-      icon: <Server className="w-12 h-12 text-cyan-400" />,
-      title: 'Flexible Server Side Rendering',
-      description:
-        'Full-document SSR, streaming, and progressive enhancement out of the box. Control exactly what renders where.',
-    },
-    {
-      icon: <RouteIcon className="w-12 h-12 text-cyan-400" />,
-      title: 'API Routes',
-      description:
-        'Build type-safe API endpoints alongside your application. No separate backend needed.',
-    },
-    {
-      icon: <Shield className="w-12 h-12 text-cyan-400" />,
-      title: 'Strongly Typed Everything',
-      description:
-        'End-to-end type safety from server to client. Catch errors before they reach production.',
-    },
-    {
-      icon: <Waves className="w-12 h-12 text-cyan-400" />,
-      title: 'Full Streaming Support',
-      description:
-        'Stream data from server to client progressively. Perfect for AI applications and real-time updates.',
-    },
-    {
-      icon: <Sparkles className="w-12 h-12 text-cyan-400" />,
-      title: 'Next Generation Ready',
-      description:
-        'Built from the ground up for modern web applications. Deploy anywhere JavaScript runs.',
-    },
-  ]
+const features = [
+  { icon: Zap, title: 'Visitor management', description: 'Real-time entry requests with resident approve/deny and full entry/exit logging.' },
+  { icon: Shield, title: 'Guard check-in', description: 'Gate workflow for check-in/out, pre-approval codes, and a tamper-evident audit trail.' },
+  { icon: RouteIcon, title: 'Pre-approvals', description: 'Residents generate shareable codes; guards redeem them for instant, friction-free entry.' },
+  { icon: Server, title: 'Single-tenant', description: 'Each society runs its own isolated database — complete data ownership, no lock-in.' },
+  { icon: Waves, title: 'Notice board', description: 'Society-wide announcements with priority and push notifications.' },
+  { icon: Sparkles, title: 'Open source', description: 'TanStack Start, Hono on Cloudflare Workers, Drizzle + Neon. Your code, your data.' },
+]
 
+function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      <section className="relative py-20 px-6 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10"></div>
-        <div className="relative max-w-5xl mx-auto">
-          <div className="flex items-center justify-center gap-6 mb-6">
-            <h1 className="text-6xl md:text-7xl font-black text-white [letter-spacing:-0.08em]">
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                OpenSociety
-              </span>
-            </h1>
-          </div>
-          <p className="text-2xl md:text-3xl text-gray-300 mb-4 font-light">
-            Privacy-first society management platform
+    <div className="bg-background text-foreground min-h-screen">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <span className="text-lg font-bold tracking-tight">OpenSociety</span>
+        <ThemeToggle />
+      </header>
+
+      <section className="px-6 py-16 text-center">
+        <div className="mx-auto max-w-3xl">
+          <h1 className="text-5xl font-black tracking-tight md:text-6xl">
+            Open<span className="text-cyan-500 dark:text-cyan-400">Society</span>
+          </h1>
+          <p className="text-muted-foreground mt-4 text-xl">Privacy-first society management platform</p>
+          <p className="text-muted-foreground mx-auto mt-3 max-w-2xl">
+            An open-source alternative to MyGate and NoBrokerHood for gated communities. You own your data and
+            your deployment.
           </p>
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
-            Open-source alternative to MyGate and NoBrokerHood for gated communities.
-            Built with TanStack Start and React.
-          </p>
-          <div className="flex flex-col items-center gap-4">
-            <a
-              href="https://tanstack.com/start"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-cyan-500/50"
-            >
-              Documentation
-            </a>
-            <Link
-              to="/admin"
-              className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
-            >
-              Open Admin Dashboard
-            </Link>
-            <p className="text-gray-400 text-sm mt-2">
-              Begin your TanStack Start journey by editing{' '}
-              <code className="px-2 py-1 bg-slate-700 rounded text-cyan-400">
-                /src/routes/index.tsx
-              </code>
-            </p>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <Button asChild size="lg">
+              <Link to="/admin">Open Admin Dashboard</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <a href="https://tanstack.com/start" target="_blank" rel="noopener noreferrer">
+                Documentation
+              </a>
+            </Button>
           </div>
         </div>
       </section>
 
-      <section className="py-16 px-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10"
-            >
-              <div className="mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((f) => (
+            <Card key={f.title}>
+              <CardHeader>
+                <f.icon className="size-8 text-cyan-500 dark:text-cyan-400" />
+                <CardTitle className="mt-2">{f.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">{f.description}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </section>
