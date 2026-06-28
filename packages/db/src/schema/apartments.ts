@@ -1,12 +1,18 @@
-import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core'
-import { societies } from './societies'
+import { pgTable, uuid, text, integer, timestamp, boolean, unique } from 'drizzle-orm/pg-core'
+import { bhkType } from './enums'
 
-export const apartments = pgTable('apartments', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  societyId: uuid('society_id').notNull().references(() => societies.id),
-  number: text('number').notNull(),
-  block: text('block'),
-  floor: text('floor'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+// Single-tenant: no society_id — all apartments belong to this instance's society.
+export const apartments = pgTable(
+  'apartments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tower: text('tower').notNull(),
+    apartmentNo: text('apartment_no').notNull(),
+    floor: integer('floor'),
+    bhkType: bhkType('bhk_type'),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (t) => [unique('apartments_tower_apartment_no_unique').on(t.tower, t.apartmentNo)],
+)
