@@ -10,11 +10,12 @@ import {
   createPreApprovalSchema,
   redeemPreApprovalSchema,
 } from '@opensociety/shared'
-import { withDb, actingUserId } from '../middleware'
+import { withDb, withAuth, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const visitorRoutes = new Hono<AppEnv>()
 visitorRoutes.use('*', withDb)
+visitorRoutes.use('*', withAuth)
 
 // ----- Pre-approvals (registered before /:id so the static segment wins) -----
 

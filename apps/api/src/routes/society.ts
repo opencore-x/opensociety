@@ -3,11 +3,12 @@ import { zValidator } from '@hono/zod-validator'
 import { eq } from 'drizzle-orm'
 import { societyConfig } from '@opensociety/db'
 import { updateSocietyConfigSchema } from '@opensociety/shared'
-import { withDb } from '../middleware'
+import { withDb, withAuth } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const societyRoutes = new Hono<AppEnv>()
 societyRoutes.use('*', withDb)
+societyRoutes.use('*', withAuth)
 
 // Single-tenant: at most one config row.
 societyRoutes.get('/', async (c) => {

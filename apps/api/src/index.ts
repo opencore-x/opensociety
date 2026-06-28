@@ -6,6 +6,7 @@ import { apartmentRoutes } from './routes/apartments'
 import { visitorRoutes } from './routes/visitors'
 import { noticeRoutes } from './routes/notices'
 import { userRoutes } from './routes/users'
+import { webhookRoutes } from './routes/webhooks'
 
 const app = new Hono<AppEnv>()
 
@@ -21,6 +22,7 @@ app.route('/apartments', apartmentRoutes)
 app.route('/visitors', visitorRoutes)
 app.route('/notices', noticeRoutes)
 app.route('/users', userRoutes)
+app.route('/webhooks', webhookRoutes)
 
 app.notFound((c) => c.json({ error: 'not found' }, 404))
 app.onError((err, c) => {

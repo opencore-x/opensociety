@@ -3,11 +3,12 @@ import { zValidator } from '@hono/zod-validator'
 import { asc } from 'drizzle-orm'
 import { apartments } from '@opensociety/db'
 import { createApartmentSchema, createApartmentsBulkSchema } from '@opensociety/shared'
-import { withDb } from '../middleware'
+import { withDb, withAuth } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const apartmentRoutes = new Hono<AppEnv>()
 apartmentRoutes.use('*', withDb)
+apartmentRoutes.use('*', withAuth)
 
 apartmentRoutes.get('/', async (c) => {
   const rows = await c

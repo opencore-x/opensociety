@@ -33,4 +33,4 @@ Set the same secrets in production with `wrangler secret put <NAME>`.
 - `GET /users`, `POST /users/:id/approve`, `PATCH /users/:id/role` — user/approval admin.
 - `GET|POST /notices` — notice board.
 
-Auth is currently a dev stand-in (`x-user-id` / `x-guard-id` headers); these will be replaced by Clerk session verification.
+Auth: a Clerk session (`Authorization: Bearer <token>`) is verified server-side and mapped `clerk_id -> users.id`. When Clerk isn't configured (no `CLERK_SECRET_KEY`), it falls back to the `x-user-id` / `x-guard-id` dev headers. `POST /webhooks/clerk` (svix-verified) mirrors Clerk users locally — new users start `PENDING` until an admin approves them.
