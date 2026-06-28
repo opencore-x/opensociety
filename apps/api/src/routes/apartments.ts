@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { asc } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { apartments } from '@opensociety/db'
-import { createApartmentSchema, createApartmentsBulkSchema } from '@opensociety/shared'
+import { createApartmentSchema, createApartmentsBulkSchema, updateApartmentSchema } from '@opensociety/shared'
 import { withDb, withAuth } from '../middleware'
 import type { AppEnv } from '../types'
 
@@ -29,4 +29,16 @@ apartmentRoutes.post('/bulk', zValidator('json', createApartmentsBulkSchema), as
   const { apartments: list } = c.req.valid('json')
   const created = await c.get('db').insert(apartments).values(list).returning()
   return c.json({ count: created.length, apartments: created }, 201)
+})
+
+// Edit a unit or toggle its active state (soft deactivation via isActive).
+apartmentRoutes.patch('/:id', zValidator('json', updateApartmentSchema), async (c) => {
+  const [updated] = await c
+    .get('db')
+    .update(apartments)
+    .set({ ...c.req.valid('json'), updatedAt: new Date() })
+    .where(eq(apartments.id, c.req.param('id')))
+    .returning()
+  if (!updated) return c.json({ error: 'not found' }, 404)
+  return c.json(updated)
 })
