@@ -70,21 +70,84 @@ function AddGuard() {
   )
 }
 
-function ToggleActive({ guard }: { guard: Guard }) {
+function GuardRow({ guard }: { guard: Guard }) {
   const qc = useQueryClient()
-  const mutation = useMutation({
-    mutationFn: () => apiClient.updateGuard(guard.id, { isActive: !guard.isActive }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['guards'] }),
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(guard.name)
+  const [phone, setPhone] = useState(guard.phone ?? '')
+  const [employeeCode, setEmployeeCode] = useState(guard.employeeCode ?? '')
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['guards'] })
+
+  const save = useMutation({
+    mutationFn: () =>
+      apiClient.updateGuard(guard.id, {
+        name,
+        phone: phone.trim() || null,
+        employeeCode: employeeCode.trim() || null,
+      }),
+    onSuccess: () => {
+      invalidate()
+      setEditing(false)
+    },
   })
+
+  const toggleActive = useMutation({
+    mutationFn: () => apiClient.updateGuard(guard.id, { isActive: !guard.isActive }),
+    onSuccess: invalidate,
+  })
+
+  if (editing) {
+    return (
+      <TableRow>
+        <TableCell>
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-36" />
+        </TableCell>
+        <TableCell>
+          <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="h-8 w-36" />
+        </TableCell>
+        <TableCell>
+          <Input value={employeeCode} onChange={(e) => setEmployeeCode(e.target.value)} className="h-8 w-28" />
+        </TableCell>
+        <TableCell />
+        <TableCell className="text-right">
+          <div className="flex justify-end gap-2">
+            <Button size="sm" disabled={save.isPending || !name.trim()} onClick={() => save.mutate()}>
+              {save.isPending ? '…' : 'Save'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    )
+  }
+
   return (
-    <Button
-      size="sm"
-      variant={guard.isActive ? 'outline' : 'default'}
-      onClick={() => mutation.mutate()}
-      disabled={mutation.isPending}
-    >
-      {mutation.isPending ? '…' : guard.isActive ? 'Deactivate' : 'Activate'}
-    </Button>
+    <TableRow className={guard.isActive ? undefined : 'opacity-60'}>
+      <TableCell className="font-medium">{guard.name}</TableCell>
+      <TableCell className="text-muted-foreground">{guard.phone ?? '—'}</TableCell>
+      <TableCell className="text-muted-foreground">{guard.employeeCode ?? '—'}</TableCell>
+      <TableCell>
+        <Badge variant={guard.isActive ? 'default' : 'secondary'}>{guard.isActive ? 'Active' : 'Inactive'}</Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant={guard.isActive ? 'ghost' : 'default'}
+            onClick={() => toggleActive.mutate()}
+            disabled={toggleActive.isPending}
+          >
+            {toggleActive.isPending ? '…' : guard.isActive ? 'Deactivate' : 'Activate'}
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -129,19 +192,7 @@ function GuardsPage() {
               </TableHeader>
               <TableBody>
                 {guards.data?.map((g) => (
-                  <TableRow key={g.id}>
-                    <TableCell className="font-medium">{g.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{g.phone ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground">{g.employeeCode ?? '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant={g.isActive ? 'default' : 'secondary'}>
-                        {g.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <ToggleActive guard={g} />
-                    </TableCell>
-                  </TableRow>
+                  <GuardRow key={g.id} guard={g} />
                 ))}
               </TableBody>
             </Table>
