@@ -54,6 +54,12 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@opensociety/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@tanstack/react-query':
+        specifier: ^5.66.0
+        version: 5.90.21(react@19.1.0)
       expo:
         specifier: ~54.0.31
         version: 54.0.31(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.23)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -7832,6 +7838,11 @@ snapshots:
       - csstype
       - solid-js
       - utf-8-validate
+
+  '@tanstack/react-query@5.90.21(react@19.1.0)':
+    dependencies:
+      '@tanstack/query-core': 5.90.20
+      react: 19.1.0
 
   '@tanstack/react-query@5.90.21(react@19.2.4)':
     dependencies:
