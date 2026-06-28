@@ -1,17 +1,31 @@
-import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import type { AppEnv } from './types'
+import { societyRoutes } from './routes/society'
+import { apartmentRoutes } from './routes/apartments'
+import { visitorRoutes } from './routes/visitors'
+import { noticeRoutes } from './routes/notices'
+import { userRoutes } from './routes/users'
 
-const app = new Hono()
+const app = new Hono<AppEnv>()
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
+// TODO: tighten origins once web/mobile deploy URLs are known.
+app.use('*', cors())
+
+// Health checks intentionally avoid the DB so they work without DATABASE_URL.
+app.get('/', (c) => c.json({ name: 'opensociety-api', status: 'ok' }))
+app.get('/health', (c) => c.json({ status: 'ok' }))
+
+app.route('/society', societyRoutes)
+app.route('/apartments', apartmentRoutes)
+app.route('/visitors', visitorRoutes)
+app.route('/notices', noticeRoutes)
+app.route('/users', userRoutes)
+
+app.notFound((c) => c.json({ error: 'not found' }, 404))
+app.onError((err, c) => {
+  console.error(err)
+  return c.json({ error: err.message || 'internal error' }, 500)
 })
 
-const port = Number(process.env.API_PORT) || 8787
-
-serve({
-  fetch: app.fetch,
-  port
-}, (info) => {
-  console.log(`Server is running on http://localhost:${info.port}`)
-})
+export default app
