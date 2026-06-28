@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@opensociety/shared": "workspace:*",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/react-slot": "^1.1.2",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.7.0",
