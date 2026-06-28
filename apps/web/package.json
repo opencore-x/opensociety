@@ -9,8 +9,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@opensociety/shared": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.7.0",
+    "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-router": "^1.132.0",
     "@tanstack/react-router-devtools": "^1.132.0",
     "@tanstack/react-router-ssr-query": "^1.131.7",
