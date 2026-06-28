@@ -18,5 +18,13 @@ export const createGuardSchema = z.object({
   userId: z.string().uuid().optional(),
 })
 
+export const updateGuardSchema = z.object({
+  name: z.string().min(1).optional(),
+  phone: z.string().nullable().optional(),
+  employeeCode: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+})
+
 export type Guard = z.infer<typeof guardSchema>
 export type CreateGuard = z.infer<typeof createGuardSchema>
+export type UpdateGuard = z.infer<typeof updateGuardSchema>
