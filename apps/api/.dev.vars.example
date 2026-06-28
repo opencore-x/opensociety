@@ -1,0 +1,11 @@
+# Copy to `.dev.vars` (gitignored) and fill in real values for local `wrangler dev`.
+# In production, set these with `wrangler secret put <NAME>` instead.
+
+# Neon Postgres connection string (per-society database).
+DATABASE_URL=postgresql://user:password@host/database?sslmode=require
+
+# Clerk (optional for local dev — without these, the API falls back to the
+# `x-user-id` request header to identify the acting user).
+CLERK_SECRET_KEY=sk_test_...
+CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_WEBHOOK_SECRET=whsec_...
