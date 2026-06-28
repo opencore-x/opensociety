@@ -44,13 +44,42 @@ packages/
 
 ```
 pnpm install
-pnpm turbo run check-types        # type-check db, shared, api, mobile
-pnpm --filter @opensociety/db db:generate   # generate a migration from the schema
-pnpm --filter @opensociety/api dev          # wrangler dev (needs apps/api/.dev.vars)
-pnpm --filter @opensociety/web dev          # http://localhost:3000
+pnpm check-types                              # type-check all packages
+pnpm --filter @opensociety/db db:generate    # generate a migration from the schema
+pnpm --filter @opensociety/api dev           # wrangler dev (needs apps/api/.dev.vars)
+pnpm --filter @opensociety/web dev           # http://localhost:3000
 ```
 
-Per-society secrets (`DATABASE_URL`, `CLERK_*`, R2) go in `apps/api/.dev.vars` for local dev and `wrangler secret put` for production. See `.env.example`.
+Then open the admin dashboard at **http://localhost:3000/admin**.
+
+### Environment
+
+Copy the example env files and fill in real values (all are gitignored):
+
+```
+cp apps/api/.dev.vars.example apps/api/.dev.vars   # DATABASE_URL, CLERK_* (API)
+cp apps/web/.env.example apps/web/.env             # VITE_API_URL, VITE_DEV_USER_ID (web)
+```
+
+Per-society secrets (`DATABASE_URL`, `CLERK_*`, R2) go in `apps/api/.dev.vars` for local dev and `wrangler secret put` for production. See `.env.example` for the full list.
+
+Until Clerk sessions are wired into the web app, set `VITE_DEV_USER_ID` to a real `users.id` so authored writes (publishing notices, approving visitors) attribute correctly.
+
+## Admin dashboard
+
+The web app (`apps/web`) is a shadcn/ui dashboard with light + dark mode at `/admin`:
+
+- **Overview** — at-a-glance counts and a setup checklist
+- **Society** — society configuration
+- **Apartments** — add units individually or via bulk CSV import
+- **Residents** — approve sign-ups (assign apartment + relation) and manage roles
+- **Guards** — register gate staff, activate/deactivate
+- **Visitors** — visitor logs with status filters, approve/deny
+- **Notices** — publish announcements with priority and expiry
+
+## CI
+
+GitHub Actions runs build + type-check on every push and PR to `main` (`.github/workflows/ci.yml`).
 
 ## Documentation
 
