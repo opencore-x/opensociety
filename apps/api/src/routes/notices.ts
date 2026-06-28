@@ -3,11 +3,12 @@ import { zValidator } from '@hono/zod-validator'
 import { desc } from 'drizzle-orm'
 import { notices } from '@opensociety/db'
 import { createNoticeSchema } from '@opensociety/shared'
-import { withDb, actingUserId } from '../middleware'
+import { withDb, withAuth, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const noticeRoutes = new Hono<AppEnv>()
 noticeRoutes.use('*', withDb)
+noticeRoutes.use('*', withAuth)
 
 noticeRoutes.get('/', async (c) => {
   const rows = await c.get('db').select().from(notices).orderBy(desc(notices.publishedAt))
