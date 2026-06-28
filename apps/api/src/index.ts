@@ -7,9 +7,11 @@ app.get('/', (c) => {
   return c.text('Hello Hono!')
 })
 
+const port = Number(process.env.API_PORT) || 8787
+
 serve({
   fetch: app.fetch,
-  port: 3000
+  port
 }, (info) => {
   console.log(`Server is running on http://localhost:${info.port}`)
 })
