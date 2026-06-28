@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { BhkType, CreateApartment } from '@opensociety/shared'
+import type { Apartment, BhkType, CreateApartment, UpdateApartment } from '@opensociety/shared'
 import { bhkTypeSchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
 import { PageHeader, QueryState } from '@/components/admin/ui'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -179,6 +180,111 @@ function BulkAdd() {
   )
 }
 
+function ApartmentRow({ apt }: { apt: Apartment }) {
+  const qc = useQueryClient()
+  const [editing, setEditing] = useState(false)
+  const [tower, setTower] = useState(apt.tower)
+  const [apartmentNo, setApartmentNo] = useState(apt.apartmentNo)
+  const [floor, setFloor] = useState(apt.floor?.toString() ?? '')
+  const [bhk, setBhk] = useState<BhkType | ''>(apt.bhkType ?? '')
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['apartments'] })
+
+  const save = useMutation({
+    mutationFn: () => {
+      const body: UpdateApartment = {
+        tower,
+        apartmentNo,
+        floor: floor.trim() ? Number(floor) : null,
+        bhkType: bhk || null,
+      }
+      return apiClient.updateApartment(apt.id, body)
+    },
+    onSuccess: () => {
+      invalidate()
+      setEditing(false)
+    },
+  })
+
+  const toggleActive = useMutation({
+    mutationFn: () => apiClient.updateApartment(apt.id, { isActive: !apt.isActive }),
+    onSuccess: invalidate,
+  })
+
+  if (editing) {
+    return (
+      <TableRow>
+        <TableCell>
+          <Input value={tower} onChange={(e) => setTower(e.target.value)} className="h-8 w-20" />
+        </TableCell>
+        <TableCell>
+          <Input value={apartmentNo} onChange={(e) => setApartmentNo(e.target.value)} className="h-8 w-24" />
+        </TableCell>
+        <TableCell>
+          <Input
+            type="number"
+            value={floor}
+            onChange={(e) => setFloor(e.target.value)}
+            className="h-8 w-20"
+          />
+        </TableCell>
+        <TableCell>
+          <Select value={bhk} onValueChange={(v) => setBhk(v as BhkType)}>
+            <SelectTrigger size="sm" className="w-28">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              {BHK_OPTIONS.map((o) => (
+                <SelectItem key={o} value={o}>
+                  {o}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell />
+        <TableCell className="text-right">
+          <div className="flex justify-end gap-2">
+            <Button size="sm" disabled={save.isPending || !tower || !apartmentNo} onClick={() => save.mutate()}>
+              {save.isPending ? '…' : 'Save'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    )
+  }
+
+  return (
+    <TableRow className={apt.isActive ? undefined : 'opacity-60'}>
+      <TableCell className="font-medium">{apt.tower}</TableCell>
+      <TableCell>{apt.apartmentNo}</TableCell>
+      <TableCell className="text-muted-foreground">{apt.floor ?? '—'}</TableCell>
+      <TableCell className="text-muted-foreground">{apt.bhkType ?? '—'}</TableCell>
+      <TableCell>
+        <Badge variant={apt.isActive ? 'default' : 'secondary'}>{apt.isActive ? 'Active' : 'Inactive'}</Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant={apt.isActive ? 'ghost' : 'default'}
+            disabled={toggleActive.isPending}
+            onClick={() => toggleActive.mutate()}
+          >
+            {toggleActive.isPending ? '…' : apt.isActive ? 'Deactivate' : 'Activate'}
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+}
+
 function ApartmentsPage() {
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
 
@@ -224,16 +330,13 @@ function ApartmentsPage() {
                   <TableHead>Number</TableHead>
                   <TableHead>Floor</TableHead>
                   <TableHead>BHK</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {apartments.data?.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="font-medium">{a.tower}</TableCell>
-                    <TableCell>{a.apartmentNo}</TableCell>
-                    <TableCell className="text-muted-foreground">{a.floor ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground">{a.bhkType ?? '—'}</TableCell>
-                  </TableRow>
+                  <ApartmentRow key={a.id} apt={a} />
                 ))}
               </TableBody>
             </Table>

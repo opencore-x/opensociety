@@ -8,6 +8,7 @@ import type {
   Guard,
   Notice,
   SocietyConfig,
+  UpdateApartment,
   UpdateGuard,
   UpdateSocietyConfig,
   User,
@@ -51,7 +52,9 @@ export const apiClient = {
   listApartments: () => api<Apartment[]>('/apartments'),
   createApartment: (body: CreateApartment) => api<Apartment>('/apartments', { method: 'POST', body: json(body) }),
   createApartmentsBulk: (body: CreateApartmentsBulk) =>
-    api<Apartment[]>('/apartments/bulk', { method: 'POST', body: json(body) }),
+    api<{ count: number; apartments: Apartment[] }>('/apartments/bulk', { method: 'POST', body: json(body) }),
+  updateApartment: (id: string, body: UpdateApartment) =>
+    api<Apartment>(`/apartments/${id}`, { method: 'PATCH', body: json(body) }),
 
   // Users / residents
   listUsers: (status?: UserStatus) => api<User[]>(`/users${status ? `?status=${status}` : ''}`),
