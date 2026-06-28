@@ -5,6 +5,7 @@ import type { Apartment, BhkType, CreateApartment, UpdateApartment } from '@open
 import { bhkTypeSchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { parseBulk } from '@/lib/apartments-csv'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -97,37 +98,6 @@ function AddSingle() {
       )}
     </form>
   )
-}
-
-type ParseResult = { rows: CreateApartment[]; errors: string[] }
-
-function parseBulk(text: string): ParseResult {
-  const rows: CreateApartment[] = []
-  const errors: string[] = []
-  text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .forEach((line, i) => {
-      const [tower, apartmentNo, floor, bhk] = line.split(',').map((s) => s.trim())
-      if (!tower || !apartmentNo) {
-        errors.push(`Line ${i + 1}: tower and number are required`)
-        return
-      }
-      const row: CreateApartment = { tower, apartmentNo }
-      if (floor) {
-        const n = Number(floor)
-        if (Number.isNaN(n)) errors.push(`Line ${i + 1}: floor "${floor}" is not a number`)
-        else row.floor = n
-      }
-      if (bhk) {
-        const parsed = bhkTypeSchema.safeParse(bhk.toUpperCase())
-        if (!parsed.success) errors.push(`Line ${i + 1}: invalid BHK "${bhk}"`)
-        else row.bhkType = parsed.data
-      }
-      rows.push(row)
-    })
-  return { rows, errors }
 }
 
 function BulkAdd() {
