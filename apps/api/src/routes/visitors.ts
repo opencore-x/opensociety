@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { and, desc, eq } from 'drizzle-orm'
 import { visitorEntries, visitorPreApprovals } from '@opensociety/db'
@@ -12,7 +13,34 @@ import {
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import { parsePagination } from '../pagination'
+import { VISITOR_TRANSITIONS, canTransition, type VisitorAction } from '../visitor-status'
 import type { AppEnv } from '../types'
+
+// Applies a lifecycle transition to a visitor entry, enforcing the state
+// machine: 404 if the entry is missing, 409 if the action is illegal from its
+// current state, otherwise updates to the target status with `extra` fields.
+export async function applyTransition(
+  c: Context<AppEnv>,
+  action: VisitorAction,
+  extra: Partial<typeof visitorEntries.$inferInsert>,
+) {
+  const db = c.get('db')
+  const id = c.req.param('id')
+  const [entry] = await db
+    .select({ status: visitorEntries.status })
+    .from(visitorEntries)
+    .where(eq(visitorEntries.id, id))
+    .limit(1)
+  if (!entry) return c.json({ error: 'not found' }, 404)
+  if (!canTransition(action, entry.status))
+    return c.json({ error: `cannot ${action} a visitor in ${entry.status} state` }, 409)
+  const [updated] = await db
+    .update(visitorEntries)
+    .set({ status: VISITOR_TRANSITIONS[action].to, updatedAt: new Date(), ...extra })
+    .where(eq(visitorEntries.id, id))
+    .returning()
+  return c.json(updated)
+}
 
 export const visitorRoutes = new Hono<AppEnv>()
 visitorRoutes.use('*', withDb)
@@ -114,57 +142,26 @@ visitorRoutes.post('/', requireRole('GUARD', 'ADMIN'), zValidator('json', create
 })
 
 // Resident approves/denies a visitor to their apartment (admins may override).
-visitorRoutes.post('/:id/approve', requireRole('RESIDENT', 'ADMIN'), async (c) => {
-  const [updated] = await c
-    .get('db')
-    .update(visitorEntries)
-    .set({ status: 'APPROVED', approvedBy: actingUserId(c) ?? null, updatedAt: new Date() })
-    .where(eq(visitorEntries.id, c.req.param('id')))
-    .returning()
-  if (!updated) return c.json({ error: 'not found' }, 404)
-  return c.json(updated)
-})
+visitorRoutes.post('/:id/approve', requireRole('RESIDENT', 'ADMIN'), (c) =>
+  applyTransition(c, 'approve', { approvedBy: actingUserId(c) ?? null }),
+)
 
-visitorRoutes.post('/:id/deny', requireRole('RESIDENT', 'ADMIN'), zValidator('json', denyVisitorSchema), async (c) => {
-  const [updated] = await c
-    .get('db')
-    .update(visitorEntries)
-    .set({ status: 'DENIED', deniedReason: c.req.valid('json').reason, updatedAt: new Date() })
-    .where(eq(visitorEntries.id, c.req.param('id')))
-    .returning()
-  if (!updated) return c.json({ error: 'not found' }, 404)
-  return c.json(updated)
-})
+visitorRoutes.post('/:id/deny', requireRole('RESIDENT', 'ADMIN'), zValidator('json', denyVisitorSchema), (c) =>
+  applyTransition(c, 'deny', { deniedReason: c.req.valid('json').reason }),
+)
 
 // Gate actions: the guard on duty checks the visitor in and out.
-visitorRoutes.post('/:id/checkin', requireRole('GUARD', 'ADMIN'), zValidator('json', checkInVisitorSchema), async (c) => {
+visitorRoutes.post('/:id/checkin', requireRole('GUARD', 'ADMIN'), zValidator('json', checkInVisitorSchema), (c) => {
   const body = c.req.valid('json')
-  const [updated] = await c
-    .get('db')
-    .update(visitorEntries)
-    .set({
-      status: 'ENTERED',
-      checkInAt: new Date(),
-      checkInBy: body.guardId ?? null,
-      photoUrl: body.photoUrl ?? null,
-      vehicleNumber: body.vehicleNumber ?? null,
-      updatedAt: new Date(),
-    })
-    .where(eq(visitorEntries.id, c.req.param('id')))
-    .returning()
-  if (!updated) return c.json({ error: 'not found' }, 404)
-  return c.json(updated)
+  return applyTransition(c, 'checkin', {
+    checkInAt: new Date(),
+    checkInBy: body.guardId ?? null,
+    photoUrl: body.photoUrl ?? null,
+    vehicleNumber: body.vehicleNumber ?? null,
+  })
 })
 
-visitorRoutes.post('/:id/checkout', requireRole('GUARD', 'ADMIN'), async (c) => {
+visitorRoutes.post('/:id/checkout', requireRole('GUARD', 'ADMIN'), (c) =>
   // checkOutBy references guards.id (the guard at the gate), not the user.
-  const guardId = c.req.header('x-guard-id')
-  const [updated] = await c
-    .get('db')
-    .update(visitorEntries)
-    .set({ status: 'EXITED', checkOutAt: new Date(), checkOutBy: guardId ?? null, updatedAt: new Date() })
-    .where(eq(visitorEntries.id, c.req.param('id')))
-    .returning()
-  if (!updated) return c.json({ error: 'not found' }, 404)
-  return c.json(updated)
-})
+  applyTransition(c, 'checkout', { checkOutAt: new Date(), checkOutBy: c.req.header('x-guard-id') ?? null }),
+)
