@@ -39,12 +39,13 @@ webhookRoutes.post('/clerk', async (c) => {
     return c.json({ error: 'invalid signature' }, 400)
   }
 
+  const db = c.get('db')
+
   if (evt.type === 'user.created' || evt.type === 'user.updated') {
     const d = evt.data
     const email = d.email_addresses?.[0]?.email_address ?? null
     const phone = d.phone_numbers?.[0]?.phone_number ?? null
     const name = [d.first_name, d.last_name].filter(Boolean).join(' ') || email || 'Resident'
-    const db = c.get('db')
     const [existing] = await db
       .select({ id: users.id })
       .from(users)
@@ -58,6 +59,13 @@ webhookRoutes.post('/clerk', async (c) => {
     } else {
       await db.insert(users).values({ clerkId: d.id, email, phone, name })
     }
+  } else if (evt.type === 'user.deleted') {
+    // Clerk identity removed -> soft-deactivate the local mirror. We keep the row
+    // so historical visitor/notice references (approvedBy, publishedBy) stay intact.
+    await db
+      .update(users)
+      .set({ isActive: false, status: 'SUSPENDED', updatedAt: new Date() })
+      .where(eq(users.clerkId, evt.data.id))
   }
 
   return c.json({ ok: true })
