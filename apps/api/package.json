@@ -8,7 +8,8 @@
     "deploy": "wrangler deploy",
     "build": "tsc --noEmit",
     "check-types": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@clerk/backend": "^1.21.0",
@@ -25,6 +26,7 @@
     "@opensociety/eslint-config": "workspace:*",
     "eslint": "^9.18.0",
     "typescript": "^5.7.2",
+    "vitest": "^3.0.5",
     "wrangler": "^3.99.0"
   }
 }
