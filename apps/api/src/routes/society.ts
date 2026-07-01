@@ -3,12 +3,14 @@ import { zValidator } from '@hono/zod-validator'
 import { eq } from 'drizzle-orm'
 import { societyConfig } from '@opensociety/db'
 import { updateSocietyConfigSchema } from '@opensociety/shared'
-import { withDb, withAuth } from '../middleware'
+import { withDb, withAuth, requireAuth, requireRole } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const societyRoutes = new Hono<AppEnv>()
 societyRoutes.use('*', withDb)
 societyRoutes.use('*', withAuth)
+// Any signed-in user can read the society profile; only admins change it.
+societyRoutes.use('*', requireAuth)
 
 // Single-tenant: at most one config row.
 societyRoutes.get('/', async (c) => {
@@ -17,7 +19,7 @@ societyRoutes.get('/', async (c) => {
 })
 
 // Upsert the single society config row.
-societyRoutes.put('/', zValidator('json', updateSocietyConfigSchema), async (c) => {
+societyRoutes.put('/', requireRole('ADMIN'), zValidator('json', updateSocietyConfigSchema), async (c) => {
   const db = c.get('db')
   const input = c.req.valid('json')
   const [existing] = await db.select().from(societyConfig).limit(1)
