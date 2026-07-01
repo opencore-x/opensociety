@@ -4,12 +4,14 @@ import { desc, eq } from 'drizzle-orm'
 import { users, residencies } from '@opensociety/db'
 import type { UserStatus } from '@opensociety/shared'
 import { approveUserSchema, updateUserRoleSchema } from '@opensociety/shared'
-import { withDb, withAuth } from '../middleware'
+import { withDb, withAuth, requireRole } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const userRoutes = new Hono<AppEnv>()
 userRoutes.use('*', withDb)
 userRoutes.use('*', withAuth)
+// User management (approval queue, approve, role changes) is admin-only.
+userRoutes.use('*', requireRole('ADMIN'))
 
 // ?status=PENDING -> admin approval queue
 userRoutes.get('/', async (c) => {
