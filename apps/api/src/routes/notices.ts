@@ -3,21 +3,22 @@ import { zValidator } from '@hono/zod-validator'
 import { desc } from 'drizzle-orm'
 import { notices } from '@opensociety/db'
 import { createNoticeSchema } from '@opensociety/shared'
-import { withDb, withAuth, actingUserId } from '../middleware'
+import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const noticeRoutes = new Hono<AppEnv>()
 noticeRoutes.use('*', withDb)
 noticeRoutes.use('*', withAuth)
+// Any signed-in user can read the board; only admins publish.
+noticeRoutes.use('*', requireAuth)
 
 noticeRoutes.get('/', async (c) => {
   const rows = await c.get('db').select().from(notices).orderBy(desc(notices.publishedAt))
   return c.json(rows)
 })
 
-noticeRoutes.post('/', zValidator('json', createNoticeSchema), async (c) => {
-  const userId = actingUserId(c)
-  if (!userId) return c.json({ error: 'authentication required' }, 401)
+noticeRoutes.post('/', requireRole('ADMIN'), zValidator('json', createNoticeSchema), async (c) => {
+  const userId = actingUserId(c)!
   const input = c.req.valid('json')
   const [created] = await c
     .get('db')
