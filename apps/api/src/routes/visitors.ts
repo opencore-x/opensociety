@@ -11,6 +11,7 @@ import {
   redeemPreApprovalSchema,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
+import { parsePagination } from '../pagination'
 import type { AppEnv } from '../types'
 
 export const visitorRoutes = new Hono<AppEnv>()
@@ -92,6 +93,7 @@ visitorRoutes.get('/', async (c) => {
   const db = c.get('db')
   const status = c.req.query('status') as VisitorStatus | undefined
   const apartmentId = c.req.query('apartmentId')
+  const { limit, offset } = parsePagination(c)
   const conds = []
   if (status) conds.push(eq(visitorEntries.status, status))
   if (apartmentId) conds.push(eq(visitorEntries.apartmentId, apartmentId))
@@ -100,6 +102,8 @@ visitorRoutes.get('/', async (c) => {
     .from(visitorEntries)
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(desc(visitorEntries.createdAt))
+    .limit(limit)
+    .offset(offset)
   return c.json(rows)
 })
 

@@ -5,6 +5,7 @@ import { users, residencies } from '@opensociety/db'
 import type { UserStatus } from '@opensociety/shared'
 import { approveUserSchema, updateUserRoleSchema } from '@opensociety/shared'
 import { withDb, withAuth, requireRole } from '../middleware'
+import { parsePagination } from '../pagination'
 import type { AppEnv } from '../types'
 
 export const userRoutes = new Hono<AppEnv>()
@@ -17,11 +18,14 @@ userRoutes.use('*', requireRole('ADMIN'))
 userRoutes.get('/', async (c) => {
   const db = c.get('db')
   const status = c.req.query('status') as UserStatus | undefined
+  const { limit, offset } = parsePagination(c)
   const rows = await db
     .select()
     .from(users)
     .where(status ? eq(users.status, status) : undefined)
     .orderBy(desc(users.createdAt))
+    .limit(limit)
+    .offset(offset)
   return c.json(rows)
 })
 
