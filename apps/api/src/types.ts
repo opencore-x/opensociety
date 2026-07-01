@@ -1,4 +1,5 @@
 import type { Database } from '@opensociety/db'
+import type { UserRole, UserStatus } from '@opensociety/shared'
 
 export type Bindings = {
   DATABASE_URL: string
@@ -9,9 +10,11 @@ export type Bindings = {
 
 export type Variables = {
   db: Database
-  // Set by auth middleware once Clerk is wired (PR follow-up). Until then,
-  // routes that need an actor read the `x-user-id` header as a dev stand-in.
+  // Acting user, resolved by withAuth from a verified Clerk session (or the
+  // `x-user-id` dev stand-in). Unset when the request is unauthenticated.
   userId?: string
+  userRole?: UserRole
+  userStatus?: UserStatus
 }
 
 export type AppEnv = { Bindings: Bindings; Variables: Variables }
