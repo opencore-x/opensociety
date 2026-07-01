@@ -10,12 +10,14 @@ import {
   createPreApprovalSchema,
   redeemPreApprovalSchema,
 } from '@opensociety/shared'
-import { withDb, withAuth, actingUserId } from '../middleware'
+import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const visitorRoutes = new Hono<AppEnv>()
 visitorRoutes.use('*', withDb)
 visitorRoutes.use('*', withAuth)
+// Every visitor endpoint needs a signed-in actor; individual routes narrow by role.
+visitorRoutes.use('*', requireAuth)
 
 // ----- Pre-approvals (registered before /:id so the static segment wins) -----
 
@@ -28,9 +30,9 @@ visitorRoutes.get('/pre-approvals', async (c) => {
   return c.json(rows)
 })
 
-visitorRoutes.post('/pre-approvals', zValidator('json', createPreApprovalSchema), async (c) => {
-  const userId = actingUserId(c)
-  if (!userId) return c.json({ error: 'authentication required' }, 401)
+// Residents pre-approve their own visitors (admins may too).
+visitorRoutes.post('/pre-approvals', requireRole('RESIDENT', 'ADMIN'), zValidator('json', createPreApprovalSchema), async (c) => {
+  const userId = actingUserId(c)!
   const input = c.req.valid('json')
   const code = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()
   const [created] = await c
@@ -51,7 +53,7 @@ visitorRoutes.post('/pre-approvals', zValidator('json', createPreApprovalSchema)
 })
 
 // Guard redeems a code at the gate -> auto-creates an APPROVED entry.
-visitorRoutes.post('/pre-approvals/redeem', zValidator('json', redeemPreApprovalSchema), async (c) => {
+visitorRoutes.post('/pre-approvals/redeem', requireRole('GUARD', 'ADMIN'), zValidator('json', redeemPreApprovalSchema), async (c) => {
   const db = c.get('db')
   const { code, guardId } = c.req.valid('json')
   const [pa] = await db
@@ -101,13 +103,14 @@ visitorRoutes.get('/', async (c) => {
   return c.json(rows)
 })
 
-// Resident raises a request (PENDING).
-visitorRoutes.post('/', zValidator('json', createVisitorEntrySchema), async (c) => {
+// Guard registers a visitor arriving at the gate (PENDING until a resident approves).
+visitorRoutes.post('/', requireRole('GUARD', 'ADMIN'), zValidator('json', createVisitorEntrySchema), async (c) => {
   const [created] = await c.get('db').insert(visitorEntries).values(c.req.valid('json')).returning()
   return c.json(created, 201)
 })
 
-visitorRoutes.post('/:id/approve', async (c) => {
+// Resident approves/denies a visitor to their apartment (admins may override).
+visitorRoutes.post('/:id/approve', requireRole('RESIDENT', 'ADMIN'), async (c) => {
   const [updated] = await c
     .get('db')
     .update(visitorEntries)
@@ -118,7 +121,7 @@ visitorRoutes.post('/:id/approve', async (c) => {
   return c.json(updated)
 })
 
-visitorRoutes.post('/:id/deny', zValidator('json', denyVisitorSchema), async (c) => {
+visitorRoutes.post('/:id/deny', requireRole('RESIDENT', 'ADMIN'), zValidator('json', denyVisitorSchema), async (c) => {
   const [updated] = await c
     .get('db')
     .update(visitorEntries)
@@ -129,7 +132,8 @@ visitorRoutes.post('/:id/deny', zValidator('json', denyVisitorSchema), async (c)
   return c.json(updated)
 })
 
-visitorRoutes.post('/:id/checkin', zValidator('json', checkInVisitorSchema), async (c) => {
+// Gate actions: the guard on duty checks the visitor in and out.
+visitorRoutes.post('/:id/checkin', requireRole('GUARD', 'ADMIN'), zValidator('json', checkInVisitorSchema), async (c) => {
   const body = c.req.valid('json')
   const [updated] = await c
     .get('db')
@@ -148,7 +152,7 @@ visitorRoutes.post('/:id/checkin', zValidator('json', checkInVisitorSchema), asy
   return c.json(updated)
 })
 
-visitorRoutes.post('/:id/checkout', async (c) => {
+visitorRoutes.post('/:id/checkout', requireRole('GUARD', 'ADMIN'), async (c) => {
   // checkOutBy references guards.id (the guard at the gate), not the user.
   const guardId = c.req.header('x-guard-id')
   const [updated] = await c
