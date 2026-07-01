@@ -6,6 +6,7 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "check-types": "tsc --noEmit",
+    "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"
   },
@@ -33,7 +34,9 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
+    "@opensociety/eslint-config": "workspace:*",
     "@tanstack/devtools-vite": "^0.3.11",
+    "eslint": "^9.18.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^22.10.2",

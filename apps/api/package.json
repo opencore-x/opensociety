@@ -8,7 +8,7 @@
     "deploy": "wrangler deploy",
     "build": "tsc --noEmit",
     "check-types": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@clerk/backend": "^1.21.0",
@@ -22,6 +22,8 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240512.0",
+    "@opensociety/eslint-config": "workspace:*",
+    "eslint": "^9.18.0",
     "typescript": "^5.7.2",
     "wrangler": "^3.99.0"
   }
