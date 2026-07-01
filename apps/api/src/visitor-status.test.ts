@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import type { VisitorStatus } from '@opensociety/shared'
-import { VISITOR_TRANSITIONS, canTransition, type VisitorAction } from './visitor-status'
+import {
+  VISITOR_TRANSITIONS,
+  canTransition,
+  availableVisitorActions,
+  type VisitorAction,
+} from '@opensociety/shared'
 
 const ALL_STATUSES: VisitorStatus[] = [
   'PENDING',
@@ -48,5 +53,22 @@ describe('VISITOR_TRANSITIONS targets', () => {
     expect(canTransition('checkout', status)).toBe(true)
     status = VISITOR_TRANSITIONS.checkout.to
     expect(status).toBe('EXITED')
+  })
+})
+
+describe('availableVisitorActions', () => {
+  it('offers approve + deny for a PENDING visitor', () => {
+    expect(availableVisitorActions('PENDING').sort()).toEqual(['approve', 'deny'])
+  })
+
+  it('offers only checkin once APPROVED and only checkout once ENTERED', () => {
+    expect(availableVisitorActions('APPROVED')).toEqual(['checkin'])
+    expect(availableVisitorActions('ENTERED')).toEqual(['checkout'])
+  })
+
+  it('offers nothing for terminal states', () => {
+    for (const status of ['EXITED', 'DENIED', 'CANCELLED', 'EXPIRED'] as VisitorStatus[]) {
+      expect(availableVisitorActions(status)).toEqual([])
+    }
   })
 })
