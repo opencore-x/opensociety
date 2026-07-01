@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 
 import { apiClient } from '../../lib/api'
 import { PageHeader } from '@/components/admin/ui'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const Route = createFileRoute('/admin/')({ component: Overview })
@@ -83,6 +84,13 @@ function Overview() {
           <CardTitle>Getting started</CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground space-y-2 text-sm">
+          <p className="text-foreground">
+            New here? Run the{' '}
+            <Button asChild size="sm" className="mx-1 align-middle">
+              <Link to="/admin/setup">guided setup wizard</Link>
+            </Button>{' '}
+            to configure your society and import apartments in one flow — or follow the steps below.
+          </p>
           <p>
             1. Configure your society in <Link to="/admin/society" className="text-foreground underline">Society</Link>.
           </p>
