@@ -3,17 +3,18 @@ import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { and, desc, eq } from 'drizzle-orm'
 import { visitorEntries, visitorPreApprovals } from '@opensociety/db'
-import type { VisitorStatus } from '@opensociety/shared'
+import type { VisitorStatus, VisitorAction } from '@opensociety/shared'
 import {
   createVisitorEntrySchema,
   denyVisitorSchema,
   checkInVisitorSchema,
   createPreApprovalSchema,
   redeemPreApprovalSchema,
+  VISITOR_TRANSITIONS,
+  canTransition,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import { parsePagination } from '../pagination'
-import { VISITOR_TRANSITIONS, canTransition, type VisitorAction } from '../visitor-status'
 import type { AppEnv } from '../types'
 
 // Applies a lifecycle transition to a visitor entry, enforcing the state
