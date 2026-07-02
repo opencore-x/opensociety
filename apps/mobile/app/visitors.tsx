@@ -1,16 +1,9 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native'
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
 import { availableVisitorActions } from '@opensociety/shared'
 import { apiClient } from '../api/client'
+import { Button } from '../components/Button'
 
 export default function Visitors() {
   const qc = useQueryClient()
@@ -121,29 +114,6 @@ export default function Visitors() {
   )
 }
 
-function Button({
-  label,
-  onPress,
-  disabled,
-  variant = 'primary',
-}: {
-  label: string
-  onPress: () => void
-  disabled?: boolean
-  variant?: 'primary' | 'outline' | 'danger'
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      disabled={disabled}
-      style={[styles.btn, styles[variant], disabled && styles.btnDisabled]}
-    >
-      <Text style={[styles.btnText, variant === 'outline' && styles.btnTextOutline]}>{label}</Text>
-    </Pressable>
-  )
-}
-
 function Centered({ children }: { children: React.ReactNode }) {
   return <View style={styles.centered}>{children}</View>
 }
@@ -175,11 +145,4 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: '#fff',
   },
-  btn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
-  btnDisabled: { opacity: 0.5 },
-  primary: { backgroundColor: '#0e7490' },
-  danger: { backgroundColor: '#e11d48' },
-  outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#d4d4d8' },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  btnTextOutline: { color: '#3f3f46' },
 })
