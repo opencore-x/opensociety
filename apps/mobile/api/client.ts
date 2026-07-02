@@ -9,19 +9,33 @@ import type {
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787'
 
-// Dev auth stand-in until Clerk tokens are wired into the mobile app. Set
+// Dev auth stand-in used only when no Clerk session is present. Set
 // EXPO_PUBLIC_DEV_USER_ID to a real users.id (resident/admin) to act as them;
-// it's sent as the x-user-id header on writes that need an actor.
+// it's sent as the x-user-id header.
 const DEV_USER_ID = process.env.EXPO_PUBLIC_DEV_USER_ID
 
-// x-user-id defaults to DEV_USER_ID on every request (reads included) — the API
-// now requires an authenticated actor even for GETs.
+// Bridge to the Clerk session token, registered by a React component (see
+// AuthBridge in _layout). When signed in, requests carry a Bearer JWT the API
+// verifies, taking precedence over the dev header.
+let tokenGetter: (() => Promise<string | null>) | null = null
+export function setAuthTokenGetter(fn: (() => Promise<string | null>) | null) {
+  tokenGetter = fn
+}
+
+// Bearer token when signed in, else the dev x-user-id fallback. The API
+// requires an authenticated actor even for GETs.
 async function api<T>(path: string, init?: RequestInit, userId = DEV_USER_ID): Promise<T> {
+  const token = tokenGetter ? await tokenGetter().catch(() => null) : null
+  const auth: Record<string, string> = token
+    ? { authorization: `Bearer ${token}` }
+    : userId
+      ? { 'x-user-id': userId }
+      : {}
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
       'content-type': 'application/json',
-      ...(userId ? { 'x-user-id': userId } : {}),
+      ...auth,
       ...(init?.headers ?? {}),
     },
   })
