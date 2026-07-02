@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'expo-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
 import { availableVisitorActions } from '@opensociety/shared'
 import { apiClient } from '../api/client'
 import { Button } from '../components/Button'
@@ -14,6 +15,7 @@ export default function Gate() {
     queryFn: () => apiClient.listVisitors(),
   })
 
+  const [code, setCode] = useState('')
   const invalidate = () => qc.invalidateQueries({ queryKey: ['visitors'] })
   const checkIn = useMutation({
     mutationFn: (id: string) => apiClient.checkInVisitor(id),
@@ -22,6 +24,13 @@ export default function Gate() {
   const checkOut = useMutation({
     mutationFn: (id: string) => apiClient.checkOutVisitor(id),
     onSuccess: invalidate,
+  })
+  const redeem = useMutation({
+    mutationFn: () => apiClient.redeemPreApproval(code.trim().toUpperCase()),
+    onSuccess: () => {
+      setCode('')
+      invalidate()
+    },
   })
   const busy = checkIn.isPending || checkOut.isPending
 
@@ -47,9 +56,29 @@ export default function Gate() {
       data={gate}
       keyExtractor={(v) => v.id}
       ListHeaderComponent={
-        <Link href="/register" style={styles.register}>
-          + Register visitor
-        </Link>
+        <View style={styles.header}>
+          <View style={styles.redeemRow}>
+            <TextInput
+              style={styles.codeInput}
+              placeholder="Pre-approval code"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              value={code}
+              onChangeText={setCode}
+            />
+            <Button
+              label={redeem.isPending ? 'Redeeming…' : 'Redeem'}
+              onPress={() => redeem.mutate()}
+              disabled={redeem.isPending || code.trim().length === 0}
+            />
+          </View>
+          {redeem.isError && (
+            <Text style={styles.redeemError}>{String((redeem.error as Error)?.message ?? 'Invalid code')}</Text>
+          )}
+          <Link href="/register" style={styles.register}>
+            + Register visitor
+          </Link>
+        </View>
       }
       ListEmptyComponent={<Text style={styles.dim}>No visitors at the gate.</Text>}
       renderItem={({ item }) => {
@@ -105,5 +134,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   actions: { flexDirection: 'row', gap: 8 },
+  header: { gap: 8, marginBottom: 4 },
+  redeemRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  codeInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#d4d4d8',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    letterSpacing: 2,
+  },
+  redeemError: { color: '#e11d48', fontSize: 13 },
   register: { color: '#0e7490', fontWeight: '600', fontSize: 15, paddingVertical: 4 },
 })
