@@ -8,6 +8,13 @@
       "when": 1782677027739,
       "tag": "0000_overjoyed_madelyne_pryor",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783031206983,
+      "tag": "0001_nifty_george_stacy",
+      "breakpoints": true
     }
   ]
 }

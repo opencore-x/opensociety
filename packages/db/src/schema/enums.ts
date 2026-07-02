@@ -16,3 +16,19 @@ export const visitorStatus = pgEnum('visitor_status', [
 ])
 export const preApprovalType = pgEnum('pre_approval_type', ['ALWAYS', 'SCHEDULED', 'ONE_TIME'])
 export const noticePriority = pgEnum('notice_priority', ['LOW', 'NORMAL', 'HIGH', 'URGENT'])
+export const ticketStatus = pgEnum('ticket_status', [
+  'OPEN',
+  'IN_PROGRESS',
+  'RESOLVED',
+  'CLOSED',
+  'CANCELLED',
+])
+export const ticketCategory = pgEnum('ticket_category', [
+  'PLUMBING',
+  'ELECTRICAL',
+  'CARPENTRY',
+  'HOUSEKEEPING',
+  'SECURITY',
+  'OTHER',
+])
+export const ticketPriority = pgEnum('ticket_priority', ['LOW', 'NORMAL', 'HIGH', 'URGENT'])
