@@ -14,6 +14,9 @@ export default function Index() {
       <Link href="/pre-approve" style={styles.link}>
         Resident · Pre-approve →
       </Link>
+      <Link href="/notices" style={styles.link}>
+        Resident · Notices →
+      </Link>
       <Link href="/gate" style={styles.link}>
         Guard · Gate →
       </Link>
