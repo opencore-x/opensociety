@@ -12,6 +12,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ title: 'OpenSociety' }} />
         <Stack.Screen name="visitors" options={{ title: 'Visitors' }} />
         <Stack.Screen name="gate" options={{ title: 'Gate' }} />
+        <Stack.Screen name="register" options={{ title: 'Register visitor' }} />
       </Stack>
     </QueryClientProvider>
   )

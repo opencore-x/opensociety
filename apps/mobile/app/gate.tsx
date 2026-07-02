@@ -1,3 +1,4 @@
+import { Link } from 'expo-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native'
 import { availableVisitorActions } from '@opensociety/shared'
@@ -45,6 +46,11 @@ export default function Gate() {
       contentContainerStyle={styles.list}
       data={gate}
       keyExtractor={(v) => v.id}
+      ListHeaderComponent={
+        <Link href="/register" style={styles.register}>
+          + Register visitor
+        </Link>
+      }
       ListEmptyComponent={<Text style={styles.dim}>No visitors at the gate.</Text>}
       renderItem={({ item }) => {
         const actions = availableVisitorActions(item.status)
@@ -99,4 +105,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   actions: { flexDirection: 'row', gap: 8 },
+  register: { color: '#0e7490', fontWeight: '600', fontSize: 15, paddingVertical: 4 },
 })
