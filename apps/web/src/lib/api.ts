@@ -19,15 +19,29 @@ import type {
 } from '@opensociety/shared'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
-// Dev stand-in for the acting user until Clerk sessions are wired into the web app.
+// Dev stand-in for the acting user, used only when no Clerk session is present.
 // Writes that need an author (notices, visitor approvals) send this as `x-user-id`.
 const DEV_USER_ID = import.meta.env.VITE_DEV_USER_ID as string | undefined
+
+// Bridge to the Clerk session token. A React component registers this getter
+// (see AuthBridge); when signed in it returns a JWT the API verifies as a
+// Bearer token, taking precedence over the dev header.
+let tokenGetter: (() => Promise<string | null>) | null = null
+export function setAuthTokenGetter(fn: (() => Promise<string | null>) | null) {
+  tokenGetter = fn
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = tokenGetter ? await tokenGetter().catch(() => null) : null
+  if (token) return { authorization: `Bearer ${token}` }
+  return DEV_USER_ID ? { 'x-user-id': DEV_USER_ID } : {}
+}
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     headers: {
       'content-type': 'application/json',
-      ...(DEV_USER_ID ? { 'x-user-id': DEV_USER_ID } : {}),
+      ...(await authHeaders()),
       ...(init?.headers ?? {}),
     },
     ...init,
