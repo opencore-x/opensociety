@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar'
 import { Link } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
+import { AuthStatus, CLERK_ENABLED } from '../components/auth-status'
 
 export default function Index() {
   return (
@@ -13,6 +14,7 @@ export default function Index() {
       <Link href="/gate" style={styles.link}>
         Guard · Gate →
       </Link>
+      {CLERK_ENABLED && <AuthStatus />}
       <StatusBar style="auto" />
     </View>
   )
