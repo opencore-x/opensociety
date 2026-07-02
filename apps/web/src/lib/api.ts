@@ -6,8 +6,11 @@ import type {
   CreateGuard,
   CreateNotice,
   CreatePreApproval,
+  CreateTicket,
   Guard,
   Notice,
+  Ticket,
+  TicketAction,
   SocietyConfig,
   UpdateApartment,
   UpdateGuard,
@@ -105,4 +108,13 @@ export const apiClient = {
   // Notices
   listNotices: () => api<Notice[]>('/notices'),
   createNotice: (body: CreateNotice) => api<Notice>('/notices', { method: 'POST', body: json(body) }),
+
+  // Maintenance tickets
+  listTickets: (status?: string) =>
+    api<Ticket[]>(`/tickets${status ? `?status=${status}` : ''}`),
+  createTicket: (body: CreateTicket) => api<Ticket>('/tickets', { method: 'POST', body: json(body) }),
+  transitionTicket: (id: string, action: TicketAction, resolutionNote?: string) =>
+    api<Ticket>(`/tickets/${id}/transition`, { method: 'POST', body: json({ action, resolutionNote }) }),
+  assignTicket: (id: string, assignedTo: string) =>
+    api<Ticket>(`/tickets/${id}/assign`, { method: 'PATCH', body: json({ assignedTo }) }),
 }
