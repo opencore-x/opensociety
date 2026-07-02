@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Fragment, useMemo, useState } from 'react'
+import { availableVisitorActions } from '@opensociety/shared'
 import type { VisitorEntry, VisitorStatus } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
@@ -68,15 +69,25 @@ function DenyPanel({ entry, onDone }: { entry: VisitorEntry; onDone: () => void 
   )
 }
 
-function Approve({ entry }: { entry: VisitorEntry }) {
+function TransitionButton({
+  entry,
+  label,
+  variant,
+  mutationFn,
+}: {
+  entry: VisitorEntry
+  label: string
+  variant?: 'default' | 'outline'
+  mutationFn: (id: string) => Promise<VisitorEntry>
+}) {
   const qc = useQueryClient()
   const mutation = useMutation({
-    mutationFn: () => apiClient.approveVisitor(entry.id),
+    mutationFn: () => mutationFn(entry.id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['visitors'] }),
   })
   return (
-    <Button size="sm" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
-      {mutation.isPending ? '…' : 'Approve'}
+    <Button size="sm" variant={variant} disabled={mutation.isPending} onClick={() => mutation.mutate()}>
+      {mutation.isPending ? '…' : label}
     </Button>
   )
 }
@@ -157,18 +168,50 @@ function VisitorsPage() {
                       <TableCell className="text-muted-foreground text-xs">{formatTime(v.createdAt)}</TableCell>
                       <TableCell className="text-muted-foreground text-xs">{formatTime(v.checkInAt)}</TableCell>
                       <TableCell className="text-right">
-                        {v.status === 'PENDING' && (
-                          <div className="flex justify-end gap-2">
-                            <Approve entry={v} />
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setDenying(denying === v.id ? null : v.id)}
-                            >
-                              {denying === v.id ? 'Close' : 'Deny'}
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex justify-end gap-2">
+                          {availableVisitorActions(v.status).map((action) => {
+                            if (action === 'approve')
+                              return (
+                                <TransitionButton
+                                  key={action}
+                                  entry={v}
+                                  label="Approve"
+                                  mutationFn={apiClient.approveVisitor}
+                                />
+                              )
+                            if (action === 'checkin')
+                              return (
+                                <TransitionButton
+                                  key={action}
+                                  entry={v}
+                                  label="Check in"
+                                  mutationFn={apiClient.checkInVisitor}
+                                />
+                              )
+                            if (action === 'checkout')
+                              return (
+                                <TransitionButton
+                                  key={action}
+                                  entry={v}
+                                  label="Check out"
+                                  variant="outline"
+                                  mutationFn={apiClient.checkOutVisitor}
+                                />
+                              )
+                            if (action === 'deny')
+                              return (
+                                <Button
+                                  key={action}
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setDenying(denying === v.id ? null : v.id)}
+                                >
+                                  {denying === v.id ? 'Close' : 'Deny'}
+                                </Button>
+                              )
+                            return null
+                          })}
+                        </div>
                       </TableCell>
                     </TableRow>
                     {denying === v.id && (
