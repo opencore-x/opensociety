@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { visitorTypeSchema, visitorStatusSchema, preApprovalTypeSchema } from './enums'
+import type { PreApprovalType } from './enums'
 
 export const visitorEntrySchema = z.object({
   id: z.string().uuid(),
@@ -79,3 +80,25 @@ export type CheckInVisitor = z.infer<typeof checkInVisitorSchema>
 export type VisitorPreApproval = z.infer<typeof visitorPreApprovalSchema>
 export type CreatePreApproval = z.infer<typeof createPreApprovalSchema>
 export type RedeemPreApproval = z.infer<typeof redeemPreApprovalSchema>
+
+export type PreApprovalRedeemError = 'invalid or inactive code' | 'code expired' | 'code exhausted'
+
+// Whether a pre-approval code can be redeemed right now — returns the failure
+// reason (also used as the API error message) or null when redeemable.
+// ONE_TIME codes are single-use regardless of maxUses.
+export function preApprovalRedeemError(
+  pa: {
+    isActive: boolean
+    approvalType: PreApprovalType
+    validUntilMs: number | null
+    maxUses: number | null
+    useCount: number
+  },
+  nowMs: number,
+): PreApprovalRedeemError | null {
+  if (!pa.isActive) return 'invalid or inactive code'
+  if (pa.validUntilMs != null && pa.validUntilMs < nowMs) return 'code expired'
+  const effectiveMax = pa.approvalType === 'ONE_TIME' ? 1 : pa.maxUses
+  if (effectiveMax != null && pa.useCount >= effectiveMax) return 'code exhausted'
+  return null
+}
