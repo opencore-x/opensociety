@@ -8,7 +8,10 @@ export default function Index() {
       <Text style={styles.title}>OpenSociety</Text>
       <Text style={styles.subtitle}>Privacy-first society management</Text>
       <Link href="/visitors" style={styles.link}>
-        View visitors →
+        Resident · Visitors →
+      </Link>
+      <Link href="/gate" style={styles.link}>
+        Guard · Gate →
       </Link>
       <StatusBar style="auto" />
     </View>
