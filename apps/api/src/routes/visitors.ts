@@ -141,6 +141,18 @@ visitorRoutes.post('/pre-approvals/redeem', requireRole('GUARD', 'ADMIN'), zVali
   return c.json(entry, 201)
 })
 
+// Admin revokes a pre-approval so its code can no longer be redeemed.
+visitorRoutes.post('/pre-approvals/:id/revoke', requireRole('ADMIN'), async (c) => {
+  const [updated] = await c
+    .get('db')
+    .update(visitorPreApprovals)
+    .set({ isActive: false })
+    .where(eq(visitorPreApprovals.id, c.req.param('id')))
+    .returning()
+  if (!updated) return c.json({ error: 'not found' }, 404)
+  return c.json(updated)
+})
+
 // ----- Visitor entries -----
 
 visitorRoutes.get('/', async (c) => {

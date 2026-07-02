@@ -99,6 +99,8 @@ export const apiClient = {
     api<VisitorPreApproval>('/visitors/pre-approvals', { method: 'POST', body: json(body) }),
   redeemPreApproval: (code: string) =>
     api<VisitorEntry>('/visitors/pre-approvals/redeem', { method: 'POST', body: json({ code }) }),
+  revokePreApproval: (id: string) =>
+    api<VisitorPreApproval>(`/visitors/pre-approvals/${id}/revoke`, { method: 'POST' }),
 
   // Notices
   listNotices: () => api<Notice[]>('/notices'),
