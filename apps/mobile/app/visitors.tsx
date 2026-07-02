@@ -1,14 +1,48 @@
-import { useQuery } from '@tanstack/react-query'
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
+import { availableVisitorActions } from '@opensociety/shared'
 import { apiClient } from '../api/client'
 
 export default function Visitors() {
+  const qc = useQueryClient()
+  const [denyingId, setDenyingId] = useState<string | null>(null)
+  const [reason, setReason] = useState('')
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['visitors'],
     queryFn: () => apiClient.listVisitors(),
   })
 
-  if (isLoading) return <Centered><ActivityIndicator /></Centered>
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['visitors'] })
+  const approve = useMutation({
+    mutationFn: (id: string) => apiClient.approveVisitor(id),
+    onSuccess: invalidate,
+  })
+  const deny = useMutation({
+    mutationFn: (v: { id: string; reason: string }) => apiClient.denyVisitor(v.id, v.reason),
+    onSuccess: () => {
+      setDenyingId(null)
+      setReason('')
+      invalidate()
+    },
+  })
+  const busy = approve.isPending || deny.isPending
+
+  if (isLoading)
+    return (
+      <Centered>
+        <ActivityIndicator />
+      </Centered>
+    )
   if (isError)
     return (
       <Centered>
@@ -23,16 +57,90 @@ export default function Visitors() {
       data={data ?? []}
       keyExtractor={(v) => v.id}
       ListEmptyComponent={<Text style={styles.dim}>No visitors yet.</Text>}
-      renderItem={({ item }) => (
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{item.visitorName}</Text>
-            <Text style={styles.dim}>{item.type}</Text>
+      renderItem={({ item }) => {
+        const actions = availableVisitorActions(item.status)
+        const denying = denyingId === item.id
+        return (
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>{item.visitorName}</Text>
+                <Text style={styles.dim}>{item.type}</Text>
+              </View>
+              <Text style={styles.badge}>{item.status}</Text>
+            </View>
+
+            {actions.length > 0 && !denying && (
+              <View style={styles.actions}>
+                {actions.includes('approve') && (
+                  <Button label="Approve" onPress={() => approve.mutate(item.id)} disabled={busy} />
+                )}
+                {actions.includes('deny') && (
+                  <Button
+                    label="Deny"
+                    variant="outline"
+                    onPress={() => setDenyingId(item.id)}
+                    disabled={busy}
+                  />
+                )}
+              </View>
+            )}
+
+            {denying && (
+              <View style={styles.denyPanel}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Reason for denial"
+                  value={reason}
+                  onChangeText={setReason}
+                  autoFocus
+                />
+                <View style={styles.actions}>
+                  <Button
+                    label={deny.isPending ? 'Denying…' : 'Confirm'}
+                    variant="danger"
+                    onPress={() => deny.mutate({ id: item.id, reason })}
+                    disabled={busy || !reason.trim()}
+                  />
+                  <Button
+                    label="Cancel"
+                    variant="outline"
+                    onPress={() => {
+                      setDenyingId(null)
+                      setReason('')
+                    }}
+                    disabled={busy}
+                  />
+                </View>
+              </View>
+            )}
           </View>
-          <Text style={styles.badge}>{item.status}</Text>
-        </View>
-      )}
+        )
+      }}
     />
+  )
+}
+
+function Button({
+  label,
+  onPress,
+  disabled,
+  variant = 'primary',
+}: {
+  label: string
+  onPress: () => void
+  disabled?: boolean
+  variant?: 'primary' | 'outline' | 'danger'
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      disabled={disabled}
+      style={[styles.btn, styles[variant], disabled && styles.btnDisabled]}
+    >
+      <Text style={[styles.btnText, variant === 'outline' && styles.btnTextOutline]}>{label}</Text>
+    </Pressable>
   )
 }
 
@@ -43,13 +151,8 @@ function Centered({ children }: { children: React.ReactNode }) {
 const styles = StyleSheet.create({
   list: { padding: 16, gap: 8 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: '#f4f4f5',
-  },
+  card: { padding: 12, borderRadius: 10, backgroundColor: '#f4f4f5', gap: 10 },
+  row: { flexDirection: 'row', alignItems: 'center' },
   name: { fontSize: 16, fontWeight: '600' },
   dim: { color: '#71717a', fontSize: 13 },
   error: { color: '#e11d48', fontSize: 16, fontWeight: '600' },
@@ -62,4 +165,21 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
   },
+  actions: { flexDirection: 'row', gap: 8 },
+  denyPanel: { gap: 8 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#d4d4d8',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+  },
+  btn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  btnDisabled: { opacity: 0.5 },
+  primary: { backgroundColor: '#0e7490' },
+  danger: { backgroundColor: '#e11d48' },
+  outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#d4d4d8' },
+  btnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  btnTextOutline: { color: '#3f3f46' },
 })
