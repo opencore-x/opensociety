@@ -10,6 +10,7 @@ import {
   checkInVisitorSchema,
   createPreApprovalSchema,
   redeemPreApprovalSchema,
+  preApprovalRedeemError,
   VISITOR_TRANSITIONS,
   canTransition,
 } from '@opensociety/shared'
@@ -107,11 +108,19 @@ visitorRoutes.post('/pre-approvals/redeem', requireRole('GUARD', 'ADMIN'), zVali
     .from(visitorPreApprovals)
     .where(eq(visitorPreApprovals.code, code))
     .limit(1)
-  if (!pa || !pa.isActive) return c.json({ error: 'invalid or inactive code' }, 404)
-  if (pa.validUntil && pa.validUntil.getTime() < Date.now())
-    return c.json({ error: 'code expired' }, 410)
-  if (pa.maxUses != null && pa.useCount >= pa.maxUses)
-    return c.json({ error: 'code exhausted' }, 410)
+  if (!pa) return c.json({ error: 'invalid or inactive code' }, 404)
+  const redeemError = preApprovalRedeemError(
+    {
+      isActive: pa.isActive,
+      approvalType: pa.approvalType,
+      validUntilMs: pa.validUntil?.getTime() ?? null,
+      maxUses: pa.maxUses,
+      useCount: pa.useCount,
+    },
+    Date.now(),
+  )
+  if (redeemError)
+    return c.json({ error: redeemError }, redeemError === 'invalid or inactive code' ? 404 : 410)
 
   const [entry] = await db
     .insert(visitorEntries)
