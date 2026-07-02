@@ -1,9 +1,11 @@
 import type {
   Apartment,
   CreatePreApproval,
+  CreateTicket,
   CreateVisitorEntry,
   Notice,
   SocietyConfig,
+  Ticket,
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
@@ -66,4 +68,7 @@ export const apiClient = {
   redeemPreApproval: (code: string, userId?: string) =>
     api<VisitorEntry>('/visitors/pre-approvals/redeem', { method: 'POST', body: JSON.stringify({ code }) }, userId),
   listNotices: () => api<Notice[]>('/notices'),
+  listTickets: (status?: string) => api<Ticket[]>(`/tickets${status ? `?status=${status}` : ''}`),
+  createTicket: (body: CreateTicket, userId?: string) =>
+    api<Ticket>('/tickets', { method: 'POST', body: JSON.stringify(body) }, userId),
 }
