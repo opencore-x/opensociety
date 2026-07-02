@@ -1,9 +1,11 @@
 import type {
   Apartment,
+  CreatePreApproval,
   CreateVisitorEntry,
   Notice,
   SocietyConfig,
   VisitorEntry,
+  VisitorPreApproval,
   VisitorStatus,
 } from '@opensociety/shared'
 
@@ -59,5 +61,9 @@ export const apiClient = {
     api<VisitorEntry>(`/visitors/${id}/checkin`, { method: 'POST', body: JSON.stringify({}) }, userId),
   checkOutVisitor: (id: string, userId?: string) =>
     api<VisitorEntry>(`/visitors/${id}/checkout`, { method: 'POST' }, userId),
+  createPreApproval: (body: CreatePreApproval, userId?: string) =>
+    api<VisitorPreApproval>('/visitors/pre-approvals', { method: 'POST', body: JSON.stringify(body) }, userId),
+  redeemPreApproval: (code: string, userId?: string) =>
+    api<VisitorEntry>('/visitors/pre-approvals/redeem', { method: 'POST', body: JSON.stringify({ code }) }, userId),
   listNotices: () => api<Notice[]>('/notices'),
 }
