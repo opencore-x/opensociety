@@ -11,11 +11,13 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@clerk/clerk-expo": "^2.19.31",
     "@expo/metro-runtime": "~6.1.2",
     "@opensociety/shared": "workspace:*",
     "@tanstack/react-query": "^5.66.0",
     "expo": "~54.0.31",
     "expo-router": "~6.0.23",
+    "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
