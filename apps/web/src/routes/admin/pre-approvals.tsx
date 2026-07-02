@@ -115,6 +115,19 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
   )
 }
 
+function RevokeButton({ id }: { id: string }) {
+  const qc = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: () => apiClient.revokePreApproval(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pre-approvals'] }),
+  })
+  return (
+    <Button size="sm" variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
+      {mutation.isPending ? '…' : 'Revoke'}
+    </Button>
+  )
+}
+
 function PreApprovalsPage() {
   const preApprovals = useQuery({ queryKey: ['pre-approvals'], queryFn: () => apiClient.listPreApprovals() })
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
@@ -158,6 +171,7 @@ function PreApprovalsPage() {
                   <TableHead>Uses</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -182,6 +196,7 @@ function PreApprovalsPage() {
                         {p.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">{p.isActive && <RevokeButton id={p.id} />}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
