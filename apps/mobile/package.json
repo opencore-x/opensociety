@@ -11,6 +11,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@expo/metro-runtime": "~6.1.2",
     "@opensociety/shared": "workspace:*",
     "@tanstack/react-query": "^5.66.0",
     "expo": "~54.0.31",
@@ -20,7 +21,8 @@
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.2",
-    "react-native-screens": "~4.16.0"
+    "react-native-screens": "~4.16.0",
+    "react-native-web": "^0.21.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
