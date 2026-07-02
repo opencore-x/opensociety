@@ -5,6 +5,7 @@ import type {
   CreateApartmentsBulk,
   CreateGuard,
   CreateNotice,
+  CreatePreApproval,
   Guard,
   Notice,
   SocietyConfig,
@@ -15,6 +16,7 @@ import type {
   UserRole,
   UserStatus,
   VisitorEntry,
+  VisitorPreApproval,
   VisitorStatus,
 } from '@opensociety/shared'
 
@@ -90,6 +92,13 @@ export const apiClient = {
   checkInVisitor: (id: string) =>
     api<VisitorEntry>(`/visitors/${id}/checkin`, { method: 'POST', body: json({}) }),
   checkOutVisitor: (id: string) => api<VisitorEntry>(`/visitors/${id}/checkout`, { method: 'POST' }),
+
+  // Pre-approvals (expected visitors)
+  listPreApprovals: () => api<VisitorPreApproval[]>('/visitors/pre-approvals'),
+  createPreApproval: (body: CreatePreApproval) =>
+    api<VisitorPreApproval>('/visitors/pre-approvals', { method: 'POST', body: json(body) }),
+  redeemPreApproval: (code: string) =>
+    api<VisitorEntry>('/visitors/pre-approvals/redeem', { method: 'POST', body: json({ code }) }),
 
   // Notices
   listNotices: () => api<Notice[]>('/notices'),

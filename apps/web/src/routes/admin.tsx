@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Megaphone,
   ShieldCheck,
+  Ticket,
   Users,
   UserCheck,
 } from 'lucide-react'
@@ -26,6 +27,7 @@ const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/admin/residents', label: 'Residents', icon: Users },
   { to: '/admin/guards', label: 'Guards', icon: ShieldCheck },
   { to: '/admin/visitors', label: 'Visitors', icon: UserCheck },
+  { to: '/admin/pre-approvals', label: 'Pre-approvals', icon: Ticket },
   { to: '/admin/notices', label: 'Notices', icon: Megaphone },
 ]
 
