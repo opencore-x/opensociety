@@ -34,6 +34,8 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
   const [visitorPhone, setVisitorPhone] = useState('')
   const [apartmentId, setApartmentId] = useState('')
   const [approvalType, setApprovalType] = useState<PreApprovalType>('ONE_TIME')
+  const [maxUses, setMaxUses] = useState('')
+  const [validUntil, setValidUntil] = useState('')
 
   const create = useMutation({
     mutationFn: () =>
@@ -42,12 +44,17 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
         visitorName: visitorName.trim(),
         visitorPhone: visitorPhone.trim() || undefined,
         approvalType,
+        maxUses: maxUses ? Number(maxUses) : undefined,
+        // date input -> end-of-day ISO timestamp
+        validUntil: validUntil ? new Date(`${validUntil}T23:59:59`).toISOString() : undefined,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pre-approvals'] })
       setVisitorName('')
       setVisitorPhone('')
       setApartmentId('')
+      setMaxUses('')
+      setValidUntil('')
     },
   })
 
@@ -103,6 +110,26 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Max uses</Label>
+          <Input
+            className="w-24"
+            type="number"
+            min={1}
+            placeholder="∞"
+            value={maxUses}
+            onChange={(e) => setMaxUses(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Valid until</Label>
+          <Input
+            className="w-40"
+            type="date"
+            value={validUntil}
+            onChange={(e) => setValidUntil(e.target.value)}
+          />
         </div>
         <Button onClick={() => create.mutate()} disabled={!canSubmit}>
           {create.isPending ? 'Generating…' : 'Generate code'}
