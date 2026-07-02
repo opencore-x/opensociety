@@ -5,20 +5,35 @@ import { users, societyConfig, apartments, guards } from './schema'
 // re-seeds. Point apps/web/.env `VITE_DEV_USER_ID` at this to act as admin.
 export const DEV_ADMIN_ID = '00000000-0000-0000-0000-000000000001'
 
-// Idempotent local-dev seed: a dev admin, the society config, a few apartments,
-// and one guard. Safe to run repeatedly — conflicts are ignored and singleton
-// rows are only created when absent.
+// A demo resident that starts PENDING with no residency, so the admin approval
+// flow (assign apartment -> create residency) can be exercised end-to-end.
+// Act as them by sending this as x-user-id.
+export const DEV_RESIDENT_ID = '00000000-0000-0000-0000-000000000002'
+
+// Idempotent local-dev seed: a dev admin, a pending demo resident, the society
+// config, a few apartments, and one guard. Safe to run repeatedly — conflicts
+// are ignored and singleton rows are only created when absent.
 export async function seed(db = getDb()) {
   await db
     .insert(users)
-    .values({
-      id: DEV_ADMIN_ID,
-      clerkId: 'dev_admin',
-      email: 'admin@dev.local',
-      name: 'Dev Admin',
-      role: 'ADMIN',
-      status: 'APPROVED',
-    })
+    .values([
+      {
+        id: DEV_ADMIN_ID,
+        clerkId: 'dev_admin',
+        email: 'admin@dev.local',
+        name: 'Dev Admin',
+        role: 'ADMIN',
+        status: 'APPROVED',
+      },
+      {
+        id: DEV_RESIDENT_ID,
+        clerkId: 'dev_resident',
+        email: 'resident@dev.local',
+        name: 'Demo Resident',
+        role: 'RESIDENT',
+        status: 'PENDING',
+      },
+    ])
     .onConflictDoNothing()
 
   const [existingSociety] = await db.select({ id: societyConfig.id }).from(societyConfig).limit(1)
