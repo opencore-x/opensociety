@@ -27,6 +27,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# local-only notes / scratch (never committed)
+.local/
+
 # turbo
 .turbo
 
