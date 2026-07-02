@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { and, desc, eq } from 'drizzle-orm'
-import { visitorEntries, visitorPreApprovals } from '@opensociety/db'
+import { and, desc, eq, isNull } from 'drizzle-orm'
+import { visitorEntries, visitorPreApprovals, residencies } from '@opensociety/db'
 import type { VisitorStatus, VisitorAction } from '@opensociety/shared'
 import {
   createVisitorEntrySchema,
@@ -28,11 +28,27 @@ export async function applyTransition(
   const db = c.get('db')
   const id = c.req.param('id')
   const [entry] = await db
-    .select({ status: visitorEntries.status })
+    .select({ status: visitorEntries.status, apartmentId: visitorEntries.apartmentId })
     .from(visitorEntries)
     .where(eq(visitorEntries.id, id))
     .limit(1)
   if (!entry) return c.json({ error: 'not found' }, 404)
+  // Residents may only approve/deny visitors for an apartment they actively
+  // live in; admins (and guard-only actions) bypass this ownership check.
+  if ((action === 'approve' || action === 'deny') && c.get('userRole') === 'RESIDENT') {
+    const [residency] = await db
+      .select({ id: residencies.id })
+      .from(residencies)
+      .where(
+        and(
+          eq(residencies.userId, actingUserId(c)!),
+          eq(residencies.apartmentId, entry.apartmentId),
+          isNull(residencies.endDate),
+        ),
+      )
+      .limit(1)
+    if (!residency) return c.json({ error: 'not a resident of this apartment' }, 403)
+  }
   if (!canTransition(action, entry.status))
     return c.json({ error: `cannot ${action} a visitor in ${entry.status} state` }, 409)
   const [updated] = await db
