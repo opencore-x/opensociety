@@ -17,6 +17,9 @@ export default function Index() {
       <Link href="/notices" style={styles.link}>
         Resident · Notices →
       </Link>
+      <Link href="/tickets" style={styles.link}>
+        Resident · Maintenance →
+      </Link>
       <Link href="/gate" style={styles.link}>
         Guard · Gate →
       </Link>
