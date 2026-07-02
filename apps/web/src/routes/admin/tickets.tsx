@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import type { TicketAction, TicketCategory, TicketPriority, TicketStatus } from '@opensociety/shared'
+import type { TicketAction, TicketCategory, TicketPriority, TicketStatus, User } from '@opensociety/shared'
 import {
   availableTicketActions,
   ticketCategorySchema,
@@ -172,6 +172,47 @@ function ActionButtons({ id, status }: { id: string; status: TicketStatus }) {
   )
 }
 
+function AssignCell({
+  id,
+  assignedTo,
+  assignees,
+  userLabel,
+  editable,
+}: {
+  id: string
+  assignedTo: string | null
+  assignees: User[]
+  userLabel: Map<string, string>
+  editable: boolean
+}) {
+  const qc = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: (userId: string) => apiClient.assignTicket(id, userId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tickets'] }),
+  })
+  if (!editable) {
+    return (
+      <span className="text-muted-foreground text-xs">
+        {assignedTo ? (userLabel.get(assignedTo) ?? '—') : '—'}
+      </span>
+    )
+  }
+  return (
+    <Select value={assignedTo ?? undefined} onValueChange={(v) => mutation.mutate(v)} disabled={mutation.isPending}>
+      <SelectTrigger className="w-36">
+        <SelectValue placeholder="Unassigned" />
+      </SelectTrigger>
+      <SelectContent>
+        {assignees.map((u) => (
+          <SelectItem key={u.id} value={u.id}>
+            {u.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 function TicketsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const tickets = useQuery({
@@ -179,12 +220,24 @@ function TicketsPage() {
     queryFn: () => apiClient.listTickets(statusFilter === 'ALL' ? undefined : statusFilter),
   })
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
+  const users = useQuery({ queryKey: ['users'], queryFn: () => apiClient.listUsers() })
 
   const aptLabel = useMemo(() => {
     const m = new Map<string, string>()
     apartments.data?.forEach((a) => m.set(a.id, `${a.tower}-${a.apartmentNo}`))
     return m
   }, [apartments.data])
+
+  // Tickets are assigned to staff who do the work — not residents.
+  const assignees = useMemo(
+    () => (users.data ?? []).filter((u) => u.role === 'ADMIN' || u.role === 'STAFF' || u.role === 'GUARD'),
+    [users.data],
+  )
+  const userLabel = useMemo(() => {
+    const m = new Map<string, string>()
+    users.data?.forEach((u) => m.set(u.id, u.name))
+    return m
+  }, [users.data])
 
   const apartmentOptions = useMemo(
     () => apartments.data?.map((a) => ({ id: a.id, label: `${a.tower}-${a.apartmentNo}` })) ?? [],
@@ -230,6 +283,7 @@ function TicketsPage() {
                   <TableHead>Category</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Assignee</TableHead>
                   <TableHead>Raised</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -252,6 +306,15 @@ function TicketsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={STATUS_VARIANT[t.status]}>{t.status}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <AssignCell
+                        id={t.id}
+                        assignedTo={t.assignedTo}
+                        assignees={assignees}
+                        userLabel={userLabel}
+                        editable={t.status !== 'CLOSED' && t.status !== 'CANCELLED'}
+                      />
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">{formatDate(t.createdAt)}</TableCell>
                     <TableCell className="text-right">
