@@ -12,6 +12,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 
 import { apiClient } from '../lib/api'
+import { AuthControls, CLERK_ENABLED } from '@/components/auth-controls'
 import { Badge } from '@/components/ui/badge'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
@@ -77,6 +78,7 @@ function AdminLayout() {
               <Badge variant={health.isSuccess ? 'default' : 'destructive'}>
                 API {health.isLoading ? '…' : health.isSuccess ? 'online' : 'offline'}
               </Badge>
+              {CLERK_ENABLED && <AuthControls />}
               <ThemeToggle />
             </div>
           </header>
