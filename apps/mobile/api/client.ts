@@ -41,5 +41,9 @@ export const apiClient = {
     api<VisitorEntry>(`/visitors/${id}/approve`, { method: 'POST' }, userId),
   denyVisitor: (id: string, reason: string, userId?: string) =>
     api<VisitorEntry>(`/visitors/${id}/deny`, { method: 'POST', body: JSON.stringify({ reason }) }, userId),
+  checkInVisitor: (id: string, userId?: string) =>
+    api<VisitorEntry>(`/visitors/${id}/checkin`, { method: 'POST', body: JSON.stringify({}) }, userId),
+  checkOutVisitor: (id: string, userId?: string) =>
+    api<VisitorEntry>(`/visitors/${id}/checkout`, { method: 'POST' }, userId),
   listNotices: () => api<Notice[]>('/notices'),
 }

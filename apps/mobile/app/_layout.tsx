@@ -11,6 +11,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="index" options={{ title: 'OpenSociety' }} />
         <Stack.Screen name="visitors" options={{ title: 'Visitors' }} />
+        <Stack.Screen name="gate" options={{ title: 'Gate' }} />
       </Stack>
     </QueryClientProvider>
   )
