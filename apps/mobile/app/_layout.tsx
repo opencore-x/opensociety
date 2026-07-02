@@ -30,6 +30,7 @@ function Nav() {
       <Stack.Screen name="sign-in" options={{ title: 'Sign in' }} />
       <Stack.Screen name="visitors" options={{ title: 'Visitors' }} />
       <Stack.Screen name="pre-approve" options={{ title: 'Pre-approve visitor' }} />
+      <Stack.Screen name="notices" options={{ title: 'Notices' }} />
       <Stack.Screen name="gate" options={{ title: 'Gate' }} />
       <Stack.Screen name="register" options={{ title: 'Register visitor' }} />
     </Stack>
