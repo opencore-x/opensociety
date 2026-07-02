@@ -9,6 +9,7 @@ import {
   Ticket,
   Users,
   UserCheck,
+  Wrench,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -28,6 +29,7 @@ const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/admin/guards', label: 'Guards', icon: ShieldCheck },
   { to: '/admin/visitors', label: 'Visitors', icon: UserCheck },
   { to: '/admin/pre-approvals', label: 'Pre-approvals', icon: Ticket },
+  { to: '/admin/tickets', label: 'Tickets', icon: Wrench },
   { to: '/admin/notices', label: 'Notices', icon: Megaphone },
 ]
 
