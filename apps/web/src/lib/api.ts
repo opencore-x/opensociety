@@ -224,6 +224,12 @@ export const apiClient = {
   getBillConfig: () => api<BillConfig>('/bill-config'),
   updateBillConfig: (body: UpdateBillConfig) => api<BillConfig>('/bill-config', { method: 'PUT', body: json(body) }),
   getFinanceReport: () => api<FinanceReport>('/reports/finance'),
+  // Auth-fetch a bill's PDF invoice and return a local object URL to open it.
+  invoiceObjectUrl: async (billId: string): Promise<string> => {
+    const res = await fetch(`${API_URL}/bills/${billId}/invoice`, { headers: await authHeaders() })
+    if (!res.ok) throw new Error(`invoice failed (${res.status})`)
+    return URL.createObjectURL(await res.blob())
+  },
   listPayments: (params?: { apartmentId?: string; billId?: string }) => {
     const q = new URLSearchParams()
     if (params?.apartmentId) q.set('apartmentId', params.apartmentId)
