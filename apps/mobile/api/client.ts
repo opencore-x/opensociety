@@ -10,6 +10,9 @@ import type {
   Notice,
   SocietyConfig,
   Ticket,
+  Vehicle,
+  CreateVehicle,
+  UpdateVehicle,
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
@@ -88,6 +91,12 @@ export const apiClient = {
   checkOutHouseHelpEntry: (entryId: string, userId?: string) =>
     api<HouseHelpEntry>(`/house-help/entries/${entryId}/checkout`, { method: 'POST', body: JSON.stringify({}) }, userId),
   listMyApartments: () => api<Apartment[]>('/apartments/mine'),
+  listVehicles: (apartmentId?: string) =>
+    api<Vehicle[]>(`/vehicles${apartmentId ? `?apartmentId=${apartmentId}` : ''}`),
+  createVehicle: (body: CreateVehicle, userId?: string) =>
+    api<Vehicle>('/vehicles', { method: 'POST', body: JSON.stringify(body) }, userId),
+  updateVehicle: (id: string, body: UpdateVehicle, userId?: string) =>
+    api<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(body) }, userId),
   listHouseHelpForApartment: (apartmentId: string) =>
     api<HouseHelp[]>(`/house-help?apartmentId=${apartmentId}`),
   assignHouseHelp: (id: string, apartmentId: string, userId?: string) =>
