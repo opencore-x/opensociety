@@ -111,6 +111,8 @@ export const apiClient = {
     api<HouseHelpAssignment>(`/house-help/${id}/assignments`, { method: 'POST', body: JSON.stringify({ apartmentId }) }, userId),
   removeHouseHelpAssignment: (id: string, apartmentId: string, userId?: string) =>
     api<HouseHelpAssignment>(`/house-help/${id}/assignments/${apartmentId}`, { method: 'DELETE' }, userId),
+  markNoticeRead: (id: string, userId?: string) =>
+    api<{ ok: boolean }>(`/notices/${id}/read`, { method: 'POST', body: JSON.stringify({}) }, userId),
   // Auth-fetch a stored R2 object (GET /uploads/:key is auth-gated) and return a
   // local object URL suitable for opening/displaying an attachment.
   fetchUploadObjectUrl: async (path: string, userId = DEV_USER_ID): Promise<string> => {
