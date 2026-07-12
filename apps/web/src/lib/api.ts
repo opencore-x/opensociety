@@ -23,10 +23,27 @@ import type {
   User,
   UserRole,
   UserStatus,
+  Vehicle,
+  CreateVehicle,
+  UpdateVehicle,
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
 } from '@opensociety/shared'
+
+// A row from the vehicle gate log (visitor entries that arrived with a vehicle).
+export type VehicleGateLogRow = {
+  id: string
+  visitorName: string
+  vehicleNumber: string | null
+  type: string
+  status: string
+  checkInAt: string | null
+  checkOutAt: string | null
+  createdAt: string
+  apartment: string | null
+  registered: boolean
+}
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
 // Dev stand-in for the acting user, used only when no Clerk session is present.
@@ -140,4 +157,12 @@ export const apiClient = {
     const qs = q.toString()
     return api<(HouseHelpAttendanceRow & { id: string })[]>(`/house-help/entries${qs ? `?${qs}` : ''}`)
   },
+
+  // Vehicles (resident registry + gate log)
+  listVehicles: (apartmentId?: string) =>
+    api<Vehicle[]>(`/vehicles${apartmentId ? `?apartmentId=${apartmentId}` : ''}`),
+  createVehicle: (body: CreateVehicle) => api<Vehicle>('/vehicles', { method: 'POST', body: json(body) }),
+  updateVehicle: (id: string, body: UpdateVehicle) =>
+    api<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: json(body) }),
+  listVehicleGateLog: () => api<VehicleGateLogRow[]>('/vehicles/gate-log'),
 }
