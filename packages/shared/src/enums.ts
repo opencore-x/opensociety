@@ -26,6 +26,23 @@ export const ticketCategorySchema = z.enum([
   'OTHER',
 ])
 export const ticketPrioritySchema = z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT'])
+export const houseHelpTypeSchema = z.enum([
+  'MAID',
+  'COOK',
+  'DRIVER',
+  'NANNY',
+  'GARDENER',
+  'CARETAKER',
+  'OTHER',
+])
+export const idProofTypeSchema = z.enum([
+  'AADHAAR',
+  'PAN',
+  'VOTER_ID',
+  'DRIVING_LICENSE',
+  'PASSPORT',
+  'OTHER',
+])
 
 export type UserRole = z.infer<typeof userRoleSchema>
 export type UserStatus = z.infer<typeof userStatusSchema>
@@ -38,3 +55,5 @@ export type NoticePriority = z.infer<typeof noticePrioritySchema>
 export type TicketStatus = z.infer<typeof ticketStatusSchema>
 export type TicketCategory = z.infer<typeof ticketCategorySchema>
 export type TicketPriority = z.infer<typeof ticketPrioritySchema>
+export type HouseHelpType = z.infer<typeof houseHelpTypeSchema>
+export type IdProofType = z.infer<typeof idProofTypeSchema>

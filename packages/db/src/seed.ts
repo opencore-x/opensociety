@@ -1,5 +1,5 @@
 import { getDb } from './client'
-import { users, societyConfig, apartments, guards } from './schema'
+import { users, societyConfig, apartments, guards, houseHelp } from './schema'
 
 // Stable id for the local dev admin so VITE_DEV_USER_ID stays constant across
 // re-seeds. Point apps/web/.env `VITE_DEV_USER_ID` at this to act as admin.
@@ -59,6 +59,13 @@ export async function seed(db = getDb()) {
   const [existingGuard] = await db.select({ id: guards.id }).from(guards).limit(1)
   if (!existingGuard) {
     await db.insert(guards).values({ name: 'Gate Guard', phone: '9999999999', employeeCode: 'G-001' })
+  }
+
+  const [existingHelp] = await db.select({ id: houseHelp.id }).from(houseHelp).limit(1)
+  if (!existingHelp) {
+    await db
+      .insert(houseHelp)
+      .values({ name: 'Lakshmi Devi', phone: '8888888888', type: 'MAID', registeredBy: DEV_ADMIN_ID })
   }
 
   return { adminId: DEV_ADMIN_ID }
