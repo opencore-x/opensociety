@@ -23,6 +23,9 @@ export default function Index() {
       <Link href="/my-house-help" style={styles.link}>
         Resident · House help →
       </Link>
+      <Link href="/my-vehicles" style={styles.link}>
+        Resident · Vehicles →
+      </Link>
       <Link href="/gate" style={styles.link}>
         Guard · Gate →
       </Link>
