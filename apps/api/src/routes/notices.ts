@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { and, desc, eq, gte, ilike, lte, or } from 'drizzle-orm'
-import { notices } from '@opensociety/db'
+import { and, count, desc, eq, gte, ilike, inArray, lte, or } from 'drizzle-orm'
+import { notices, noticeReads, users } from '@opensociety/db'
 import type { NoticeCategory } from '@opensociety/shared'
 import { createNoticeSchema, noticeCategorySchema } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
@@ -14,7 +14,8 @@ noticeRoutes.use('*', withAuth)
 noticeRoutes.use('*', requireAuth)
 
 // Notice board / archive. Filters: ?category=, ?from=/?to= (published date, ISO),
-// ?q= keyword over title + body. Newest first.
+// ?q= keyword over title + body. Newest first. Each notice is enriched with the
+// total read count and whether the acting user has read it.
 noticeRoutes.get('/', async (c) => {
   const db = c.get('db')
   const conds = []
@@ -36,7 +37,23 @@ noticeRoutes.get('/', async (c) => {
     .from(notices)
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(desc(notices.publishedAt))
-  return c.json(rows)
+  const ids = rows.map((r) => r.id)
+  if (ids.length === 0) return c.json([])
+
+  const counts = await db
+    .select({ noticeId: noticeReads.noticeId, n: count() })
+    .from(noticeReads)
+    .where(inArray(noticeReads.noticeId, ids))
+    .groupBy(noticeReads.noticeId)
+  const countByNotice = new Map(counts.map((r) => [r.noticeId, Number(r.n)]))
+
+  const mine = await db
+    .select({ noticeId: noticeReads.noticeId })
+    .from(noticeReads)
+    .where(and(eq(noticeReads.userId, actingUserId(c)!), inArray(noticeReads.noticeId, ids)))
+  const readByMe = new Set(mine.map((r) => r.noticeId))
+
+  return c.json(rows.map((r) => ({ ...r, readCount: countByNotice.get(r.id) ?? 0, read: readByMe.has(r.id) })))
 })
 
 noticeRoutes.post('/', requireRole('ADMIN'), zValidator('json', createNoticeSchema), async (c) => {
@@ -57,4 +74,27 @@ noticeRoutes.post('/', requireRole('ADMIN'), zValidator('json', createNoticeSche
     })
     .returning()
   return c.json(created, 201)
+})
+
+// The acting user marks a notice read. Idempotent (unique notice+user). 404 if
+// the notice does not exist.
+noticeRoutes.post('/:id/read', async (c) => {
+  const db = c.get('db')
+  const noticeId = c.req.param('id')
+  const [notice] = await db.select({ id: notices.id }).from(notices).where(eq(notices.id, noticeId)).limit(1)
+  if (!notice) return c.json({ error: 'not found' }, 404)
+  await db.insert(noticeReads).values({ noticeId, userId: actingUserId(c)! }).onConflictDoNothing()
+  return c.json({ ok: true })
+})
+
+// Admin engagement view: who has read a notice, newest first.
+noticeRoutes.get('/:id/reads', requireRole('ADMIN'), async (c) => {
+  const rows = await c
+    .get('db')
+    .select({ userId: noticeReads.userId, name: users.name, readAt: noticeReads.readAt })
+    .from(noticeReads)
+    .innerJoin(users, eq(users.id, noticeReads.userId))
+    .where(eq(noticeReads.noticeId, c.req.param('id')))
+    .orderBy(desc(noticeReads.readAt))
+  return c.json(rows)
 })
