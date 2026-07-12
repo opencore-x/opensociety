@@ -43,7 +43,7 @@ function Overview() {
   const society = useQuery({ queryKey: ['society'], queryFn: apiClient.getSociety })
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
   const visitors = useQuery({ queryKey: ['visitors'], queryFn: () => apiClient.listVisitors() })
-  const notices = useQuery({ queryKey: ['notices'], queryFn: apiClient.listNotices })
+  const notices = useQuery({ queryKey: ['notices'], queryFn: () => apiClient.listNotices() })
   const pending = useQuery({ queryKey: ['users', 'PENDING'], queryFn: () => apiClient.listUsers('PENDING') })
 
   const pendingVisitors = visitors.data?.filter((v) => v.status === 'PENDING').length ?? 0
