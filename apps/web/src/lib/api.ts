@@ -4,16 +4,19 @@ import type {
   CreateApartment,
   CreateApartmentsBulk,
   CreateGuard,
+  CreateHouseHelp,
   CreateNotice,
   CreatePreApproval,
   CreateTicket,
   Guard,
+  HouseHelp,
   Notice,
   Ticket,
   TicketAction,
   SocietyConfig,
   UpdateApartment,
   UpdateGuard,
+  UpdateHouseHelp,
   UpdateSocietyConfig,
   User,
   UserRole,
@@ -117,4 +120,10 @@ export const apiClient = {
     api<Ticket>(`/tickets/${id}/transition`, { method: 'POST', body: json({ action, resolutionNote }) }),
   assignTicket: (id: string, assignedTo: string) =>
     api<Ticket>(`/tickets/${id}/assign`, { method: 'PATCH', body: json({ assignedTo }) }),
+
+  // House help (domestic staff registry)
+  listHouseHelp: (type?: string) => api<HouseHelp[]>(`/house-help${type ? `?type=${type}` : ''}`),
+  createHouseHelp: (body: CreateHouseHelp) => api<HouseHelp>('/house-help', { method: 'POST', body: json(body) }),
+  updateHouseHelp: (id: string, body: UpdateHouseHelp) =>
+    api<HouseHelp>(`/house-help/${id}`, { method: 'PUT', body: json(body) }),
 }
