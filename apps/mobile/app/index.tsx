@@ -29,6 +29,9 @@ export default function Index() {
       <Link href="/gate" style={styles.link}>
         Guard · Gate →
       </Link>
+      <Link href="/duty" style={styles.link}>
+        Guard · Duty →
+      </Link>
       <Link href="/house-help" style={styles.link}>
         Guard · House help →
       </Link>
