@@ -11,6 +11,7 @@ import type {
   Guard,
   HouseHelp,
   HouseHelpAssignment,
+  HouseHelpAttendanceRow,
   Notice,
   Ticket,
   TicketAction,
@@ -132,4 +133,11 @@ export const apiClient = {
     api<HouseHelpAssignment>(`/house-help/${id}/assignments`, { method: 'POST', body: json({ apartmentId }) }),
   removeHouseHelpAssignment: (id: string, apartmentId: string) =>
     api<HouseHelpAssignment>(`/house-help/${id}/assignments/${apartmentId}`, { method: 'DELETE' }),
+  listHouseHelpEntries: (params?: { from?: string; to?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.from) q.set('from', params.from)
+    if (params?.to) q.set('to', params.to)
+    const qs = q.toString()
+    return api<(HouseHelpAttendanceRow & { id: string })[]>(`/house-help/entries${qs ? `?${qs}` : ''}`)
+  },
 }
