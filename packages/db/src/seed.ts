@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { getDb } from './client'
-import { users, societyConfig, apartments, guards, houseHelp, residencies } from './schema'
+import { users, societyConfig, apartments, guards, houseHelp, residencies, vehicles } from './schema'
 
 // Stable id for the local dev admin so VITE_DEV_USER_ID stays constant across
 // re-seeds. Point apps/web/.env `VITE_DEV_USER_ID` at this to act as admin.
@@ -98,6 +98,18 @@ export async function seed(db = getDb()) {
         .insert(residencies)
         .values({ userId: DEV_RESIDENT2_ID, apartmentId: aptA101.id, relation: 'OWNER', isPrimary: true })
     }
+
+    await db
+      .insert(vehicles)
+      .values({
+        apartmentId: aptA101.id,
+        registrationNumber: 'KA01AB1234',
+        type: 'CAR',
+        make: 'Honda City',
+        color: 'White',
+        registeredBy: DEV_RESIDENT2_ID,
+      })
+      .onConflictDoNothing()
   }
 
   return { adminId: DEV_ADMIN_ID }
