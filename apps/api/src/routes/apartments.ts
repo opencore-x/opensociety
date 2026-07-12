@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { asc, eq } from 'drizzle-orm'
-import { apartments } from '@opensociety/db'
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
+import { apartments, residencies } from '@opensociety/db'
 import { createApartmentSchema, createApartmentsBulkSchema, updateApartmentSchema } from '@opensociety/shared'
-import { withDb, withAuth, requireAuth, requireRole } from '../middleware'
+import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
 
 export const apartmentRoutes = new Hono<AppEnv>()
@@ -17,6 +17,22 @@ apartmentRoutes.get('/', async (c) => {
     .get('db')
     .select()
     .from(apartments)
+    .orderBy(asc(apartments.tower), asc(apartments.apartmentNo))
+  return c.json(rows)
+})
+
+// The flats the acting user currently lives in (open residencies) — lets the
+// resident app scope actions (e.g. house-help assignments) to their own units.
+apartmentRoutes.get('/mine', async (c) => {
+  const db = c.get('db')
+  const mine = db
+    .select({ id: residencies.apartmentId })
+    .from(residencies)
+    .where(and(eq(residencies.userId, actingUserId(c)!), isNull(residencies.endDate)))
+  const rows = await db
+    .select()
+    .from(apartments)
+    .where(inArray(apartments.id, mine))
     .orderBy(asc(apartments.tower), asc(apartments.apartmentNo))
   return c.json(rows)
 })
