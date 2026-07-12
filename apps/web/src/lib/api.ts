@@ -10,6 +10,7 @@ import type {
   CreateTicket,
   Guard,
   HouseHelp,
+  HouseHelpAssignment,
   Notice,
   Ticket,
   TicketAction,
@@ -126,4 +127,9 @@ export const apiClient = {
   createHouseHelp: (body: CreateHouseHelp) => api<HouseHelp>('/house-help', { method: 'POST', body: json(body) }),
   updateHouseHelp: (id: string, body: UpdateHouseHelp) =>
     api<HouseHelp>(`/house-help/${id}`, { method: 'PUT', body: json(body) }),
+  listHouseHelpAssignments: (id: string) => api<HouseHelpAssignment[]>(`/house-help/${id}/assignments`),
+  assignHouseHelp: (id: string, apartmentId: string) =>
+    api<HouseHelpAssignment>(`/house-help/${id}/assignments`, { method: 'POST', body: json({ apartmentId }) }),
+  removeHouseHelpAssignment: (id: string, apartmentId: string) =>
+    api<HouseHelpAssignment>(`/house-help/${id}/assignments/${apartmentId}`, { method: 'DELETE' }),
 }
