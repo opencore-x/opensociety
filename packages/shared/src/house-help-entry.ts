@@ -9,6 +9,11 @@ export const houseHelpEntrySchema = z.object({
   checkOutAt: z.string().nullable(),
   checkOutBy: z.string().uuid().nullable(),
   createdAt: z.string(),
+  // Populated only by the enriched attendance log (GET /house-help/entries);
+  // absent on raw check-in/out responses.
+  helpName: z.string().optional(),
+  type: z.string().optional(),
+  apartment: z.string().nullable().optional(),
 })
 
 export const checkInHouseHelpSchema = z.object({
