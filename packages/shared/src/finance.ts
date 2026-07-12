@@ -129,6 +129,30 @@ export function dueDateForPeriod(periodMonth: string, dayOfMonth: number): strin
   return new Date(Date.UTC(y, m - 1, day)).toISOString()
 }
 
+export type CollectionRow = { period: string; billed: number; collected: number }
+export type MethodRow = { method: string; amount: number }
+export type FinanceReport = {
+  byMonth: CollectionRow[]
+  byMethod: MethodRow[]
+  totalBilled: number
+  totalCollected: number
+}
+
+// Collection rate as a percentage with one decimal (0 when nothing is billed).
+export function collectionRatePct(billed: number, collected: number): number {
+  if (billed <= 0) return 0
+  return Math.round((collected / billed) * 1000) / 10
+}
+
+// CSV of the monthly collection summary (rupees, no currency symbol).
+export function collectionReportToCsv(rows: CollectionRow[]): string {
+  const header = ['Period', 'Billed', 'Collected', 'Collection %']
+  const lines = rows.map((r) =>
+    [r.period, (r.billed / 100).toFixed(2), (r.collected / 100).toFixed(2), String(collectionRatePct(r.billed, r.collected))].join(','),
+  )
+  return [header.join(','), ...lines].join('\n')
+}
+
 export type BillConfig = z.infer<typeof billConfigSchema>
 export type UpdateBillConfig = z.infer<typeof updateBillConfigSchema>
 export type GenerateBills = z.infer<typeof generateBillsSchema>
