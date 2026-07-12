@@ -27,6 +27,25 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787
 // it's sent as the x-user-id header.
 const DEV_USER_ID = process.env.EXPO_PUBLIC_DEV_USER_ID
 
+// Stable per-install device id (persisted on web via localStorage; native
+// persistence is a follow-up via AsyncStorage). Sent with guard actions so the
+// API can enforce the one-device-per-guard policy.
+function deviceHeaders(): Record<string, string> {
+  let id = 'unknown-device'
+  try {
+    const store = (globalThis as { localStorage?: Storage }).localStorage
+    id = store?.getItem('opensociety-device-id') ?? ''
+    if (!id) {
+      id = globalThis.crypto?.randomUUID?.() ?? `dev-${Date.now()}`
+      store?.setItem('opensociety-device-id', id)
+    }
+  } catch {
+    // storage unavailable; fall back to the placeholder id
+  }
+  const ua = (globalThis as { navigator?: { userAgent?: string } }).navigator?.userAgent
+  return { 'x-device-id': id, 'x-device-model': ua?.slice(0, 80) ?? 'Mobile device' }
+}
+
 // Bridge to the Clerk session token, registered by a React component (see
 // AuthBridge in _layout). When signed in, requests carry a Bearer JWT the API
 // verifies, taking precedence over the dev header.
@@ -102,7 +121,11 @@ export const apiClient = {
   listGuards: () => api<Guard[]>('/guards'),
   listActiveDuty: () => api<GuardDutySession[]>('/guards/duty/active'),
   clockInGuard: (guardId: string, coords?: { lat?: number; lng?: number }, userId?: string) =>
-    api<GuardDutySession>(`/guards/${guardId}/duty/clock-in`, { method: 'POST', body: JSON.stringify(coords ?? {}) }, userId),
+    api<GuardDutySession>(
+      `/guards/${guardId}/duty/clock-in`,
+      { method: 'POST', body: JSON.stringify(coords ?? {}), headers: deviceHeaders() },
+      userId,
+    ),
   clockOutGuard: (sessionId: string, coords?: { lat?: number; lng?: number }, userId?: string) =>
     api<GuardDutySession>(`/guards/duty/${sessionId}/clock-out`, { method: 'POST', body: JSON.stringify(coords ?? {}) }, userId),
   listHouseHelpForApartment: (apartmentId: string) =>
