@@ -16,6 +16,14 @@ export const visitorStatusSchema = z.enum([
 ])
 export const preApprovalTypeSchema = z.enum(['ALWAYS', 'SCHEDULED', 'ONE_TIME'])
 export const noticePrioritySchema = z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT'])
+export const noticeCategorySchema = z.enum([
+  'GENERAL',
+  'MAINTENANCE',
+  'EVENT',
+  'SECURITY',
+  'BILLING',
+  'EMERGENCY',
+])
 export const ticketStatusSchema = z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELLED'])
 export const ticketCategorySchema = z.enum([
   'PLUMBING',
@@ -53,6 +61,7 @@ export type VisitorType = z.infer<typeof visitorTypeSchema>
 export type VisitorStatus = z.infer<typeof visitorStatusSchema>
 export type PreApprovalType = z.infer<typeof preApprovalTypeSchema>
 export type NoticePriority = z.infer<typeof noticePrioritySchema>
+export type NoticeCategory = z.infer<typeof noticeCategorySchema>
 export type TicketStatus = z.infer<typeof ticketStatusSchema>
 export type TicketCategory = z.infer<typeof ticketCategorySchema>
 export type TicketPriority = z.infer<typeof ticketPrioritySchema>

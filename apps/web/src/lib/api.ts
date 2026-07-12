@@ -129,8 +129,32 @@ export const apiClient = {
     api<VisitorPreApproval>(`/visitors/pre-approvals/${id}/revoke`, { method: 'POST' }),
 
   // Notices
-  listNotices: () => api<Notice[]>('/notices'),
+  listNotices: (params?: { q?: string; category?: string; from?: string; to?: string }) => {
+    const p = new URLSearchParams()
+    if (params?.q) p.set('q', params.q)
+    if (params?.category) p.set('category', params.category)
+    if (params?.from) p.set('from', params.from)
+    if (params?.to) p.set('to', params.to)
+    const qs = p.toString()
+    return api<Notice[]>(`/notices${qs ? `?${qs}` : ''}`)
+  },
   createNotice: (body: CreateNotice) => api<Notice>('/notices', { method: 'POST', body: json(body) }),
+
+  // Uploads (R2): raw file POST + auth-fetched object URL for display/download.
+  uploadFile: async (file: File): Promise<{ key: string; url: string }> => {
+    const res = await fetch(`${API_URL}/uploads`, {
+      method: 'POST',
+      headers: { 'content-type': file.type, ...(await authHeaders()) },
+      body: file,
+    })
+    if (!res.ok) throw new Error(`upload failed (${res.status})`)
+    return res.json()
+  },
+  fetchUploadObjectUrl: async (path: string): Promise<string> => {
+    const res = await fetch(`${API_URL}${path}`, { headers: await authHeaders() })
+    if (!res.ok) throw new Error(`attachment fetch failed (${res.status})`)
+    return URL.createObjectURL(await res.blob())
+  },
 
   // Maintenance tickets
   listTickets: (status?: string) =>
