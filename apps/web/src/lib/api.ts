@@ -14,6 +14,7 @@ import type {
   HouseHelpAssignment,
   HouseHelpAttendanceRow,
   Notice,
+  NoticeReadReceipt,
   Ticket,
   TicketAction,
   SocietyConfig,
@@ -139,6 +140,7 @@ export const apiClient = {
     return api<Notice[]>(`/notices${qs ? `?${qs}` : ''}`)
   },
   createNotice: (body: CreateNotice) => api<Notice>('/notices', { method: 'POST', body: json(body) }),
+  listNoticeReads: (id: string) => api<NoticeReadReceipt[]>(`/notices/${id}/reads`),
 
   // Uploads (R2): raw file POST + auth-fetched object URL for display/download.
   uploadFile: async (file: File): Promise<{ key: string; url: string }> => {

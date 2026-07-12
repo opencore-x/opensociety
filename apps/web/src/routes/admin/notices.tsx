@@ -47,6 +47,34 @@ function AttachmentLink({ url, name }: { url: string; name: string }) {
   )
 }
 
+// Engagement: a read count that expands to show who has read the notice.
+function ReadReceipts({ noticeId, readCount }: { noticeId: string; readCount: number }) {
+  const [open, setOpen] = useState(false)
+  const reads = useQuery({
+    queryKey: ['notice-reads', noticeId],
+    queryFn: () => apiClient.listNoticeReads(noticeId),
+    enabled: open,
+  })
+  return (
+    <div className="mt-2">
+      <Button variant="ghost" size="sm" onClick={() => setOpen((s) => !s)}>
+        👁 {readCount} read{readCount === 1 ? '' : 's'}
+      </Button>
+      {open && (
+        <div className="text-muted-foreground mt-1 space-y-0.5 text-xs">
+          {reads.isLoading && <p>Loading…</p>}
+          {reads.isSuccess && reads.data.length === 0 && <p>No one has read this yet.</p>}
+          {reads.data?.map((r) => (
+            <div key={r.userId}>
+              {r.name ?? r.userId} · {formatDate(r.readAt)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CreateNoticeForm() {
   const qc = useQueryClient()
   const [title, setTitle] = useState('')
@@ -269,6 +297,7 @@ function NoticesPage() {
                       Published {formatDate(n.publishedAt)}
                       {n.expiresAt ? ` · expires ${formatDate(n.expiresAt)}` : ''}
                     </p>
+                    <ReadReceipts noticeId={n.id} readCount={n.readCount ?? 0} />
                   </CardContent>
                 </Card>
               ))}
