@@ -35,6 +35,8 @@ import type {
   RecordPayment,
   Payment,
   DuesRow,
+  BillConfig,
+  UpdateBillConfig,
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
@@ -218,6 +220,8 @@ export const apiClient = {
   getBill: (id: string) => api<MaintenanceBill>(`/bills/${id}`),
   listDues: () => api<DuesRow[]>('/bills/dues'),
   recordPayment: (body: RecordPayment) => api<Payment>('/payments', { method: 'POST', body: json(body) }),
+  getBillConfig: () => api<BillConfig>('/bill-config'),
+  updateBillConfig: (body: UpdateBillConfig) => api<BillConfig>('/bill-config', { method: 'PUT', body: json(body) }),
   listPayments: (params?: { apartmentId?: string; billId?: string }) => {
     const q = new URLSearchParams()
     if (params?.apartmentId) q.set('apartmentId', params.apartmentId)

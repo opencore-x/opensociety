@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { GenerateBills, MaintenanceBill, PaymentMethod } from '@opensociety/shared'
+import type { BillConfig, GenerateBills, MaintenanceBill, PaymentMethod } from '@opensociety/shared'
 import { formatPaise, paymentMethodSchema, billStatusSchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
@@ -249,10 +249,84 @@ function BillsCard() {
   )
 }
 
+function BillConfigForm({ initial }: { initial: BillConfig }) {
+  const qc = useQueryClient()
+  const [dueDay, setDueDay] = useState(String(initial.dueDayOfMonth))
+  const [lines, setLines] = useState<LineDraft[]>(
+    initial.lineItems.length
+      ? initial.lineItems.map((l) => ({ description: l.description, amount: String(l.amount / 100), taxRatePct: String(l.taxRatePct) }))
+      : [{ description: 'Maintenance charge', amount: '', taxRatePct: '18' }],
+  )
+  const setLine = (i: number, patch: Partial<LineDraft>) =>
+    setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
+
+  const save = useMutation({
+    mutationFn: () =>
+      apiClient.updateBillConfig({
+        dueDayOfMonth: parseInt(dueDay) || 10,
+        lineItems: lines
+          .filter((l) => l.description.trim() && l.amount)
+          .map((l) => ({ description: l.description.trim(), amount: rupeesToPaise(l.amount), taxRatePct: parseInt(l.taxRatePct) || 0 })),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['bill-config'] }),
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="cfg-due">Due day of month</Label>
+        <Input id="cfg-due" className="w-24" inputMode="numeric" value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label>Recurring line items</Label>
+        {lines.map((l, i) => (
+          <div key={i} className="flex flex-wrap items-center gap-2">
+            <Input className="w-56" placeholder="Description" value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
+            <Input className="w-32" placeholder="Amount ₹" inputMode="decimal" value={l.amount} onChange={(e) => setLine(i, { amount: e.target.value })} />
+            <Input className="w-24" placeholder="GST %" inputMode="numeric" value={l.taxRatePct} onChange={(e) => setLine(i, { taxRatePct: e.target.value })} />
+            {lines.length > 1 && (
+              <Button type="button" size="sm" variant="ghost" onClick={() => setLines((ls) => ls.filter((_, idx) => idx !== i))}>
+                ✕
+              </Button>
+            )}
+          </div>
+        ))}
+        <Button type="button" size="sm" variant="outline" onClick={() => setLines((ls) => [...ls, { description: '', amount: '', taxRatePct: '0' }])}>
+          + Add line
+        </Button>
+      </div>
+      <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        {save.isPending ? 'Saving…' : 'Save configuration'}
+      </Button>
+      {save.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Saved ✓ — the monthly cron will use this template.</p>}
+      <p className="text-muted-foreground text-xs">
+        Bills auto-generate on the 1st of each month from this template. You can also generate any month manually above.
+      </p>
+    </div>
+  )
+}
+
+function BillConfigCard() {
+  const cfg = useQuery({ queryKey: ['bill-config'], queryFn: apiClient.getBillConfig })
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Bill configuration (recurring template)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <QueryState q={cfg} empty={false} emptyText="">
+          {cfg.data && <BillConfigForm initial={cfg.data} />}
+        </QueryState>
+      </CardContent>
+    </Card>
+  )
+}
+
 function BillingPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Billing" description="Generate maintenance bills, record payments, and track dues." />
+      <BillConfigCard />
       <Card>
         <CardHeader>
           <CardTitle>Generate monthly bills</CardTitle>
