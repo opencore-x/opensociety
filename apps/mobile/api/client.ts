@@ -111,4 +111,17 @@ export const apiClient = {
     api<HouseHelpAssignment>(`/house-help/${id}/assignments`, { method: 'POST', body: JSON.stringify({ apartmentId }) }, userId),
   removeHouseHelpAssignment: (id: string, apartmentId: string, userId?: string) =>
     api<HouseHelpAssignment>(`/house-help/${id}/assignments/${apartmentId}`, { method: 'DELETE' }, userId),
+  // Auth-fetch a stored R2 object (GET /uploads/:key is auth-gated) and return a
+  // local object URL suitable for opening/displaying an attachment.
+  fetchUploadObjectUrl: async (path: string, userId = DEV_USER_ID): Promise<string> => {
+    const token = tokenGetter ? await tokenGetter().catch(() => null) : null
+    const auth: Record<string, string> = token
+      ? { authorization: `Bearer ${token}` }
+      : userId
+        ? { 'x-user-id': userId }
+        : {}
+    const res = await fetch(`${API_URL}${path}`, { headers: auth })
+    if (!res.ok) throw new Error(`attachment fetch failed (${res.status})`)
+    return URL.createObjectURL(await res.blob())
+  },
 }
