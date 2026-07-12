@@ -8,6 +8,7 @@ import {
   Home,
   LayoutDashboard,
   Megaphone,
+  Receipt,
   ShieldCheck,
   Ticket,
   Users,
@@ -36,6 +37,7 @@ const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/admin/visitors', label: 'Visitors', icon: UserCheck },
   { to: '/admin/pre-approvals', label: 'Pre-approvals', icon: Ticket },
   { to: '/admin/tickets', label: 'Tickets', icon: Wrench },
+  { to: '/admin/billing', label: 'Billing', icon: Receipt },
   { to: '/admin/notices', label: 'Notices', icon: Megaphone },
 ]
 
