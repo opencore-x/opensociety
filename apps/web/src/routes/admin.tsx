@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
   Building2,
+  HeartHandshake,
   Home,
   LayoutDashboard,
   Megaphone,
@@ -27,6 +28,7 @@ const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/admin/apartments', label: 'Apartments', icon: Building2 },
   { to: '/admin/residents', label: 'Residents', icon: Users },
   { to: '/admin/guards', label: 'Guards', icon: ShieldCheck },
+  { to: '/admin/house-help', label: 'House help', icon: HeartHandshake },
   { to: '/admin/visitors', label: 'Visitors', icon: UserCheck },
   { to: '/admin/pre-approvals', label: 'Pre-approvals', icon: Ticket },
   { to: '/admin/tickets', label: 'Tickets', icon: Wrench },
