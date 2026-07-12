@@ -1,12 +1,13 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { and, asc, eq } from 'drizzle-orm'
-import { houseHelp } from '@opensociety/db'
+import { and, asc, desc, eq, isNull } from 'drizzle-orm'
+import { houseHelp, houseHelpEntries } from '@opensociety/db'
 import type { HouseHelpType } from '@opensociety/shared'
 import {
   createHouseHelpSchema,
   updateHouseHelpSchema,
   houseHelpTypeSchema,
+  checkInHouseHelpSchema,
   canManageHouseHelp,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
@@ -64,6 +65,71 @@ houseHelpRoutes.put('/:id', zValidator('json', updateHouseHelpSchema), async (c)
     .update(houseHelp)
     .set({ ...c.req.valid('json'), updatedAt: new Date() })
     .where(eq(houseHelp.id, id))
+    .returning()
+  return c.json(updated)
+})
+
+// Attendance log. ?active=true returns only open entries (still inside);
+// ?houseHelpId= scopes to one worker. Newest first.
+houseHelpRoutes.get('/entries', async (c) => {
+  const db = c.get('db')
+  const conds = []
+  if (c.req.query('active') === 'true') conds.push(isNull(houseHelpEntries.checkOutAt))
+  const forHelp = c.req.query('houseHelpId')
+  if (forHelp) conds.push(eq(houseHelpEntries.houseHelpId, forHelp))
+
+  const rows = await db
+    .select()
+    .from(houseHelpEntries)
+    .where(conds.length ? and(...conds) : undefined)
+    .orderBy(desc(houseHelpEntries.checkInAt))
+  return c.json(rows)
+})
+
+// Guard instantly checks in a pre-approved house help (no resident approval).
+// 404 if the profile is missing, 409 if it is inactive or already inside.
+houseHelpRoutes.post('/:id/checkin', requireRole('GUARD', 'ADMIN'), zValidator('json', checkInHouseHelpSchema), async (c) => {
+  const db = c.get('db')
+  const id = c.req.param('id')
+  const [help] = await db
+    .select({ isActive: houseHelp.isActive })
+    .from(houseHelp)
+    .where(eq(houseHelp.id, id))
+    .limit(1)
+  if (!help) return c.json({ error: 'not found' }, 404)
+  if (!help.isActive) return c.json({ error: 'house help is inactive' }, 409)
+
+  const [open] = await db
+    .select({ id: houseHelpEntries.id })
+    .from(houseHelpEntries)
+    .where(and(eq(houseHelpEntries.houseHelpId, id), isNull(houseHelpEntries.checkOutAt)))
+    .limit(1)
+  if (open) return c.json({ error: 'already checked in' }, 409)
+
+  const [entry] = await db
+    .insert(houseHelpEntries)
+    .values({ houseHelpId: id, apartmentId: c.req.valid('json').apartmentId, checkInBy: actingUserId(c) })
+    .returning()
+  return c.json(entry, 201)
+})
+
+// Guard checks a house help out, closing the open attendance row.
+// 404 if the entry is missing, 409 if it was already checked out.
+houseHelpRoutes.post('/entries/:entryId/checkout', requireRole('GUARD', 'ADMIN'), async (c) => {
+  const db = c.get('db')
+  const entryId = c.req.param('entryId')
+  const [entry] = await db
+    .select({ checkOutAt: houseHelpEntries.checkOutAt })
+    .from(houseHelpEntries)
+    .where(eq(houseHelpEntries.id, entryId))
+    .limit(1)
+  if (!entry) return c.json({ error: 'not found' }, 404)
+  if (entry.checkOutAt) return c.json({ error: 'already checked out' }, 409)
+
+  const [updated] = await db
+    .update(houseHelpEntries)
+    .set({ checkOutAt: new Date(), checkOutBy: actingUserId(c) })
+    .where(eq(houseHelpEntries.id, entryId))
     .returning()
   return c.json(updated)
 })
