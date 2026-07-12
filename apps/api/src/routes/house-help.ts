@@ -1,17 +1,39 @@
 import { Hono } from 'hono'
+import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { and, asc, desc, eq, isNull } from 'drizzle-orm'
-import { houseHelp, houseHelpEntries } from '@opensociety/db'
+import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
+import { houseHelp, houseHelpEntries, houseHelpAssignments, apartments, residencies } from '@opensociety/db'
 import type { HouseHelpType } from '@opensociety/shared'
 import {
   createHouseHelpSchema,
   updateHouseHelpSchema,
   houseHelpTypeSchema,
   checkInHouseHelpSchema,
+  createHouseHelpAssignmentSchema,
   canManageHouseHelp,
+  canManageHouseHelpAssignment,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
+
+// True when the acting user currently lives in `apartmentId` (open residency).
+async function actingUserLivesIn(c: Context<AppEnv>, apartmentId: string): Promise<boolean> {
+  const uid = actingUserId(c)
+  if (!uid) return false
+  const [row] = await c
+    .get('db')
+    .select({ id: residencies.id })
+    .from(residencies)
+    .where(
+      and(
+        eq(residencies.userId, uid),
+        eq(residencies.apartmentId, apartmentId),
+        isNull(residencies.endDate),
+      ),
+    )
+    .limit(1)
+  return !!row
+}
 
 export const houseHelpRoutes = new Hono<AppEnv>()
 houseHelpRoutes.use('*', withDb)
@@ -19,7 +41,7 @@ houseHelpRoutes.use('*', withAuth)
 houseHelpRoutes.use('*', requireAuth)
 
 // Registry list. Admins see everyone; other roles see only active profiles.
-// Optional ?type= filters by help category.
+// ?type= filters by category; ?apartmentId= limits to help assigned to that flat.
 houseHelpRoutes.get('/', async (c) => {
   const db = c.get('db')
   const typeParam = c.req.query('type')
@@ -27,6 +49,17 @@ houseHelpRoutes.get('/', async (c) => {
   if (c.get('userRole') !== 'ADMIN') conds.push(eq(houseHelp.isActive, true))
   const parsedType = houseHelpTypeSchema.safeParse(typeParam)
   if (parsedType.success) conds.push(eq(houseHelp.type, parsedType.data as HouseHelpType))
+  const apartmentId = c.req.query('apartmentId')
+  if (apartmentId)
+    conds.push(
+      inArray(
+        houseHelp.id,
+        db
+          .select({ id: houseHelpAssignments.houseHelpId })
+          .from(houseHelpAssignments)
+          .where(eq(houseHelpAssignments.apartmentId, apartmentId)),
+      ),
+    )
 
   const rows = await db
     .select()
@@ -132,4 +165,67 @@ houseHelpRoutes.post('/entries/:entryId/checkout', requireRole('GUARD', 'ADMIN')
     .where(eq(houseHelpEntries.id, entryId))
     .returning()
   return c.json(updated)
+})
+
+// Apartments a house help is assigned to (which flats they serve).
+houseHelpRoutes.get('/:id/assignments', async (c) => {
+  const rows = await c
+    .get('db')
+    .select()
+    .from(houseHelpAssignments)
+    .where(eq(houseHelpAssignments.houseHelpId, c.req.param('id')))
+    .orderBy(desc(houseHelpAssignments.createdAt))
+  return c.json(rows)
+})
+
+// Assign a house help to an apartment. Admins may assign to any flat; a resident
+// only to a flat they live in. 404 if help/apartment missing, 403 if not allowed,
+// 409 if already assigned to that apartment.
+houseHelpRoutes.post('/:id/assignments', zValidator('json', createHouseHelpAssignmentSchema), async (c) => {
+  const db = c.get('db')
+  const id = c.req.param('id')
+  const { apartmentId } = c.req.valid('json')
+
+  const [help] = await db.select({ id: houseHelp.id }).from(houseHelp).where(eq(houseHelp.id, id)).limit(1)
+  if (!help) return c.json({ error: 'house help not found' }, 404)
+  const [apartment] = await db
+    .select({ id: apartments.id })
+    .from(apartments)
+    .where(eq(apartments.id, apartmentId))
+    .limit(1)
+  if (!apartment) return c.json({ error: 'apartment not found' }, 404)
+
+  if (!canManageHouseHelpAssignment(c.get('userRole'), await actingUserLivesIn(c, apartmentId)))
+    return c.json({ error: 'forbidden' }, 403)
+
+  const [existing] = await db
+    .select({ id: houseHelpAssignments.id })
+    .from(houseHelpAssignments)
+    .where(and(eq(houseHelpAssignments.houseHelpId, id), eq(houseHelpAssignments.apartmentId, apartmentId)))
+    .limit(1)
+  if (existing) return c.json({ error: 'already assigned to this apartment' }, 409)
+
+  const [created] = await db
+    .insert(houseHelpAssignments)
+    .values({ houseHelpId: id, apartmentId, assignedBy: actingUserId(c) })
+    .returning()
+  return c.json(created, 201)
+})
+
+// Remove a house help ↔ apartment assignment. Admin, or a resident of that flat.
+// 404 if there is no such assignment, 403 if the acting user may not manage it.
+houseHelpRoutes.delete('/:id/assignments/:apartmentId', async (c) => {
+  const db = c.get('db')
+  const id = c.req.param('id')
+  const apartmentId = c.req.param('apartmentId')
+
+  if (!canManageHouseHelpAssignment(c.get('userRole'), await actingUserLivesIn(c, apartmentId)))
+    return c.json({ error: 'forbidden' }, 403)
+
+  const [deleted] = await db
+    .delete(houseHelpAssignments)
+    .where(and(eq(houseHelpAssignments.houseHelpId, id), eq(houseHelpAssignments.apartmentId, apartmentId)))
+    .returning()
+  if (!deleted) return c.json({ error: 'not found' }, 404)
+  return c.json(deleted)
 })
