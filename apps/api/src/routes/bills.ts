@@ -2,11 +2,12 @@ import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
-import { maintenanceBills, billLineItems, payments, apartments, residencies } from '@opensociety/db'
+import { maintenanceBills, billLineItems, payments, apartments, residencies, societyConfig } from '@opensociety/db'
 import type { BillStatus } from '@opensociety/shared'
 import { generateBillsSchema, createBillSchema, computeBill, billStatusSchema } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import { generateMonthlyBills } from '../lib/generate-bills'
+import { renderInvoicePdf } from '../lib/invoice-pdf'
 import type { AppEnv } from '../types'
 
 // Apartment ids the acting user currently lives in (open residencies).
@@ -173,4 +174,58 @@ billRoutes.get('/:id', async (c) => {
   const lineItems = await db.select().from(billLineItems).where(eq(billLineItems.billId, id))
   const paid = await paidByBill(c, [id])
   return c.json({ ...bill, lineItems, paidAmount: paid.get(id) ?? 0 })
+})
+
+// GST-compliant PDF invoice for a bill. Admin or resident-of-flat.
+billRoutes.get('/:id/invoice', async (c) => {
+  const db = c.get('db')
+  const id = c.req.param('id')
+  const [row] = await db
+    .select({ bill: maintenanceBills, tower: apartments.tower, apartmentNo: apartments.apartmentNo })
+    .from(maintenanceBills)
+    .innerJoin(apartments, eq(apartments.id, maintenanceBills.apartmentId))
+    .where(eq(maintenanceBills.id, id))
+    .limit(1)
+  if (!row) return c.json({ error: 'not found' }, 404)
+  if (c.get('userRole') !== 'ADMIN') {
+    const mine = await actingUserApartments(c)
+    if (!mine.includes(row.bill.apartmentId)) return c.json({ error: 'forbidden' }, 403)
+  }
+
+  const lineItems = await db.select().from(billLineItems).where(eq(billLineItems.billId, id))
+  const paid = await paidByBill(c, [id])
+  const [society] = await db.select().from(societyConfig).limit(1)
+
+  const pdf = await renderInvoicePdf({
+    society: {
+      name: society?.name ?? 'Society',
+      address: society?.address ?? '',
+      city: society?.city ?? '',
+      state: society?.state ?? '',
+      pincode: society?.pincode ?? '',
+      gstin: society?.gstin ?? null,
+    },
+    apartment: `${row.tower}-${row.apartmentNo}`,
+    invoiceNo: `INV-${row.bill.periodMonth ?? 'OT'}-${id.slice(0, 8).toUpperCase()}`,
+    bill: {
+      title: row.bill.title,
+      periodMonth: row.bill.periodMonth,
+      status: row.bill.status,
+      dueDate: row.bill.dueDate ? row.bill.dueDate.toISOString() : null,
+      subtotal: row.bill.subtotal,
+      taxAmount: row.bill.taxAmount,
+      totalAmount: row.bill.totalAmount,
+    },
+    lineItems,
+    paidAmount: paid.get(id) ?? 0,
+  })
+
+  const body = new ArrayBuffer(pdf.byteLength)
+  new Uint8Array(body).set(pdf)
+  return new Response(body, {
+    headers: {
+      'content-type': 'application/pdf',
+      'content-disposition': `inline; filename="invoice-${id.slice(0, 8)}.pdf"`,
+    },
+  })
 })

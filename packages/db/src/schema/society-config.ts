@@ -9,6 +9,7 @@ export const societyConfig = pgTable('society_config', {
   city: text('city').notNull(),
   state: text('state').notNull(),
   pincode: text('pincode').notNull(),
+  gstin: text('gstin'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

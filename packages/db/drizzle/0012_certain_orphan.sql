@@ -1,0 +1,1 @@
+ALTER TABLE "society_config" ADD COLUMN "gstin" text;
