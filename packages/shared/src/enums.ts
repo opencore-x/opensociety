@@ -52,6 +52,9 @@ export const idProofTypeSchema = z.enum([
   'OTHER',
 ])
 export const vehicleTypeSchema = z.enum(['CAR', 'BIKE', 'SCOOTER', 'BICYCLE', 'OTHER'])
+export const billTypeSchema = z.enum(['MONTHLY', 'ONE_TIME'])
+export const billStatusSchema = z.enum(['ISSUED', 'PARTIALLY_PAID', 'PAID', 'CANCELLED'])
+export const paymentMethodSchema = z.enum(['CASH', 'CHEQUE', 'UPI', 'BANK_TRANSFER', 'ONLINE'])
 
 export type UserRole = z.infer<typeof userRoleSchema>
 export type UserStatus = z.infer<typeof userStatusSchema>
@@ -68,3 +71,6 @@ export type TicketPriority = z.infer<typeof ticketPrioritySchema>
 export type HouseHelpType = z.infer<typeof houseHelpTypeSchema>
 export type IdProofType = z.infer<typeof idProofTypeSchema>
 export type VehicleType = z.infer<typeof vehicleTypeSchema>
+export type BillType = z.infer<typeof billTypeSchema>
+export type BillStatus = z.infer<typeof billStatusSchema>
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>

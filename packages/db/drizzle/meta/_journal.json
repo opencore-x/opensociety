@@ -71,6 +71,13 @@
       "when": 1783895537752,
       "tag": "0009_panoramic_blonde_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783896705248,
+      "tag": "0010_naive_sinister_six",
+      "breakpoints": true
     }
   ]
 }

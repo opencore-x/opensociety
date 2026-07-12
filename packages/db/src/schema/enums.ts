@@ -58,3 +58,6 @@ export const idProofType = pgEnum('id_proof_type', [
   'OTHER',
 ])
 export const vehicleType = pgEnum('vehicle_type', ['CAR', 'BIKE', 'SCOOTER', 'BICYCLE', 'OTHER'])
+export const billType = pgEnum('bill_type', ['MONTHLY', 'ONE_TIME'])
+export const billStatus = pgEnum('bill_status', ['ISSUED', 'PARTIALLY_PAID', 'PAID', 'CANCELLED'])
+export const paymentMethod = pgEnum('payment_method', ['CASH', 'CHEQUE', 'UPI', 'BANK_TRANSFER', 'ONLINE'])
