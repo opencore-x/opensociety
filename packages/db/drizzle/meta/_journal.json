@@ -43,6 +43,13 @@
       "when": 1783884639434,
       "tag": "0005_serious_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783889447096,
+      "tag": "0006_short_gorilla_man",
+      "breakpoints": true
     }
   ]
 }
