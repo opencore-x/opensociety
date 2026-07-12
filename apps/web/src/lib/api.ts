@@ -4,6 +4,7 @@ import type {
   CreateApartment,
   CreateApartmentsBulk,
   CreateGuard,
+  GuardDutySession,
   CreateHouseHelp,
   CreateNotice,
   CreatePreApproval,
@@ -165,4 +166,15 @@ export const apiClient = {
   updateVehicle: (id: string, body: UpdateVehicle) =>
     api<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: json(body) }),
   listVehicleGateLog: () => api<VehicleGateLogRow[]>('/vehicles/gate-log'),
+
+  // Guard duty sessions
+  listActiveDuty: () => api<GuardDutySession[]>('/guards/duty/active'),
+  listDutySessions: (params?: { guardId?: string; from?: string; to?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.guardId) q.set('guardId', params.guardId)
+    if (params?.from) q.set('from', params.from)
+    if (params?.to) q.set('to', params.to)
+    const qs = q.toString()
+    return api<GuardDutySession[]>(`/guards/duty${qs ? `?${qs}` : ''}`)
+  },
 }

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Building2,
   Car,
+  Clock,
   HeartHandshake,
   Home,
   LayoutDashboard,
@@ -29,6 +30,7 @@ const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/admin/apartments', label: 'Apartments', icon: Building2 },
   { to: '/admin/residents', label: 'Residents', icon: Users },
   { to: '/admin/guards', label: 'Guards', icon: ShieldCheck },
+  { to: '/admin/duty', label: 'Guard duty', icon: Clock },
   { to: '/admin/house-help', label: 'House help', icon: HeartHandshake },
   { to: '/admin/vehicles', label: 'Vehicles', icon: Car },
   { to: '/admin/visitors', label: 'Visitors', icon: UserCheck },
