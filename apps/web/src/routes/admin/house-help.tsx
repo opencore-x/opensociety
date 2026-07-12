@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { CreateHouseHelp, HouseHelp, HouseHelpType, IdProofType } from '@opensociety/shared'
+import type { Apartment, CreateHouseHelp, HouseHelp, HouseHelpType, IdProofType } from '@opensociety/shared'
 import { houseHelpTypeSchema, idProofTypeSchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
@@ -132,9 +132,10 @@ function AddHouseHelp() {
   )
 }
 
-function HouseHelpRow({ help }: { help: HouseHelp }) {
+function HouseHelpRow({ help, apartments }: { help: HouseHelp; apartments: Apartment[] }) {
   const qc = useQueryClient()
   const [editing, setEditing] = useState(false)
+  const [showFlats, setShowFlats] = useState(false)
   const [name, setName] = useState(help.name)
   const [phone, setPhone] = useState(help.phone ?? '')
   const [type, setType] = useState<HouseHelpType>(help.type)
@@ -194,39 +195,123 @@ function HouseHelpRow({ help }: { help: HouseHelp }) {
   }
 
   return (
-    <TableRow className={help.isActive ? undefined : 'opacity-60'}>
-      <TableCell className="font-medium">{help.name}</TableCell>
-      <TableCell className="text-muted-foreground">{help.phone ?? '—'}</TableCell>
-      <TableCell>
-        <Badge variant="secondary">{help.type}</Badge>
-      </TableCell>
-      <TableCell className="text-muted-foreground">
-        {help.idProofType ? `${help.idProofType}${help.idProofNumber ? ` · ${help.idProofNumber}` : ''}` : '—'}
-      </TableCell>
-      <TableCell>
-        <Badge variant={help.isActive ? 'default' : 'secondary'}>{help.isActive ? 'Active' : 'Inactive'}</Badge>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-            Edit
-          </Button>
-          <Button
-            size="sm"
-            variant={help.isActive ? 'ghost' : 'default'}
-            onClick={() => toggleActive.mutate()}
-            disabled={toggleActive.isPending}
-          >
-            {toggleActive.isPending ? '…' : help.isActive ? 'Deactivate' : 'Activate'}
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
+    <>
+      <TableRow className={help.isActive ? undefined : 'opacity-60'}>
+        <TableCell className="font-medium">{help.name}</TableCell>
+        <TableCell className="text-muted-foreground">{help.phone ?? '—'}</TableCell>
+        <TableCell>
+          <Badge variant="secondary">{help.type}</Badge>
+        </TableCell>
+        <TableCell className="text-muted-foreground">
+          {help.idProofType ? `${help.idProofType}${help.idProofNumber ? ` · ${help.idProofNumber}` : ''}` : '—'}
+        </TableCell>
+        <TableCell>
+          <Badge variant={help.isActive ? 'default' : 'secondary'}>{help.isActive ? 'Active' : 'Inactive'}</Badge>
+        </TableCell>
+        <TableCell className="text-right">
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setShowFlats((s) => !s)}>
+              {showFlats ? 'Hide flats' : 'Flats'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              variant={help.isActive ? 'ghost' : 'default'}
+              onClick={() => toggleActive.mutate()}
+              disabled={toggleActive.isPending}
+            >
+              {toggleActive.isPending ? '…' : help.isActive ? 'Deactivate' : 'Activate'}
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+      {showFlats && (
+        <TableRow>
+          <TableCell colSpan={6} className="bg-muted/40">
+            <AssignmentsPanel helpId={help.id} apartments={apartments} />
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  )
+}
+
+function AssignmentsPanel({ helpId, apartments }: { helpId: string; apartments: Apartment[] }) {
+  const qc = useQueryClient()
+  const [apartmentId, setApartmentId] = useState('')
+  const assignments = useQuery({
+    queryKey: ['house-help-assignments', helpId],
+    queryFn: () => apiClient.listHouseHelpAssignments(helpId),
+  })
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['house-help-assignments', helpId] })
+  const labelOf = (id: string) => {
+    const a = apartments.find((x) => x.id === id)
+    return a ? `${a.tower}-${a.apartmentNo}` : id
+  }
+
+  const add = useMutation({
+    mutationFn: () => apiClient.assignHouseHelp(helpId, apartmentId),
+    onSuccess: () => {
+      invalidate()
+      setApartmentId('')
+    },
+  })
+  const remove = useMutation({
+    mutationFn: (aptId: string) => apiClient.removeHouseHelpAssignment(helpId, aptId),
+    onSuccess: invalidate,
+  })
+
+  const assignedIds = new Set((assignments.data ?? []).map((a) => a.apartmentId))
+  const available = apartments.filter((a) => !assignedIds.has(a.id))
+
+  return (
+    <div className="space-y-3 py-1">
+      <p className="text-sm font-medium">Assigned flats</p>
+      <div className="flex flex-wrap gap-2">
+        {(assignments.data ?? []).length === 0 && (
+          <span className="text-muted-foreground text-sm">Not assigned to any flat yet.</span>
+        )}
+        {(assignments.data ?? []).map((a) => (
+          <Badge key={a.id} variant="secondary" className="gap-1.5">
+            {labelOf(a.apartmentId)}
+            <button
+              className="hover:text-destructive"
+              onClick={() => remove.mutate(a.apartmentId)}
+              disabled={remove.isPending}
+              aria-label={`Remove ${labelOf(a.apartmentId)}`}
+            >
+              ✕
+            </button>
+          </Badge>
+        ))}
+      </div>
+      <div className="flex items-end gap-2">
+        <Select value={apartmentId} onValueChange={setApartmentId}>
+          <SelectTrigger className="h-8 w-40">
+            <SelectValue placeholder="Add a flat" />
+          </SelectTrigger>
+          <SelectContent>
+            {available.map((a) => (
+              <SelectItem key={a.id} value={a.id}>
+                {a.tower}-{a.apartmentNo}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button size="sm" disabled={!apartmentId || add.isPending} onClick={() => add.mutate()}>
+          {add.isPending ? '…' : 'Assign'}
+        </Button>
+      </div>
+      {add.isError && <p className="text-destructive text-sm">{(add.error as Error).message}</p>}
+    </div>
   )
 }
 
 function HouseHelpPage() {
   const help = useQuery({ queryKey: ['house-help'], queryFn: () => apiClient.listHouseHelp() })
+  const apartments = useQuery({ queryKey: ['apartments'], queryFn: apiClient.listApartments })
 
   return (
     <div className="space-y-6">
@@ -267,7 +352,7 @@ function HouseHelpPage() {
               </TableHeader>
               <TableBody>
                 {help.data?.map((h) => (
-                  <HouseHelpRow key={h.id} help={h} />
+                  <HouseHelpRow key={h.id} help={h} apartments={apartments.data ?? []} />
                 ))}
               </TableBody>
             </Table>
