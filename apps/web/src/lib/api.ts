@@ -29,6 +29,12 @@ import type {
   Vehicle,
   CreateVehicle,
   UpdateVehicle,
+  MaintenanceBill,
+  GenerateBills,
+  CreateBill,
+  RecordPayment,
+  Payment,
+  DuesRow,
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
@@ -196,6 +202,29 @@ export const apiClient = {
   updateVehicle: (id: string, body: UpdateVehicle) =>
     api<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: json(body) }),
   listVehicleGateLog: () => api<VehicleGateLogRow[]>('/vehicles/gate-log'),
+
+  // Billing (finance)
+  generateBills: (body: GenerateBills) =>
+    api<{ created: number; skipped: number }>('/bills/generate', { method: 'POST', body: json(body) }),
+  createBill: (body: CreateBill) => api<MaintenanceBill>('/bills', { method: 'POST', body: json(body) }),
+  listBills: (params?: { apartmentId?: string; status?: string; period?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.apartmentId) q.set('apartmentId', params.apartmentId)
+    if (params?.status) q.set('status', params.status)
+    if (params?.period) q.set('period', params.period)
+    const qs = q.toString()
+    return api<MaintenanceBill[]>(`/bills${qs ? `?${qs}` : ''}`)
+  },
+  getBill: (id: string) => api<MaintenanceBill>(`/bills/${id}`),
+  listDues: () => api<DuesRow[]>('/bills/dues'),
+  recordPayment: (body: RecordPayment) => api<Payment>('/payments', { method: 'POST', body: json(body) }),
+  listPayments: (params?: { apartmentId?: string; billId?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.apartmentId) q.set('apartmentId', params.apartmentId)
+    if (params?.billId) q.set('billId', params.billId)
+    const qs = q.toString()
+    return api<Payment[]>(`/payments${qs ? `?${qs}` : ''}`)
+  },
 
   // Guard duty sessions
   listActiveDuty: () => api<GuardDutySession[]>('/guards/duty/active'),
