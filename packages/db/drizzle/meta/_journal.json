@@ -85,6 +85,13 @@
       "when": 1783897886858,
       "tag": "0011_bouncy_thundra",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783899029138,
+      "tag": "0012_certain_orphan",
+      "breakpoints": true
     }
   ]
 }

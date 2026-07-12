@@ -7,6 +7,7 @@ export const societyConfigSchema = z.object({
   city: z.string(),
   state: z.string(),
   pincode: z.string(),
+  gstin: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -18,6 +19,7 @@ export const updateSocietyConfigSchema = z.object({
   city: z.string().min(1),
   state: z.string().min(1),
   pincode: z.string().regex(/^\d{6}$/, 'pincode must be 6 digits'),
+  gstin: z.string().optional(),
 })
 
 export type SocietyConfig = z.infer<typeof societyConfigSchema>
