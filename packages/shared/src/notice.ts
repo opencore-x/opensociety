@@ -14,6 +14,17 @@ export const noticeSchema = z.object({
   expiresAt: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  // Engagement fields present on GET /notices: total reads and whether the
+  // acting user has read it.
+  readCount: z.number().optional(),
+  read: z.boolean().optional(),
+})
+
+// One entry from GET /notices/:id/reads — who read a notice and when.
+export const noticeReadReceiptSchema = z.object({
+  userId: z.string().uuid(),
+  name: z.string().nullable(),
+  readAt: z.string(),
 })
 
 export const createNoticeSchema = z.object({
@@ -34,5 +45,12 @@ export function noticeMatchesQuery(notice: { title: string; body: string }, quer
   return notice.title.toLowerCase().includes(q) || notice.body.toLowerCase().includes(q)
 }
 
+// How many of these notices the acting user has not read yet (for an unread
+// badge). Notices with an undefined `read` flag are treated as read.
+export function unreadNoticeCount(notices: { read?: boolean }[]): number {
+  return notices.filter((n) => n.read === false).length
+}
+
 export type Notice = z.infer<typeof noticeSchema>
 export type CreateNotice = z.infer<typeof createNoticeSchema>
+export type NoticeReadReceipt = z.infer<typeof noticeReadReceiptSchema>
