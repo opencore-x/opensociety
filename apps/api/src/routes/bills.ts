@@ -6,6 +6,7 @@ import { maintenanceBills, billLineItems, payments, apartments, residencies } fr
 import type { BillStatus } from '@opensociety/shared'
 import { generateBillsSchema, createBillSchema, computeBill, billStatusSchema } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
+import { generateMonthlyBills } from '../lib/generate-bills'
 import type { AppEnv } from '../types'
 
 // Apartment ids the acting user currently lives in (open residencies).
@@ -40,48 +41,15 @@ billRoutes.use('*', requireAuth)
 // Generate a monthly bill (same line items) for every active apartment that
 // doesn't already have one for this period. Idempotent per period.
 billRoutes.post('/generate', requireRole('ADMIN'), zValidator('json', generateBillsSchema), async (c) => {
-  const db = c.get('db')
   const input = c.req.valid('json')
-  const totals = computeBill(input.lineItems)
-
-  const flats = await db.select({ id: apartments.id }).from(apartments).where(eq(apartments.isActive, true))
-  const existing = await db
-    .select({ apartmentId: maintenanceBills.apartmentId })
-    .from(maintenanceBills)
-    .where(eq(maintenanceBills.periodMonth, input.periodMonth))
-  const already = new Set(existing.map((r) => r.apartmentId))
-  const targets = flats.filter((f) => !already.has(f.id))
-  if (targets.length === 0) return c.json({ created: 0, skipped: flats.length })
-
-  const created = await db
-    .insert(maintenanceBills)
-    .values(
-      targets.map((f) => ({
-        apartmentId: f.id,
-        type: 'MONTHLY' as const,
-        title: input.title,
-        periodMonth: input.periodMonth,
-        subtotal: totals.subtotal,
-        taxAmount: totals.taxAmount,
-        totalAmount: totals.total,
-        dueDate: input.dueDate ? new Date(input.dueDate) : null,
-        createdBy: actingUserId(c),
-      })),
-    )
-    .returning({ id: maintenanceBills.id })
-
-  await db.insert(billLineItems).values(
-    created.flatMap((b) =>
-      totals.lines.map((l) => ({
-        billId: b.id,
-        description: l.description,
-        amount: l.amount,
-        taxRatePct: l.taxRatePct,
-        taxAmount: l.taxAmount,
-      })),
-    ),
-  )
-  return c.json({ created: created.length, skipped: already.size }, 201)
+  const result = await generateMonthlyBills(c.get('db'), {
+    periodMonth: input.periodMonth,
+    title: input.title,
+    dueDate: input.dueDate ? new Date(input.dueDate) : null,
+    lineItems: input.lineItems,
+    createdBy: actingUserId(c),
+  })
+  return c.json(result, result.created > 0 ? 201 : 200)
 })
 
 // Create a one-time bill for a single apartment.

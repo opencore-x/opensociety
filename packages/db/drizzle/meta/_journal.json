@@ -78,6 +78,13 @@
       "when": 1783896705248,
       "tag": "0010_naive_sinister_six",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783897886858,
+      "tag": "0011_bouncy_thundra",
+      "breakpoints": true
     }
   ]
 }

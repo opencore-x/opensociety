@@ -103,6 +103,34 @@ export function formatPaise(paise: number): string {
   return `${sign}₹${rupees.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
+export const billConfigSchema = z.object({
+  id: z.string().uuid(),
+  dueDayOfMonth: z.number(),
+  lineItems: z.array(billLineInputSchema),
+  updatedBy: z.string().uuid().nullable(),
+  updatedAt: z.string(),
+})
+
+export const updateBillConfigSchema = z.object({
+  dueDayOfMonth: z.number().int().min(1).max(28).default(10),
+  lineItems: z.array(billLineInputSchema),
+})
+
+// 'YYYY-MM' for a Date (UTC).
+export function periodMonthOf(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+// Due date (ISO) for a billing period + day-of-month; day is clamped to 1..28 so
+// it's valid in every month.
+export function dueDateForPeriod(periodMonth: string, dayOfMonth: number): string {
+  const [y, m] = periodMonth.split('-').map(Number)
+  const day = Math.min(Math.max(dayOfMonth, 1), 28)
+  return new Date(Date.UTC(y, m - 1, day)).toISOString()
+}
+
+export type BillConfig = z.infer<typeof billConfigSchema>
+export type UpdateBillConfig = z.infer<typeof updateBillConfigSchema>
 export type GenerateBills = z.infer<typeof generateBillsSchema>
 export type CreateBill = z.infer<typeof createBillSchema>
 export type RecordPayment = z.infer<typeof recordPaymentSchema>
