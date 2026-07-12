@@ -34,6 +34,7 @@ function Nav() {
       <Stack.Screen name="tickets" options={{ title: 'Maintenance' }} />
       <Stack.Screen name="gate" options={{ title: 'Gate' }} />
       <Stack.Screen name="register" options={{ title: 'Register visitor' }} />
+      <Stack.Screen name="house-help" options={{ title: 'House help' }} />
     </Stack>
   )
 }
