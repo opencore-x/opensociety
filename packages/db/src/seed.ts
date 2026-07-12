@@ -1,5 +1,6 @@
+import { eq } from 'drizzle-orm'
 import { getDb } from './client'
-import { users, societyConfig, apartments, guards, houseHelp } from './schema'
+import { users, societyConfig, apartments, guards, houseHelp, residencies } from './schema'
 
 // Stable id for the local dev admin so VITE_DEV_USER_ID stays constant across
 // re-seeds. Point apps/web/.env `VITE_DEV_USER_ID` at this to act as admin.
@@ -9,6 +10,10 @@ export const DEV_ADMIN_ID = '00000000-0000-0000-0000-000000000001'
 // flow (assign apartment -> create residency) can be exercised end-to-end.
 // Act as them by sending this as x-user-id.
 export const DEV_RESIDENT_ID = '00000000-0000-0000-0000-000000000002'
+
+// An APPROVED resident with an active residency in tower A / 101, so resident-scoped
+// flows (e.g. house-help assignments to one's own flat) are testable via x-user-id.
+export const DEV_RESIDENT2_ID = '00000000-0000-0000-0000-000000000003'
 
 // Idempotent local-dev seed: a dev admin, a pending demo resident, the society
 // config, a few apartments, and one guard. Safe to run repeatedly — conflicts
@@ -32,6 +37,14 @@ export async function seed(db = getDb()) {
         name: 'Demo Resident',
         role: 'RESIDENT',
         status: 'PENDING',
+      },
+      {
+        id: DEV_RESIDENT2_ID,
+        clerkId: 'dev_resident2',
+        email: 'resident2@dev.local',
+        name: 'Priya Sharma',
+        role: 'RESIDENT',
+        status: 'APPROVED',
       },
     ])
     .onConflictDoNothing()
@@ -66,6 +79,25 @@ export async function seed(db = getDb()) {
     await db
       .insert(houseHelp)
       .values({ name: 'Lakshmi Devi', phone: '8888888888', type: 'MAID', registeredBy: DEV_ADMIN_ID })
+  }
+
+  // Give the approved resident an active residency so resident-scoped flows work.
+  const [aptA101] = await db
+    .select({ id: apartments.id })
+    .from(apartments)
+    .where(eq(apartments.tower, 'A'))
+    .limit(1)
+  if (aptA101) {
+    const [existingRes] = await db
+      .select({ id: residencies.id })
+      .from(residencies)
+      .where(eq(residencies.userId, DEV_RESIDENT2_ID))
+      .limit(1)
+    if (!existingRes) {
+      await db
+        .insert(residencies)
+        .values({ userId: DEV_RESIDENT2_ID, apartmentId: aptA101.id, relation: 'OWNER', isPrimary: true })
+    }
   }
 
   return { adminId: DEV_ADMIN_ID }
