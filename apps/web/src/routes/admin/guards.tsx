@@ -73,6 +73,7 @@ function AddGuard() {
 function GuardRow({ guard }: { guard: Guard }) {
   const qc = useQueryClient()
   const [editing, setEditing] = useState(false)
+  const [showDevice, setShowDevice] = useState(false)
   const [name, setName] = useState(guard.name)
   const [phone, setPhone] = useState(guard.phone ?? '')
   const [employeeCode, setEmployeeCode] = useState(guard.employeeCode ?? '')
@@ -125,29 +126,77 @@ function GuardRow({ guard }: { guard: Guard }) {
   }
 
   return (
-    <TableRow className={guard.isActive ? undefined : 'opacity-60'}>
-      <TableCell className="font-medium">{guard.name}</TableCell>
-      <TableCell className="text-muted-foreground">{guard.phone ?? '—'}</TableCell>
-      <TableCell className="text-muted-foreground">{guard.employeeCode ?? '—'}</TableCell>
-      <TableCell>
-        <Badge variant={guard.isActive ? 'default' : 'secondary'}>{guard.isActive ? 'Active' : 'Inactive'}</Badge>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-            Edit
-          </Button>
-          <Button
-            size="sm"
-            variant={guard.isActive ? 'ghost' : 'default'}
-            onClick={() => toggleActive.mutate()}
-            disabled={toggleActive.isPending}
-          >
-            {toggleActive.isPending ? '…' : guard.isActive ? 'Deactivate' : 'Activate'}
+    <>
+      <TableRow className={guard.isActive ? undefined : 'opacity-60'}>
+        <TableCell className="font-medium">{guard.name}</TableCell>
+        <TableCell className="text-muted-foreground">{guard.phone ?? '—'}</TableCell>
+        <TableCell className="text-muted-foreground">{guard.employeeCode ?? '—'}</TableCell>
+        <TableCell>
+          <Badge variant={guard.isActive ? 'default' : 'secondary'}>{guard.isActive ? 'Active' : 'Inactive'}</Badge>
+        </TableCell>
+        <TableCell className="text-right">
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setShowDevice((s) => !s)}>
+              {showDevice ? 'Hide device' : 'Device'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              variant={guard.isActive ? 'ghost' : 'default'}
+              onClick={() => toggleActive.mutate()}
+              disabled={toggleActive.isPending}
+            >
+              {toggleActive.isPending ? '…' : guard.isActive ? 'Deactivate' : 'Activate'}
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+      {showDevice && (
+        <TableRow>
+          <TableCell colSpan={5} className="bg-muted/40">
+            <GuardDevices guardId={guard.id} />
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  )
+}
+
+function GuardDevices({ guardId }: { guardId: string }) {
+  const qc = useQueryClient()
+  const devices = useQuery({ queryKey: ['guard-devices', guardId], queryFn: () => apiClient.listGuardDevices(guardId) })
+  const revoke = useMutation({
+    mutationFn: (deviceId: string) => apiClient.revokeGuardDevice(guardId, deviceId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['guard-devices', guardId] }),
+  })
+  const fmt = (iso: string) => new Date(iso).toLocaleString()
+  const active = devices.data?.filter((d) => d.revokedAt === null) ?? []
+  const revoked = devices.data?.filter((d) => d.revokedAt !== null) ?? []
+
+  return (
+    <div className="space-y-2 py-1 text-sm">
+      <p className="font-medium">Bound device</p>
+      {devices.isLoading && <p className="text-muted-foreground">Loading…</p>}
+      {devices.isSuccess && active.length === 0 && (
+        <p className="text-muted-foreground">No device bound — the guard&rsquo;s first clock-in will auto-bind their device.</p>
+      )}
+      {active.map((d) => (
+        <div key={d.id} className="flex items-center gap-3">
+          <span className="font-medium">{d.model ?? 'Unknown model'}</span>
+          <span className="text-muted-foreground text-xs">last active {fmt(d.lastActiveAt)}</span>
+          <Button size="sm" variant="outline" onClick={() => revoke.mutate(d.deviceId)} disabled={revoke.isPending}>
+            {revoke.isPending ? '…' : 'Revoke'}
           </Button>
         </div>
-      </TableCell>
-    </TableRow>
+      ))}
+      {revoked.length > 0 && (
+        <p className="text-muted-foreground text-xs">
+          Revoked: {revoked.map((d) => d.model ?? d.deviceId.slice(0, 8)).join(', ')}
+        </p>
+      )}
+    </div>
   )
 }
 
