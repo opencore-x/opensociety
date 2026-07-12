@@ -64,6 +64,13 @@
       "when": 1783893684817,
       "tag": "0008_secret_talisman",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783895537752,
+      "tag": "0009_panoramic_blonde_phantom",
+      "breakpoints": true
     }
   ]
 }
