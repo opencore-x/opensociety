@@ -5,6 +5,7 @@ import type {
   CreateTicket,
   CreateVisitorEntry,
   HouseHelp,
+  HouseHelpAssignment,
   HouseHelpEntry,
   Notice,
   SocietyConfig,
@@ -86,4 +87,11 @@ export const apiClient = {
     api<HouseHelpEntry>(`/house-help/${id}/checkin`, { method: 'POST', body: JSON.stringify(body) }, userId),
   checkOutHouseHelpEntry: (entryId: string, userId?: string) =>
     api<HouseHelpEntry>(`/house-help/entries/${entryId}/checkout`, { method: 'POST', body: JSON.stringify({}) }, userId),
+  listMyApartments: () => api<Apartment[]>('/apartments/mine'),
+  listHouseHelpForApartment: (apartmentId: string) =>
+    api<HouseHelp[]>(`/house-help?apartmentId=${apartmentId}`),
+  assignHouseHelp: (id: string, apartmentId: string, userId?: string) =>
+    api<HouseHelpAssignment>(`/house-help/${id}/assignments`, { method: 'POST', body: JSON.stringify({ apartmentId }) }, userId),
+  removeHouseHelpAssignment: (id: string, apartmentId: string, userId?: string) =>
+    api<HouseHelpAssignment>(`/house-help/${id}/assignments/${apartmentId}`, { method: 'DELETE' }, userId),
 }
