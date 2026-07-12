@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm'
 import { houseHelp, houseHelpEntries, houseHelpAssignments, apartments, residencies } from '@opensociety/db'
 import type { HouseHelpType } from '@opensociety/shared'
 import {
@@ -103,20 +103,48 @@ houseHelpRoutes.put('/:id', zValidator('json', updateHouseHelpSchema), async (c)
 })
 
 // Attendance log. ?active=true returns only open entries (still inside);
-// ?houseHelpId= scopes to one worker. Newest first.
+// ?houseHelpId= scopes to one worker; ?from=/?to= bound the check-in date
+// (ISO). Newest first.
 houseHelpRoutes.get('/entries', async (c) => {
   const db = c.get('db')
   const conds = []
   if (c.req.query('active') === 'true') conds.push(isNull(houseHelpEntries.checkOutAt))
   const forHelp = c.req.query('houseHelpId')
   if (forHelp) conds.push(eq(houseHelpEntries.houseHelpId, forHelp))
+  const from = new Date(c.req.query('from') ?? '')
+  if (!isNaN(from.valueOf())) conds.push(gte(houseHelpEntries.checkInAt, from))
+  const to = new Date(c.req.query('to') ?? '')
+  if (!isNaN(to.valueOf())) conds.push(lte(houseHelpEntries.checkInAt, to))
 
   const rows = await db
-    .select()
+    .select({
+      id: houseHelpEntries.id,
+      houseHelpId: houseHelpEntries.houseHelpId,
+      apartmentId: houseHelpEntries.apartmentId,
+      checkInAt: houseHelpEntries.checkInAt,
+      checkInBy: houseHelpEntries.checkInBy,
+      checkOutAt: houseHelpEntries.checkOutAt,
+      checkOutBy: houseHelpEntries.checkOutBy,
+      createdAt: houseHelpEntries.createdAt,
+      helpName: houseHelp.name,
+      type: houseHelp.type,
+      tower: apartments.tower,
+      apartmentNo: apartments.apartmentNo,
+    })
     .from(houseHelpEntries)
+    .leftJoin(houseHelp, eq(houseHelp.id, houseHelpEntries.houseHelpId))
+    .leftJoin(apartments, eq(apartments.id, houseHelpEntries.apartmentId))
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(desc(houseHelpEntries.checkInAt))
-  return c.json(rows)
+
+  return c.json(
+    rows.map(({ tower, apartmentNo, helpName, type, ...r }) => ({
+      ...r,
+      helpName: helpName ?? '',
+      type: type ?? '',
+      apartment: tower ? `${tower}-${apartmentNo}` : null,
+    })),
+  )
 })
 
 // Guard instantly checks in a pre-approved house help (no resident approval).
