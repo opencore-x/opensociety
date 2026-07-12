@@ -1,8 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Apartment, CreateHouseHelp, HouseHelp, HouseHelpType, IdProofType } from '@opensociety/shared'
-import { houseHelpTypeSchema, idProofTypeSchema } from '@opensociety/shared'
+import {
+  houseHelpTypeSchema,
+  idProofTypeSchema,
+  summarizeHouseHelpAttendance,
+  formatWorkedMinutes,
+  houseHelpAttendanceToCsv,
+  houseHelpWorkedMinutes,
+} from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
 import { PageHeader, QueryState } from '@/components/admin/ui'
@@ -359,6 +366,123 @@ function HouseHelpPage() {
           </QueryState>
         </CardContent>
       </Card>
+
+      <AttendanceReports />
     </div>
+  )
+}
+
+function AttendanceReports() {
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const entries = useQuery({
+    queryKey: ['house-help-entries', from, to],
+    queryFn: () => apiClient.listHouseHelpEntries({ from: from || undefined, to: to || undefined }),
+  })
+
+  const rows = useMemo(() => entries.data ?? [], [entries.data])
+  const summary = useMemo(() => summarizeHouseHelpAttendance(rows), [rows])
+  const csvHref = useMemo(
+    () => `data:text/csv;charset=utf-8,${encodeURIComponent(houseHelpAttendanceToCsv(rows))}`,
+    [rows],
+  )
+  const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '—')
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Attendance &amp; reports</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="att-from">From</Label>
+            <Input id="att-from" type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="att-to">To</Label>
+            <Input id="att-to" type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
+          {(from || to) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFrom('')
+                setTo('')
+              }}
+            >
+              Clear
+            </Button>
+          )}
+          <a
+            href={csvHref}
+            download="house-help-attendance.csv"
+            className="border-input hover:bg-accent hover:text-accent-foreground ml-auto inline-flex h-9 items-center rounded-md border px-4 text-sm font-medium transition-colors aria-disabled:pointer-events-none aria-disabled:opacity-50"
+            aria-disabled={rows.length === 0}
+          >
+            Download CSV
+          </a>
+        </div>
+
+        <QueryState q={entries} empty={entries.isSuccess && rows.length === 0} emptyText="No attendance in this range.">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Hours per help</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Visits</TableHead>
+                  <TableHead className="text-right">Hours</TableHead>
+                  <TableHead className="text-right">Inside</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {summary.map((s) => (
+                  <TableRow key={s.houseHelpId}>
+                    <TableCell className="font-medium">{s.helpName}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{s.type}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{s.visits}</TableCell>
+                    <TableCell className="text-right">{formatWorkedMinutes(s.totalMinutes)}</TableCell>
+                    <TableCell className="text-right">{s.openVisits || '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Entry log</p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Flat</TableHead>
+                  <TableHead>Check-in</TableHead>
+                  <TableHead>Check-out</TableHead>
+                  <TableHead className="text-right">Duration</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.helpName}</TableCell>
+                    <TableCell className="text-muted-foreground">{r.apartment ?? '—'}</TableCell>
+                    <TableCell className="text-muted-foreground">{fmt(r.checkInAt)}</TableCell>
+                    <TableCell className="text-muted-foreground">{fmt(r.checkOutAt)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatWorkedMinutes(houseHelpWorkedMinutes(r.checkInAt, r.checkOutAt))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </QueryState>
+      </CardContent>
+    </Card>
   )
 }
