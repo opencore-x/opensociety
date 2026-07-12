@@ -139,6 +139,24 @@ function RecordPayment({ bill }: { bill: MaintenanceBill }) {
   )
 }
 
+function InvoiceButton({ billId }: { billId: string }) {
+  const [busy, setBusy] = useState(false)
+  const open = async () => {
+    setBusy(true)
+    try {
+      const url = await apiClient.invoiceObjectUrl(billId)
+      window.open(url, '_blank', 'noopener')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Button variant="ghost" size="sm" onClick={open} disabled={busy}>
+      {busy ? '…' : '📄 Invoice'}
+    </Button>
+  )
+}
+
 function DuesCard() {
   const dues = useQuery({ queryKey: ['dues'], queryFn: apiClient.listDues })
   return (
@@ -226,7 +244,9 @@ function BillsCard() {
               {bills.data?.map((b) => (
                 <TableRow key={b.id}>
                   <TableCell className="font-medium">{b.apartment}</TableCell>
-                  <TableCell className="text-muted-foreground">{b.title}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    <span className="align-middle">{b.title}</span> <InvoiceButton billId={b.id} />
+                  </TableCell>
                   <TableCell className="text-right">{formatPaise(b.totalAmount)}</TableCell>
                   <TableCell className="text-right">{formatPaise(b.paidAmount ?? 0)}</TableCell>
                   <TableCell>

@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 
 export const Route = createFileRoute('/admin/society')({ component: SocietyPage })
 
-const EMPTY: UpdateSocietyConfig = { name: '', address: '', city: '', state: '', pincode: '' }
+const EMPTY: UpdateSocietyConfig = { name: '', address: '', city: '', state: '', pincode: '', gstin: '' }
 
 const FIELDS: { key: keyof UpdateSocietyConfig; label: string; placeholder: string }[] = [
   { key: 'name', label: 'Society name', placeholder: 'Green Valley Heights' },
@@ -20,6 +20,7 @@ const FIELDS: { key: keyof UpdateSocietyConfig; label: string; placeholder: stri
   { key: 'city', label: 'City', placeholder: 'Bengaluru' },
   { key: 'state', label: 'State', placeholder: 'Karnataka' },
   { key: 'pincode', label: 'Pincode', placeholder: '560001' },
+  { key: 'gstin', label: 'GSTIN (for invoices, optional)', placeholder: '29ABCDE1234F1Z5' },
 ]
 
 function SocietyForm({ initial }: { initial: UpdateSocietyConfig }) {
@@ -44,7 +45,7 @@ function SocietyForm({ initial }: { initial: UpdateSocietyConfig }) {
           <Input
             id={key}
             placeholder={placeholder}
-            value={form[key]}
+            value={form[key] ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
           />
         </div>
@@ -72,7 +73,21 @@ function SocietyPage() {
         </CardHeader>
         <CardContent>
           <QueryState q={society}>
-            <SocietyForm key={society.data?.id ?? 'new'} initial={society.data ?? EMPTY} />
+            <SocietyForm
+              key={society.data?.id ?? 'new'}
+              initial={
+                society.data
+                  ? {
+                      name: society.data.name,
+                      address: society.data.address,
+                      city: society.data.city,
+                      state: society.data.state,
+                      pincode: society.data.pincode,
+                      gstin: society.data.gstin ?? '',
+                    }
+                  : EMPTY
+              }
+            />
           </QueryState>
         </CardContent>
       </Card>
