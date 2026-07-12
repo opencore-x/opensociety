@@ -4,6 +4,8 @@ import type {
   CreatePreApproval,
   CreateTicket,
   CreateVisitorEntry,
+  Guard,
+  GuardDutySession,
   HouseHelp,
   HouseHelpAssignment,
   HouseHelpEntry,
@@ -97,6 +99,12 @@ export const apiClient = {
     api<Vehicle>('/vehicles', { method: 'POST', body: JSON.stringify(body) }, userId),
   updateVehicle: (id: string, body: UpdateVehicle, userId?: string) =>
     api<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(body) }, userId),
+  listGuards: () => api<Guard[]>('/guards'),
+  listActiveDuty: () => api<GuardDutySession[]>('/guards/duty/active'),
+  clockInGuard: (guardId: string, coords?: { lat?: number; lng?: number }, userId?: string) =>
+    api<GuardDutySession>(`/guards/${guardId}/duty/clock-in`, { method: 'POST', body: JSON.stringify(coords ?? {}) }, userId),
+  clockOutGuard: (sessionId: string, coords?: { lat?: number; lng?: number }, userId?: string) =>
+    api<GuardDutySession>(`/guards/duty/${sessionId}/clock-out`, { method: 'POST', body: JSON.stringify(coords ?? {}) }, userId),
   listHouseHelpForApartment: (apartmentId: string) =>
     api<HouseHelp[]>(`/house-help?apartmentId=${apartmentId}`),
   assignHouseHelp: (id: string, apartmentId: string, userId?: string) =>
