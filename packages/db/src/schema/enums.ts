@@ -49,3 +49,4 @@ export const idProofType = pgEnum('id_proof_type', [
   'PASSPORT',
   'OTHER',
 ])
+export const vehicleType = pgEnum('vehicle_type', ['CAR', 'BIKE', 'SCOOTER', 'BICYCLE', 'OTHER'])

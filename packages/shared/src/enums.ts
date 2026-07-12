@@ -43,6 +43,7 @@ export const idProofTypeSchema = z.enum([
   'PASSPORT',
   'OTHER',
 ])
+export const vehicleTypeSchema = z.enum(['CAR', 'BIKE', 'SCOOTER', 'BICYCLE', 'OTHER'])
 
 export type UserRole = z.infer<typeof userRoleSchema>
 export type UserStatus = z.infer<typeof userStatusSchema>
@@ -57,3 +58,4 @@ export type TicketCategory = z.infer<typeof ticketCategorySchema>
 export type TicketPriority = z.infer<typeof ticketPrioritySchema>
 export type HouseHelpType = z.infer<typeof houseHelpTypeSchema>
 export type IdProofType = z.infer<typeof idProofTypeSchema>
+export type VehicleType = z.infer<typeof vehicleTypeSchema>
