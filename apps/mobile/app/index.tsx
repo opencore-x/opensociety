@@ -23,6 +23,9 @@ export default function Index() {
       <Link href="/gate" style={styles.link}>
         Guard · Gate →
       </Link>
+      <Link href="/house-help" style={styles.link}>
+        Guard · House help →
+      </Link>
       {CLERK_ENABLED && <AuthStatus />}
       <StatusBar style="auto" />
     </View>

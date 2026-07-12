@@ -1,8 +1,11 @@
 import type {
   Apartment,
+  CheckInHouseHelp,
   CreatePreApproval,
   CreateTicket,
   CreateVisitorEntry,
+  HouseHelp,
+  HouseHelpEntry,
   Notice,
   SocietyConfig,
   Ticket,
@@ -71,4 +74,16 @@ export const apiClient = {
   listTickets: (status?: string) => api<Ticket[]>(`/tickets${status ? `?status=${status}` : ''}`),
   createTicket: (body: CreateTicket, userId?: string) =>
     api<Ticket>('/tickets', { method: 'POST', body: JSON.stringify(body) }, userId),
+  listHouseHelp: (type?: string) => api<HouseHelp[]>(`/house-help${type ? `?type=${type}` : ''}`),
+  listHouseHelpEntries: (params?: { active?: boolean; houseHelpId?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.active) q.set('active', 'true')
+    if (params?.houseHelpId) q.set('houseHelpId', params.houseHelpId)
+    const qs = q.toString()
+    return api<HouseHelpEntry[]>(`/house-help/entries${qs ? `?${qs}` : ''}`)
+  },
+  checkInHouseHelp: (id: string, body: CheckInHouseHelp = {}, userId?: string) =>
+    api<HouseHelpEntry>(`/house-help/${id}/checkin`, { method: 'POST', body: JSON.stringify(body) }, userId),
+  checkOutHouseHelpEntry: (entryId: string, userId?: string) =>
+    api<HouseHelpEntry>(`/house-help/entries/${entryId}/checkout`, { method: 'POST', body: JSON.stringify({}) }, userId),
 }
