@@ -5,6 +5,7 @@ import type {
   CreateApartmentsBulk,
   CreateGuard,
   GuardDutySession,
+  GuardDevice,
   CreateHouseHelp,
   CreateNotice,
   CreatePreApproval,
@@ -110,6 +111,9 @@ export const apiClient = {
   listGuards: () => api<Guard[]>('/guards'),
   createGuard: (body: CreateGuard) => api<Guard>('/guards', { method: 'POST', body: json(body) }),
   updateGuard: (id: string, body: UpdateGuard) => api<Guard>(`/guards/${id}`, { method: 'PATCH', body: json(body) }),
+  listGuardDevices: (id: string) => api<GuardDevice[]>(`/guards/${id}/devices`),
+  revokeGuardDevice: (id: string, deviceId: string) =>
+    api<GuardDevice>(`/guards/${id}/devices/${deviceId}/revoke`, { method: 'POST' }),
 
   // Visitors
   listVisitors: (status?: VisitorStatus) => api<VisitorEntry[]>(`/visitors${status ? `?status=${status}` : ''}`),
