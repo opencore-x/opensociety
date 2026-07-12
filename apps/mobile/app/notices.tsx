@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ActivityIndicator, FlatList, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Notice } from '@opensociety/shared'
 import { noticeMatchesQuery } from '@opensociety/shared'
 import { apiClient } from '../api/client'
@@ -30,6 +30,12 @@ export default function Notices() {
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['notices'], queryFn: () => apiClient.listNotices() })
 
   const notices = useMemo(() => (data ?? []).filter((n) => noticeMatchesQuery(n, search)), [data, search])
+
+  const qc = useQueryClient()
+  const markRead = useMutation({
+    mutationFn: (id: string) => apiClient.markNoticeRead(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notices'] }),
+  })
 
   if (isLoading)
     return (
@@ -61,9 +67,10 @@ export default function Notices() {
       }
       ListEmptyComponent={<Text style={styles.dim}>{search ? 'No matching notices.' : 'No notices yet.'}</Text>}
       renderItem={({ item }) => (
-        <View style={styles.card}>
+        <Pressable style={styles.card} onPress={() => item.read === false && markRead.mutate(item.id)}>
           <View style={styles.row}>
             <Text style={styles.title}>{item.title}</Text>
+            {item.read === false && <Text style={styles.newBadge}>NEW</Text>}
             <Text style={[styles.badge, isUrgent(item.priority) && styles.badgeUrgent]}>{item.priority}</Text>
           </View>
           <View style={styles.metaRow}>
@@ -76,7 +83,7 @@ export default function Notices() {
               <Text style={styles.attachmentText}>📎 {item.attachmentName ?? 'Attachment'}</Text>
             </Pressable>
           )}
-        </View>
+        </Pressable>
       )}
     />
   )
@@ -121,6 +128,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   badgeUrgent: { color: '#b91c1c', backgroundColor: '#fee2e2' },
+  newBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    backgroundColor: '#0e7490',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
   attachment: { alignSelf: 'flex-start', paddingVertical: 4 },
   attachmentText: { color: '#0e7490', fontWeight: '600', fontSize: 14 },
 })
