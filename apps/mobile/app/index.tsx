@@ -26,6 +26,9 @@ export default function Index() {
       <Link href="/my-vehicles" style={styles.link}>
         Resident · Vehicles →
       </Link>
+      <Link href="/bills" style={styles.link}>
+        Resident · Bills →
+      </Link>
       <Link href="/gate" style={styles.link}>
         Guard · Gate →
       </Link>
