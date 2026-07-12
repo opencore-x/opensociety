@@ -32,3 +32,20 @@ export const ticketCategory = pgEnum('ticket_category', [
   'OTHER',
 ])
 export const ticketPriority = pgEnum('ticket_priority', ['LOW', 'NORMAL', 'HIGH', 'URGENT'])
+export const houseHelpType = pgEnum('house_help_type', [
+  'MAID',
+  'COOK',
+  'DRIVER',
+  'NANNY',
+  'GARDENER',
+  'CARETAKER',
+  'OTHER',
+])
+export const idProofType = pgEnum('id_proof_type', [
+  'AADHAAR',
+  'PAN',
+  'VOTER_ID',
+  'DRIVING_LICENSE',
+  'PASSPORT',
+  'OTHER',
+])
