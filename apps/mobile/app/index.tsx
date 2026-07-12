@@ -20,6 +20,9 @@ export default function Index() {
       <Link href="/tickets" style={styles.link}>
         Resident · Maintenance →
       </Link>
+      <Link href="/my-house-help" style={styles.link}>
+        Resident · House help →
+      </Link>
       <Link href="/gate" style={styles.link}>
         Guard · Gate →
       </Link>
