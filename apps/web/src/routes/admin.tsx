@@ -24,31 +24,34 @@ import { apiClient } from '../lib/api'
 import { AuthControls, CLERK_ENABLED } from '@/components/auth-controls'
 import { Badge } from '@/components/ui/badge'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { LanguageSwitcher } from '@/components/language-switcher'
+import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/admin')({ component: AdminLayout })
 
-const NAV: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: '/admin', label: 'Overview', icon: LayoutDashboard },
-  { to: '/admin/society', label: 'Society', icon: Home },
-  { to: '/admin/apartments', label: 'Apartments', icon: Building2 },
-  { to: '/admin/residents', label: 'Residents', icon: Users },
-  { to: '/admin/guards', label: 'Guards', icon: ShieldCheck },
-  { to: '/admin/duty', label: 'Guard duty', icon: Clock },
-  { to: '/admin/house-help', label: 'House help', icon: HeartHandshake },
-  { to: '/admin/vehicles', label: 'Vehicles', icon: Car },
-  { to: '/admin/parking', label: 'Parking', icon: SquareParking },
-  { to: '/admin/visitors', label: 'Visitors', icon: UserCheck },
-  { to: '/admin/pre-approvals', label: 'Pre-approvals', icon: Ticket },
-  { to: '/admin/tickets', label: 'Tickets', icon: Wrench },
-  { to: '/admin/billing', label: 'Billing', icon: Receipt },
-  { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
-  { to: '/admin/analytics', label: 'Analytics', icon: TrendingUp },
-  { to: '/admin/notices', label: 'Notices', icon: Megaphone },
+const NAV: { to: string; tKey: string; icon: LucideIcon }[] = [
+  { to: '/admin', tKey: 'nav.overview', icon: LayoutDashboard },
+  { to: '/admin/society', tKey: 'nav.society', icon: Home },
+  { to: '/admin/apartments', tKey: 'nav.apartments', icon: Building2 },
+  { to: '/admin/residents', tKey: 'nav.residents', icon: Users },
+  { to: '/admin/guards', tKey: 'nav.guards', icon: ShieldCheck },
+  { to: '/admin/duty', tKey: 'nav.duty', icon: Clock },
+  { to: '/admin/house-help', tKey: 'nav.houseHelp', icon: HeartHandshake },
+  { to: '/admin/vehicles', tKey: 'nav.vehicles', icon: Car },
+  { to: '/admin/parking', tKey: 'nav.parking', icon: SquareParking },
+  { to: '/admin/visitors', tKey: 'nav.visitors', icon: UserCheck },
+  { to: '/admin/pre-approvals', tKey: 'nav.preApprovals', icon: Ticket },
+  { to: '/admin/tickets', tKey: 'nav.tickets', icon: Wrench },
+  { to: '/admin/billing', tKey: 'nav.billing', icon: Receipt },
+  { to: '/admin/reports', tKey: 'nav.reports', icon: BarChart3 },
+  { to: '/admin/analytics', tKey: 'nav.analytics', icon: TrendingUp },
+  { to: '/admin/notices', tKey: 'nav.notices', icon: Megaphone },
 ]
 
 function AdminLayout() {
   const health = useQuery({ queryKey: ['health'], queryFn: apiClient.health, retry: false })
+  const { t } = useT()
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -60,7 +63,7 @@ function AdminLayout() {
             </span>
           </Link>
           <nav className="flex flex-col gap-1">
-            {NAV.map(({ to, label, icon: Icon }) => (
+            {NAV.map(({ to, tKey, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
@@ -71,7 +74,7 @@ function AdminLayout() {
                 activeProps={{ className: 'bg-accent text-accent-foreground' }}
               >
                 <Icon className="size-4" />
-                {label}
+                {t(tKey)}
               </Link>
             ))}
           </nav>
@@ -80,7 +83,7 @@ function AdminLayout() {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center justify-between gap-3 border-b px-6 py-3">
             <nav className="flex gap-1 overflow-x-auto md:hidden">
-              {NAV.map(({ to, label }) => (
+              {NAV.map(({ to, tKey }) => (
                 <Link
                   key={to}
                   to={to}
@@ -88,14 +91,16 @@ function AdminLayout() {
                   className="text-muted-foreground rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap"
                   activeProps={{ className: 'text-foreground' }}
                 >
-                  {label}
+                  {t(tKey)}
                 </Link>
               ))}
             </nav>
             <div className="ml-auto flex items-center gap-3">
               <Badge variant={health.isSuccess ? 'default' : 'destructive'}>
-                API {health.isLoading ? '…' : health.isSuccess ? 'online' : 'offline'}
+                {t('header.api')}{' '}
+                {health.isLoading ? '…' : health.isSuccess ? t('header.apiOnline') : t('header.apiOffline')}
               </Badge>
+              <LanguageSwitcher />
               {CLERK_ENABLED && <AuthControls />}
               <ThemeToggle />
             </div>
