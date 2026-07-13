@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import QRCode from 'react-qr-code'
 import type { PreApprovalType } from '@opensociety/shared'
-import { preApprovalTypeSchema } from '@opensociety/shared'
+import { preApprovalTypeSchema, preApprovalQrValue } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
 import { PageHeader, QueryState } from '@/components/admin/ui'
@@ -142,6 +143,40 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
   )
 }
 
+function QrButton({ code, visitorName }: { code: string; visitorName: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+        QR
+      </Button>
+      {open && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="bg-background w-full max-w-xs rounded-lg p-6 text-center shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-medium">{visitorName}</p>
+            <p className="text-muted-foreground mb-4 text-sm">Show this QR at the gate</p>
+            <div className="mx-auto inline-block rounded bg-white p-3">
+              <QRCode value={preApprovalQrValue(code)} size={196} />
+            </div>
+            <p className="mt-4 font-mono text-lg tracking-widest">{code}</p>
+            <Button className="mt-4 w-full" variant="outline" onClick={() => setOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 function RevokeButton({ id }: { id: string }) {
   const qc = useQueryClient()
   const mutation = useMutation({
@@ -223,7 +258,14 @@ function PreApprovalsPage() {
                         {p.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">{p.isActive && <RevokeButton id={p.id} />}</TableCell>
+                    <TableCell className="text-right">
+                      {p.isActive && (
+                        <div className="flex justify-end gap-2">
+                          <QrButton code={p.code} visitorName={p.visitorName} />
+                          <RevokeButton id={p.id} />
+                        </div>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
