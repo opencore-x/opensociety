@@ -9,6 +9,7 @@ import type {
   HouseHelp,
   HouseHelpAssignment,
   HouseHelpEntry,
+  CreateHouseHelpReview,
   MaintenanceBill,
   Payment,
   Notice,
@@ -23,6 +24,13 @@ import type {
 } from '@opensociety/shared'
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787'
+
+// House help as returned by the directory list — carries its anonymous rating summary.
+export type HouseHelpWithRating = HouseHelp & {
+  ratingAvg: number | null
+  reviewCount: number
+  trustScore: number
+}
 
 // Dev auth stand-in used only when no Clerk session is present. Set
 // EXPO_PUBLIC_DEV_USER_ID to a real users.id (resident/admin) to act as them;
@@ -103,7 +111,13 @@ export const apiClient = {
   listTickets: (status?: string) => api<Ticket[]>(`/tickets${status ? `?status=${status}` : ''}`),
   createTicket: (body: CreateTicket, userId?: string) =>
     api<Ticket>('/tickets', { method: 'POST', body: JSON.stringify(body) }, userId),
-  listHouseHelp: (type?: string) => api<HouseHelp[]>(`/house-help${type ? `?type=${type}` : ''}`),
+  listHouseHelp: (type?: string) => api<HouseHelpWithRating[]>(`/house-help${type ? `?type=${type}` : ''}`),
+  rateHouseHelp: (id: string, body: CreateHouseHelpReview, userId?: string) =>
+    api<{ ok: true; id: string; rating: number }>(
+      `/house-help/${id}/reviews`,
+      { method: 'POST', body: JSON.stringify(body) },
+      userId,
+    ),
   listHouseHelpEntries: (params?: { active?: boolean; houseHelpId?: string }) => {
     const q = new URLSearchParams()
     if (params?.active) q.set('active', 'true')
@@ -133,7 +147,7 @@ export const apiClient = {
   clockOutGuard: (sessionId: string, coords?: { lat?: number; lng?: number }, userId?: string) =>
     api<GuardDutySession>(`/guards/duty/${sessionId}/clock-out`, { method: 'POST', body: JSON.stringify(coords ?? {}) }, userId),
   listHouseHelpForApartment: (apartmentId: string) =>
-    api<HouseHelp[]>(`/house-help?apartmentId=${apartmentId}`),
+    api<HouseHelpWithRating[]>(`/house-help?apartmentId=${apartmentId}`),
   assignHouseHelp: (id: string, apartmentId: string, userId?: string) =>
     api<HouseHelpAssignment>(`/house-help/${id}/assignments`, { method: 'POST', body: JSON.stringify({ apartmentId }) }, userId),
   removeHouseHelpAssignment: (id: string, apartmentId: string, userId?: string) =>
