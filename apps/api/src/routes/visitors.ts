@@ -16,6 +16,7 @@ import {
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import { parsePagination } from '../pagination'
+import { assignVisitorParking, releaseVisitorParking } from '../lib/visitor-parking'
 import type { AppEnv } from '../types'
 
 // Applies a lifecycle transition to a visitor entry, enforcing the state
@@ -188,18 +189,30 @@ visitorRoutes.post('/:id/deny', requireRole('RESIDENT', 'ADMIN'), zValidator('js
   applyTransition(c, 'deny', { deniedReason: c.req.valid('json').reason }),
 )
 
-// Gate actions: the guard on duty checks the visitor in and out.
-visitorRoutes.post('/:id/checkin', requireRole('GUARD', 'ADMIN'), zValidator('json', checkInVisitorSchema), (c) => {
+// Gate actions: the guard on duty checks the visitor in and out. On check-in a
+// visitor arriving with a vehicle is auto-assigned the next free visitor
+// parking slot (first-come); check-out releases it.
+visitorRoutes.post('/:id/checkin', requireRole('GUARD', 'ADMIN'), zValidator('json', checkInVisitorSchema), async (c) => {
   const body = c.req.valid('json')
-  return applyTransition(c, 'checkin', {
+  // Only overwrite photo/vehicle when the guard actually captures them at the
+  // gate — otherwise a plate recorded at registration would be wiped.
+  const extra: Partial<typeof visitorEntries.$inferInsert> = {
     checkInAt: new Date(),
     checkInBy: body.guardId ?? null,
-    photoUrl: body.photoUrl ?? null,
-    vehicleNumber: body.vehicleNumber ?? null,
-  })
+  }
+  if (body.photoUrl !== undefined) extra.photoUrl = body.photoUrl
+  if (body.vehicleNumber !== undefined) extra.vehicleNumber = body.vehicleNumber
+  const res = await applyTransition(c, 'checkin', extra)
+  if (res.status === 200) await assignVisitorParking(c.get('db'), c.req.param('id'))
+  return res
 })
 
-visitorRoutes.post('/:id/checkout', requireRole('GUARD', 'ADMIN'), (c) =>
+visitorRoutes.post('/:id/checkout', requireRole('GUARD', 'ADMIN'), async (c) => {
   // checkOutBy references guards.id (the guard at the gate), not the user.
-  applyTransition(c, 'checkout', { checkOutAt: new Date(), checkOutBy: c.req.header('x-guard-id') ?? null }),
-)
+  const res = await applyTransition(c, 'checkout', {
+    checkOutAt: new Date(),
+    checkOutBy: c.req.header('x-guard-id') ?? null,
+  })
+  if (res.status === 200) await releaseVisitorParking(c.get('db'), c.req.param('id'))
+  return res
+})

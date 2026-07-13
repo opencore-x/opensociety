@@ -5,6 +5,9 @@ import {
   parkingSlotStatus,
   summarizeParking,
   assignParkingSlotSchema,
+  isVisitorSlotFree,
+  nextFreeVisitorSlot,
+  visitorParkingSummary,
 } from '@opensociety/shared'
 import type { ParkingSlotType } from '@opensociety/shared'
 
@@ -96,6 +99,49 @@ describe('summarizeParking', () => {
     expect(s.assigned).toBe(1)
     expect(s.temporary).toBe(1)
     expect(s.inactive).toBe(1)
+  })
+})
+
+describe('visitor parking pool', () => {
+  const vslot = (o: { isActive?: boolean; isVisitor?: boolean; occupiedByEntryId?: string | null; slotNumber?: string }) => ({
+    isActive: true,
+    isVisitor: true,
+    occupiedByEntryId: null,
+    slotNumber: 'V-1',
+    ...o,
+  })
+
+  it('isVisitorSlotFree only for active, unoccupied visitor slots', () => {
+    expect(isVisitorSlotFree(vslot({}))).toBe(true)
+    expect(isVisitorSlotFree(vslot({ occupiedByEntryId: 'e1' }))).toBe(false)
+    expect(isVisitorSlotFree(vslot({ isActive: false }))).toBe(false)
+    expect(isVisitorSlotFree(vslot({ isVisitor: false }))).toBe(false)
+  })
+
+  it('nextFreeVisitorSlot returns the first free slot in order, else null', () => {
+    const slots = [
+      vslot({ slotNumber: 'V-1', occupiedByEntryId: 'e1' }),
+      vslot({ slotNumber: 'V-2' }),
+      vslot({ slotNumber: 'V-3' }),
+    ]
+    expect(nextFreeVisitorSlot(slots)?.slotNumber).toBe('V-2')
+    const full = [vslot({ slotNumber: 'V-1', occupiedByEntryId: 'e1' }), vslot({ slotNumber: 'V-2', occupiedByEntryId: 'e2' })]
+    expect(nextFreeVisitorSlot(full)).toBeNull()
+  })
+
+  it('visitorParkingSummary counts only active visitor slots and flags full', () => {
+    const s = visitorParkingSummary([
+      vslot({ occupiedByEntryId: 'e1' }),
+      vslot({}),
+      vslot({ isActive: false }), // ignored
+      { isActive: true, isVisitor: false, occupiedByEntryId: null }, // resident slot, ignored
+    ])
+    expect(s).toEqual({ total: 2, occupied: 1, available: 1, isFull: false })
+
+    const full = visitorParkingSummary([vslot({ occupiedByEntryId: 'e1' }), vslot({ occupiedByEntryId: 'e2' })])
+    expect(full).toEqual({ total: 2, occupied: 2, available: 0, isFull: true })
+
+    expect(visitorParkingSummary([])).toEqual({ total: 0, occupied: 0, available: 0, isFull: false })
   })
 })
 
