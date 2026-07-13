@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, boolean, unique } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, boolean, unique, index } from 'drizzle-orm/pg-core'
 import { apartments } from './apartments'
 import { users } from './users'
 import { visitorEntries } from './visitor-entries'
@@ -32,5 +32,9 @@ export const parkingSlots = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
-  (t) => [unique('parking_slots_slot_number_unq').on(t.slotNumber)],
+  (t) => [
+    unique('parking_slots_slot_number_unq').on(t.slotNumber),
+    index('parking_slots_apartment_id_idx').on(t.apartmentId),
+    index('parking_slots_is_visitor_idx').on(t.isVisitor),
+  ],
 )

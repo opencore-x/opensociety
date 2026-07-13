@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, integer, timestamp, index } from 'drizzle-orm/pg-core'
 import { apartments } from './apartments'
 import { users } from './users'
 import { billType, billStatus, paymentMethod } from './enums'
@@ -25,7 +25,10 @@ export const maintenanceBills = pgTable('maintenance_bills', {
   createdBy: uuid('created_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (t) => [
+  index('maintenance_bills_apartment_id_idx').on(t.apartmentId),
+  index('maintenance_bills_period_month_idx').on(t.periodMonth),
+])
 
 // A single charge on a bill, with its own GST rate (percent). taxAmount is the
 // computed tax in paise; amount is the pre-tax charge.
@@ -39,7 +42,7 @@ export const billLineItems = pgTable('bill_line_items', {
   taxRatePct: integer('tax_rate_pct').notNull().default(0),
   taxAmount: integer('tax_amount').notNull().default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (t) => [index('bill_line_items_bill_id_idx').on(t.billId)])
 
 // A payment recorded against a bill (manual entry today; online later). Dues are
 // derived as sum(bill totals) − sum(payments) per apartment.
@@ -58,4 +61,7 @@ export const payments = pgTable('payments', {
   paidAt: timestamp('paid_at').defaultNow().notNull(),
   recordedBy: uuid('recorded_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (t) => [
+  index('payments_bill_id_idx').on(t.billId),
+  index('payments_apartment_id_idx').on(t.apartmentId),
+])
