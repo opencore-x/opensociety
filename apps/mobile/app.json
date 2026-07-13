@@ -25,6 +25,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow OpenSociety to use the camera to scan visitor pre-approval QR codes at the gate."
+        }
+      ]
+    ]
   }
 }
