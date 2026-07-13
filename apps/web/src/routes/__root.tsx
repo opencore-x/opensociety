@@ -8,6 +8,7 @@ import { ClerkProvider, useAuth } from '@clerk/tanstack-react-start'
 import { getQueryClient } from '../lib/query'
 import { setAuthTokenGetter } from '../lib/api'
 import { ThemeProvider, themeInitScript } from '../lib/theme'
+import { I18nProvider } from '../lib/i18n'
 import appCss from '../styles.css?url'
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
@@ -28,7 +29,9 @@ function AuthBridge() {
 function Providers({ children }: { children: React.ReactNode }) {
   const tree = (
     <ThemeProvider>
-      <QueryClientProvider client={getQueryClient()}>{children}</QueryClientProvider>
+      <I18nProvider>
+        <QueryClientProvider client={getQueryClient()}>{children}</QueryClientProvider>
+      </I18nProvider>
     </ThemeProvider>
   )
   if (!CLERK_PUBLISHABLE_KEY) return tree
