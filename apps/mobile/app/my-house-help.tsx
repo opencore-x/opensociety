@@ -95,8 +95,17 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
       {(assigned.data ?? []).map((h) => (
         <View key={h.id} style={styles.card}>
           <View style={{ flex: 1, gap: 6 }}>
-            <Text style={styles.name}>{h.name}</Text>
-            <Text style={styles.dim}>{h.type}</Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{h.name}</Text>
+              <View style={[styles.badge, h.verificationLevel === 'VERIFIED' ? styles.badgeOk : styles.badgeMuted]}>
+                <Text style={[styles.badgeText, h.verificationLevel === 'VERIFIED' && styles.badgeTextOk]}>
+                  {h.verificationLevel === 'VERIFIED' ? '✓ Verified' : 'Unverified'}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.dim}>
+              {h.type} · Trust {h.trustScore}/100
+            </Text>
             <StarRating help={h} apartmentKey={apartment.id} />
           </View>
           <Button label="Remove" variant="outline" onPress={() => remove.mutate(h.id)} disabled={busy} />
@@ -140,6 +149,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   name: { fontSize: 16, fontWeight: '600' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  badgeOk: { backgroundColor: '#dcfce7' },
+  badgeMuted: { backgroundColor: '#e4e4e7' },
+  badgeText: { fontSize: 11, fontWeight: '600', color: '#71717a' },
+  badgeTextOk: { color: '#15803d' },
   dim: { color: '#71717a', fontSize: 13 },
   rating: { gap: 2 },
   stars: { flexDirection: 'row', gap: 2 },

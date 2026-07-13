@@ -25,11 +25,13 @@ import type {
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787'
 
-// House help as returned by the directory list — carries its anonymous rating summary.
+// House help as returned by the directory list — carries its anonymous rating
+// summary plus verification/trust signals.
 export type HouseHelpWithRating = HouseHelp & {
   ratingAvg: number | null
   reviewCount: number
   trustScore: number
+  verificationLevel: 'VERIFIED' | 'UNVERIFIED'
 }
 
 // Dev auth stand-in used only when no Clerk session is present. Set
