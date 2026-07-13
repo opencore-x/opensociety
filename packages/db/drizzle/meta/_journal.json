@@ -99,6 +99,13 @@
       "when": 1783909760444,
       "tag": "0013_parking_slots",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1783923890299,
+      "tag": "0014_visitor_parking",
+      "breakpoints": true
     }
   ]
 }
