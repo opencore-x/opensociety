@@ -1,12 +1,13 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { asc, eq } from 'drizzle-orm'
-import { parkingSlots, apartments } from '@opensociety/db'
+import { and, asc, eq } from 'drizzle-orm'
+import { parkingSlots, apartments, visitorEntries } from '@opensociety/db'
 import {
   createParkingSlotSchema,
   updateParkingSlotSchema,
   assignParkingSlotSchema,
   normalizeSlotNumber,
+  visitorParkingSummary,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
@@ -38,6 +39,7 @@ parkingRoutes.get('/slots', requireRole('ADMIN'), async (c) => {
     })
     .from(parkingSlots)
     .leftJoin(apartments, eq(apartments.id, parkingSlots.apartmentId))
+    .where(eq(parkingSlots.isVisitor, false))
     .orderBy(asc(parkingSlots.slotNumber))
   return c.json(
     rows.map(({ tower, apartmentNo, ...r }) => ({
@@ -47,7 +49,7 @@ parkingRoutes.get('/slots', requireRole('ADMIN'), async (c) => {
   )
 })
 
-// Read-only directory any resident can see: which slot belongs to which flat.
+// Read-only directory any resident can see: which resident slot belongs to which flat.
 parkingRoutes.get('/directory', async (c) => {
   const db = c.get('db')
   const rows = await db
@@ -61,7 +63,7 @@ parkingRoutes.get('/directory', async (c) => {
     })
     .from(parkingSlots)
     .leftJoin(apartments, eq(apartments.id, parkingSlots.apartmentId))
-    .where(eq(parkingSlots.isActive, true))
+    .where(and(eq(parkingSlots.isActive, true), eq(parkingSlots.isVisitor, false)))
     .orderBy(asc(parkingSlots.slotNumber))
   return c.json(
     rows.map(({ tower, apartmentNo, ...r }) => ({
@@ -69,6 +71,32 @@ parkingRoutes.get('/directory', async (c) => {
       apartment: tower ? `${tower}-${apartmentNo}` : null,
     })),
   )
+})
+
+// Visitor parking pool: every visitor slot with its current occupant (name +
+// vehicle), plus an occupancy summary the guard app uses (incl. `isFull`).
+parkingRoutes.get('/visitor', requireRole('ADMIN', 'GUARD'), async (c) => {
+  const db = c.get('db')
+  const rows = await db
+    .select({
+      id: parkingSlots.id,
+      slotNumber: parkingSlots.slotNumber,
+      type: parkingSlots.type,
+      isActive: parkingSlots.isActive,
+      isVisitor: parkingSlots.isVisitor,
+      occupiedByEntryId: parkingSlots.occupiedByEntryId,
+      occupiedAt: parkingSlots.occupiedAt,
+      visitorName: visitorEntries.visitorName,
+      vehicleNumber: visitorEntries.vehicleNumber,
+    })
+    .from(parkingSlots)
+    .leftJoin(visitorEntries, eq(visitorEntries.id, parkingSlots.occupiedByEntryId))
+    .where(eq(parkingSlots.isVisitor, true))
+    .orderBy(asc(parkingSlots.slotNumber))
+  return c.json({
+    slots: rows,
+    summary: visitorParkingSummary(rows),
+  })
 })
 
 // Create a slot. 409 if the (normalized) number already exists.
@@ -86,7 +114,7 @@ parkingRoutes.post('/slots', requireRole('ADMIN'), zValidator('json', createPark
 
   const [created] = await db
     .insert(parkingSlots)
-    .values({ slotNumber, type: input.type, notes: input.notes })
+    .values({ slotNumber, type: input.type, isVisitor: input.isVisitor, notes: input.notes })
     .returning()
   return c.json(created, 201)
 })
@@ -122,8 +150,14 @@ parkingRoutes.post('/slots/:id/assign', requireRole('ADMIN'), zValidator('json',
   const id = c.req.param('id')
   const input = c.req.valid('json')
 
-  const [existing] = await db.select({ id: parkingSlots.id }).from(parkingSlots).where(eq(parkingSlots.id, id)).limit(1)
+  const [existing] = await db
+    .select({ id: parkingSlots.id, isVisitor: parkingSlots.isVisitor })
+    .from(parkingSlots)
+    .where(eq(parkingSlots.id, id))
+    .limit(1)
   if (!existing) return c.json({ error: 'not found' }, 404)
+  if (existing.isVisitor)
+    return c.json({ error: 'visitor slots are auto-assigned at the gate, not to a flat' }, 409)
 
   if (input.apartmentId) {
     const [apt] = await db
