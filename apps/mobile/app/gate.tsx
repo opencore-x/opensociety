@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'expo-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
-import { availableVisitorActions } from '@opensociety/shared'
+import { ActivityIndicator, FlatList, Modal, Platform, StyleSheet, Text, TextInput, View } from 'react-native'
+import { CameraView, useCameraPermissions } from 'expo-camera'
+import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
 import { Button } from '../components/Button'
 
@@ -16,6 +17,7 @@ export default function Gate() {
   })
 
   const [code, setCode] = useState('')
+  const [scanning, setScanning] = useState(false)
   const invalidate = () => qc.invalidateQueries({ queryKey: ['visitors'] })
   const checkIn = useMutation({
     mutationFn: (id: string) => apiClient.checkInVisitor(id),
@@ -26,7 +28,7 @@ export default function Gate() {
     onSuccess: invalidate,
   })
   const redeem = useMutation({
-    mutationFn: () => apiClient.redeemPreApproval(code.trim().toUpperCase()),
+    mutationFn: (c: string) => apiClient.redeemPreApproval(c),
     onSuccess: () => {
       setCode('')
       invalidate()
@@ -51,6 +53,7 @@ export default function Gate() {
   const gate = (data ?? []).filter((v) => v.status === 'APPROVED' || v.status === 'ENTERED')
 
   return (
+    <>
     <FlatList
       contentContainerStyle={styles.list}
       data={gate}
@@ -68,10 +71,11 @@ export default function Gate() {
             />
             <Button
               label={redeem.isPending ? 'Redeeming…' : 'Redeem'}
-              onPress={() => redeem.mutate()}
+              onPress={() => redeem.mutate(code.trim().toUpperCase())}
               disabled={redeem.isPending || code.trim().length === 0}
             />
           </View>
+          <Button label="Scan QR code" variant="outline" onPress={() => setScanning(true)} />
           {redeem.isError && (
             <Text style={styles.redeemError}>{String((redeem.error as Error)?.message ?? 'Invalid code')}</Text>
           )}
@@ -109,6 +113,76 @@ export default function Gate() {
         )
       }}
     />
+    <QrScannerModal
+      visible={scanning}
+      onClose={() => setScanning(false)}
+      onScan={(c) => {
+        setScanning(false)
+        redeem.mutate(c)
+      }}
+    />
+    </>
+  )
+}
+
+// Full-screen camera scanner for pre-approval QRs. On the device it opens the
+// camera and redeems the first valid QR; on web (no camera scanning) it points
+// the guard back to the manual code field.
+function QrScannerModal({
+  visible,
+  onClose,
+  onScan,
+}: {
+  visible: boolean
+  onClose: () => void
+  onScan: (code: string) => void
+}) {
+  const [permission, requestPermission] = useCameraPermissions()
+  const handledRef = useRef(false)
+
+  useEffect(() => {
+    if (visible) handledRef.current = false
+  }, [visible])
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.scanner}>
+        {Platform.OS === 'web' ? (
+          <View style={styles.scannerMsg}>
+            <Text style={styles.scannerMsgText}>
+              QR scanning uses the device camera. Open the app on a phone, or enter the code manually.
+            </Text>
+          </View>
+        ) : !permission ? (
+          <ActivityIndicator />
+        ) : !permission.granted ? (
+          <View style={styles.scannerMsg}>
+            <Text style={styles.scannerMsgText}>Camera access is needed to scan pre-approval QR codes.</Text>
+            <Button label="Grant camera access" onPress={requestPermission} />
+          </View>
+        ) : (
+          <>
+            <CameraView
+              style={StyleSheet.absoluteFill}
+              barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+              onBarcodeScanned={({ data }) => {
+                if (handledRef.current) return
+                const code = parsePreApprovalQrValue(data)
+                if (!code) return
+                handledRef.current = true
+                onScan(code)
+              }}
+            />
+            <View style={styles.scannerHint} pointerEvents="none">
+              <Text style={styles.scannerHintText}>Point the camera at the pre-approval QR code</Text>
+            </View>
+          </>
+        )}
+        <View style={styles.scannerCancel}>
+          <Button label="Cancel" variant="outline" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
   )
 }
 
@@ -148,4 +222,18 @@ const styles = StyleSheet.create({
   },
   redeemError: { color: '#e11d48', fontSize: 13 },
   register: { color: '#0e7490', fontWeight: '600', fontSize: 15, paddingVertical: 4 },
+  scanner: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
+  scannerMsg: { padding: 24, gap: 16, alignItems: 'center' },
+  scannerMsgText: { color: '#fff', fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  scannerHint: { position: 'absolute', bottom: 120, left: 0, right: 0, alignItems: 'center' },
+  scannerHintText: {
+    color: '#fff',
+    fontSize: 14,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  scannerCancel: { position: 'absolute', bottom: 40, left: 24, right: 24 },
 })
