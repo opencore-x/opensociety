@@ -56,11 +56,32 @@ export type ParkingSlotRow = {
   assignedUntil: string | null
   assignedBy: string | null
   assignedAt: string | null
+  isVisitor: boolean
+  occupiedByEntryId: string | null
+  occupiedAt: string | null
   notes: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string
   apartment: string | null
+}
+
+// A visitor-pool slot with its current occupant (from the /parking/visitor view).
+export type VisitorParkingSlot = {
+  id: string
+  slotNumber: string
+  type: 'COVERED' | 'OPEN'
+  isActive: boolean
+  isVisitor: boolean
+  occupiedByEntryId: string | null
+  occupiedAt: string | null
+  visitorName: string | null
+  vehicleNumber: string | null
+}
+
+export type VisitorParkingView = {
+  slots: VisitorParkingSlot[]
+  summary: { total: number; available: number; occupied: number; isFull: boolean }
 }
 
 // A public parking-directory row (active slots only).
@@ -238,6 +259,7 @@ export const apiClient = {
   // Parking (slot inventory + allocation)
   listParkingSlots: () => api<ParkingSlotRow[]>('/parking/slots'),
   listParkingDirectory: () => api<ParkingDirectoryRow[]>('/parking/directory'),
+  listVisitorParking: () => api<VisitorParkingView>('/parking/visitor'),
   createParkingSlot: (body: CreateParkingSlot) =>
     api<ParkingSlotRow>('/parking/slots', { method: 'POST', body: json(body) }),
   updateParkingSlot: (id: string, body: UpdateParkingSlot) =>
