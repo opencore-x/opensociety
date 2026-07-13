@@ -47,13 +47,16 @@ function AddSlot() {
   const qc = useQueryClient()
   const [slotNumber, setSlotNumber] = useState('')
   const [type, setType] = useState<ParkingSlotType>('OPEN')
+  const [isVisitor, setIsVisitor] = useState(false)
 
   const create = useMutation({
-    mutationFn: () => apiClient.createParkingSlot({ slotNumber: slotNumber.trim(), type }),
+    mutationFn: () => apiClient.createParkingSlot({ slotNumber: slotNumber.trim(), type, isVisitor }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['parking-slots'] })
+      qc.invalidateQueries({ queryKey: ['visitor-parking'] })
       setSlotNumber('')
       setType('OPEN')
+      setIsVisitor(false)
     },
   })
 
@@ -92,11 +95,73 @@ function AddSlot() {
           </SelectContent>
         </Select>
       </div>
+      <label className="text-muted-foreground flex items-center gap-1.5 pb-2 text-sm">
+        <input type="checkbox" checked={isVisitor} onChange={(e) => setIsVisitor(e.target.checked)} />
+        Visitor slot
+      </label>
       <Button type="submit" disabled={!canSubmit}>
         {create.isPending ? 'Adding…' : 'Add slot'}
       </Button>
       {create.isError && <p className="text-destructive w-full text-sm">{(create.error as Error).message}</p>}
     </form>
+  )
+}
+
+function VisitorParkingCard() {
+  const q = useQuery({ queryKey: ['visitor-parking'], queryFn: apiClient.listVisitorParking })
+  const summary = q.data?.summary
+  const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString(undefined, { timeStyle: 'short' }) : '—')
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-3">
+          Visitor parking
+          {summary?.isFull && (
+            <Badge variant="destructive">Full — {summary.occupied}/{summary.total}</Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <QueryState
+          q={q}
+          empty={q.isSuccess && (q.data?.slots.length ?? 0) === 0}
+          emptyText="No visitor slots yet. Add one above with 'Visitor slot' ticked."
+        >
+          {summary && (
+            <p className="text-muted-foreground mb-4 text-sm">
+              {summary.available} of {summary.total} free · {summary.occupied} occupied
+            </p>
+          )}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Slot</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Visitor</TableHead>
+                <TableHead>Vehicle</TableHead>
+                <TableHead>Since</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {q.data?.slots.map((s) => (
+                <TableRow key={s.id} className={s.isActive ? undefined : 'opacity-60'}>
+                  <TableCell className="font-mono font-medium">{s.slotNumber}</TableCell>
+                  <TableCell>
+                    <Badge variant={s.occupiedByEntryId ? 'default' : 'outline'}>
+                      {s.occupiedByEntryId ? 'Occupied' : 'Free'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{s.visitorName ?? '—'}</TableCell>
+                  <TableCell className="text-muted-foreground font-mono">{s.vehicleNumber ?? '—'}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{fmt(s.occupiedAt)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </QueryState>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -260,15 +325,17 @@ function ParkingPage() {
         </CardContent>
       </Card>
 
+      <VisitorParkingCard />
+
       <Card>
         <CardHeader>
-          <CardTitle>Slots</CardTitle>
+          <CardTitle>Resident slots</CardTitle>
         </CardHeader>
         <CardContent>
           <QueryState
             q={slots}
             empty={slots.isSuccess && slots.data?.length === 0}
-            emptyText="No parking slots yet. Add one above."
+            emptyText="No resident parking slots yet. Add one above."
           >
             <Table>
               <TableHeader>
