@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, timestamp, index } from 'drizzle-orm/pg-core'
 import { houseHelp } from './house-help'
 import { apartments } from './apartments'
 import { users } from './users'
@@ -18,4 +18,4 @@ export const houseHelpEntries = pgTable('house_help_entries', {
   checkOutAt: timestamp('check_out_at'),
   checkOutBy: uuid('check_out_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (t) => [index('house_help_entries_house_help_id_idx').on(t.houseHelpId)])
