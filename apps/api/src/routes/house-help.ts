@@ -1,8 +1,15 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { and, asc, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm'
-import { houseHelp, houseHelpEntries, houseHelpAssignments, apartments, residencies } from '@opensociety/db'
+import { and, asc, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm'
+import {
+  houseHelp,
+  houseHelpEntries,
+  houseHelpAssignments,
+  houseHelpReviews,
+  apartments,
+  residencies,
+} from '@opensociety/db'
 import type { HouseHelpType } from '@opensociety/shared'
 import {
   createHouseHelpSchema,
@@ -10,8 +17,10 @@ import {
   houseHelpTypeSchema,
   checkInHouseHelpSchema,
   createHouseHelpAssignmentSchema,
+  createHouseHelpReviewSchema,
   canManageHouseHelp,
   canManageHouseHelpAssignment,
+  trustScore,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
@@ -66,7 +75,79 @@ houseHelpRoutes.get('/', async (c) => {
     .from(houseHelp)
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(asc(houseHelp.name))
-  return c.json(rows)
+
+  // Attach anonymous rating summaries so the directory can show trust at a glance.
+  const agg = await db
+    .select({
+      houseHelpId: houseHelpReviews.houseHelpId,
+      sum: sql<number>`coalesce(sum(${houseHelpReviews.rating}), 0)`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(houseHelpReviews)
+    .groupBy(houseHelpReviews.houseHelpId)
+  const byHelp = new Map(agg.map((a) => [a.houseHelpId, { sum: Number(a.sum), count: Number(a.count) }]))
+  return c.json(
+    rows.map((r) => {
+      const s = byHelp.get(r.id) ?? { sum: 0, count: 0 }
+      return {
+        ...r,
+        ratingAvg: s.count > 0 ? Math.round((s.sum / s.count) * 10) / 10 : null,
+        reviewCount: s.count,
+        trustScore: trustScore(s.sum, s.count),
+      }
+    }),
+  )
+})
+
+// Anonymous reviews for a house help, plus the rating summary. Visible to any
+// signed-in user (residents browse the directory).
+houseHelpRoutes.get('/:id/reviews', async (c) => {
+  const db = c.get('db')
+  const id = c.req.param('id')
+  const reviews = await db
+    .select({
+      id: houseHelpReviews.id,
+      houseHelpId: houseHelpReviews.houseHelpId,
+      rating: houseHelpReviews.rating,
+      comment: houseHelpReviews.comment,
+      createdAt: houseHelpReviews.createdAt,
+    })
+    .from(houseHelpReviews)
+    .where(eq(houseHelpReviews.houseHelpId, id))
+    .orderBy(desc(houseHelpReviews.createdAt))
+  const sum = reviews.reduce((s, r) => s + r.rating, 0)
+  const count = reviews.length
+  return c.json({
+    reviews,
+    summary: {
+      average: count > 0 ? Math.round((sum / count) * 10) / 10 : null,
+      count,
+      trustScore: trustScore(sum, count),
+    },
+  })
+})
+
+// A resident rates a house help 1..5 with an optional comment. One review per
+// resident per help — a repeat submission updates the existing one (upsert).
+houseHelpRoutes.post('/:id/reviews', requireRole('RESIDENT', 'ADMIN'), zValidator('json', createHouseHelpReviewSchema), async (c) => {
+  const db = c.get('db')
+  const id = c.req.param('id')
+  const uid = actingUserId(c)
+  if (!uid) return c.json({ error: 'unauthenticated' }, 401)
+
+  const [help] = await db.select({ id: houseHelp.id }).from(houseHelp).where(eq(houseHelp.id, id)).limit(1)
+  if (!help) return c.json({ error: 'house help not found' }, 404)
+
+  const { rating, comment } = c.req.valid('json')
+  const [saved] = await db
+    .insert(houseHelpReviews)
+    .values({ houseHelpId: id, reviewerId: uid, rating, comment: comment ?? null })
+    .onConflictDoUpdate({
+      target: [houseHelpReviews.houseHelpId, houseHelpReviews.reviewerId],
+      set: { rating, comment: comment ?? null, updatedAt: new Date() },
+    })
+    .returning({ id: houseHelpReviews.id, rating: houseHelpReviews.rating })
+  return c.json({ ok: true, id: saved.id, rating: saved.rating }, 201)
 })
 
 // Residents register the domestic staff they employ; admins may register any.
