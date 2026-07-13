@@ -2,9 +2,11 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import type { Apartment, CreateHouseHelp, HouseHelpType, IdProofType } from '@opensociety/shared'
+import type { BackgroundCheckStatus } from '@opensociety/shared'
 import {
   houseHelpTypeSchema,
   idProofTypeSchema,
+  backgroundCheckStatusSchema,
   summarizeHouseHelpAttendance,
   formatWorkedMinutes,
   houseHelpAttendanceToCsv,
@@ -139,6 +141,94 @@ function AddHouseHelp() {
   )
 }
 
+function TrustBadge({ help }: { help: HouseHelpRow }) {
+  const verified = help.verificationLevel === 'VERIFIED'
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Badge variant={verified ? 'default' : 'secondary'}>{verified ? '✓ Verified' : 'Unverified'}</Badge>
+      <span className="text-muted-foreground text-xs">Trust {help.trustScore}/100</span>
+    </div>
+  )
+}
+
+function VerificationButton({ help }: { help: HouseHelpRow }) {
+  const qc = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [idVerified, setIdVerified] = useState(help.idVerified)
+  const [backgroundCheck, setBackgroundCheck] = useState<BackgroundCheckStatus>(help.backgroundCheck)
+  const [incidents, setIncidents] = useState(String(help.incidentCount))
+
+  const save = useMutation({
+    mutationFn: () =>
+      apiClient.updateHouseHelpVerification(help.id, {
+        idVerified,
+        backgroundCheck,
+        incidentCount: Number(incidents) || 0,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['house-help'] })
+      setOpen(false)
+    },
+  })
+
+  return (
+    <>
+      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+        Verify
+      </Button>
+      {open && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div className="bg-background w-full max-w-sm space-y-4 rounded-lg p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <p className="text-lg font-semibold">{help.name} — verification</p>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={idVerified} onChange={(e) => setIdVerified(e.target.checked)} />
+              ID proof verified
+            </label>
+            <div className="space-y-1.5">
+              <Label>Background check</Label>
+              <Select value={backgroundCheck} onValueChange={(v) => setBackgroundCheck(v as BackgroundCheckStatus)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {backgroundCheckStatusSchema.options.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="incidents">Incident reports</Label>
+              <Input
+                id="incidents"
+                type="number"
+                min={0}
+                value={incidents}
+                onChange={(e) => setIncidents(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button className="flex-1" disabled={save.isPending} onClick={() => save.mutate()}>
+                {save.isPending ? 'Saving…' : 'Save'}
+              </Button>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 function Rating({ avg, count }: { avg: number | null; count: number }) {
   if (count === 0) return <span className="text-muted-foreground text-sm">No ratings</span>
   return (
@@ -253,6 +343,7 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Ap
         <TableCell />
         <TableCell />
         <TableCell />
+        <TableCell />
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <Button size="sm" disabled={save.isPending || !name.trim()} onClick={() => save.mutate()}>
@@ -282,10 +373,14 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Ap
           <Rating avg={help.ratingAvg} count={help.reviewCount} />
         </TableCell>
         <TableCell>
+          <TrustBadge help={help} />
+        </TableCell>
+        <TableCell>
           <Badge variant={help.isActive ? 'default' : 'secondary'}>{help.isActive ? 'Active' : 'Inactive'}</Badge>
         </TableCell>
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
+            <VerificationButton help={help} />
             <ReviewsButton helpId={help.id} name={help.name} />
             <Button size="sm" variant="ghost" onClick={() => setShowFlats((s) => !s)}>
               {showFlats ? 'Hide flats' : 'Flats'}
@@ -306,7 +401,7 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Ap
       </TableRow>
       {showFlats && (
         <TableRow>
-          <TableCell colSpan={7} className="bg-muted/40">
+          <TableCell colSpan={8} className="bg-muted/40">
             <AssignmentsPanel helpId={help.id} apartments={apartments} />
           </TableCell>
         </TableRow>
@@ -424,6 +519,7 @@ function HouseHelpPage() {
                   <TableHead>Type</TableHead>
                   <TableHead>ID proof</TableHead>
                   <TableHead>Rating</TableHead>
+                  <TableHead>Trust</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>

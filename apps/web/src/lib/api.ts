@@ -14,6 +14,9 @@ import type {
   HouseHelp,
   HouseHelpReview,
   CreateHouseHelpReview,
+  UpdateVerification,
+  BackgroundCheckStatus,
+  VerificationLevel,
   HouseHelpAssignment,
   HouseHelpAttendanceRow,
   Notice,
@@ -51,8 +54,16 @@ import type {
   VisitorStatus,
 } from '@opensociety/shared'
 
-// House help with its anonymous rating summary (from the directory list).
-export type HouseHelpRow = HouseHelp & { ratingAvg: number | null; reviewCount: number; trustScore: number }
+// House help with its anonymous rating summary + verification/trust (directory list).
+export type HouseHelpRow = HouseHelp & {
+  ratingAvg: number | null
+  reviewCount: number
+  trustScore: number
+  idVerified: boolean
+  backgroundCheck: BackgroundCheckStatus
+  incidentCount: number
+  verificationLevel: VerificationLevel
+}
 
 export type HouseHelpReviewsView = {
   reviews: HouseHelpReview[]
@@ -266,6 +277,8 @@ export const apiClient = {
   getHouseHelpReviews: (id: string) => api<HouseHelpReviewsView>(`/house-help/${id}/reviews`),
   createHouseHelpReview: (id: string, body: CreateHouseHelpReview) =>
     api<{ ok: true; id: string; rating: number }>(`/house-help/${id}/reviews`, { method: 'POST', body: json(body) }),
+  updateHouseHelpVerification: (id: string, body: UpdateVerification) =>
+    api<HouseHelp>(`/house-help/${id}/verification`, { method: 'POST', body: json(body) }),
   createHouseHelp: (body: CreateHouseHelp) => api<HouseHelp>('/house-help', { method: 'POST', body: json(body) }),
   updateHouseHelp: (id: string, body: UpdateHouseHelp) =>
     api<HouseHelp>(`/house-help/${id}`, { method: 'PUT', body: json(body) }),
