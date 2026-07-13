@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import type { Apartment, CreateHouseHelp, HouseHelp, HouseHelpType, IdProofType } from '@opensociety/shared'
+import type { Apartment, CreateHouseHelp, HouseHelpType, IdProofType } from '@opensociety/shared'
 import {
   houseHelpTypeSchema,
   idProofTypeSchema,
@@ -11,7 +11,7 @@ import {
   houseHelpWorkedMinutes,
 } from '@opensociety/shared'
 
-import { apiClient } from '../../lib/api'
+import { apiClient, type HouseHelpRow } from '../../lib/api'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -139,7 +139,72 @@ function AddHouseHelp() {
   )
 }
 
-function HouseHelpRow({ help, apartments }: { help: HouseHelp; apartments: Apartment[] }) {
+function Rating({ avg, count }: { avg: number | null; count: number }) {
+  if (count === 0) return <span className="text-muted-foreground text-sm">No ratings</span>
+  return (
+    <span className="text-sm">
+      <span className="text-amber-500">★</span> {avg}{' '}
+      <span className="text-muted-foreground">({count})</span>
+    </span>
+  )
+}
+
+function ReviewsButton({ helpId, name }: { helpId: string; name: string }) {
+  const [open, setOpen] = useState(false)
+  const reviews = useQuery({
+    queryKey: ['house-help-reviews', helpId],
+    queryFn: () => apiClient.getHouseHelpReviews(helpId),
+    enabled: open,
+  })
+  return (
+    <>
+      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+        Reviews
+      </Button>
+      {open && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="bg-background max-h-[80vh] w-full max-w-md overflow-auto rounded-lg p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="mb-1 text-lg font-semibold">{name}</p>
+            {reviews.data && (
+              <p className="text-muted-foreground mb-4 text-sm">
+                <span className="text-amber-500">★</span> {reviews.data.summary.average ?? '—'} · Trust{' '}
+                {reviews.data.summary.trustScore}/100 · {reviews.data.summary.count} review
+                {reviews.data.summary.count === 1 ? '' : 's'}
+              </p>
+            )}
+            <div className="space-y-3">
+              {reviews.data?.reviews.length === 0 && (
+                <p className="text-muted-foreground text-sm">No reviews yet.</p>
+              )}
+              {reviews.data?.reviews.map((r) => (
+                <div key={r.id} className="border-border border-b pb-2 last:border-0">
+                  <p className="text-sm">
+                    <span className="text-amber-500">{'★'.repeat(r.rating)}</span>
+                    <span className="text-muted-foreground">{'★'.repeat(5 - r.rating)}</span>
+                  </p>
+                  {r.comment && <p className="text-muted-foreground text-sm">{r.comment}</p>}
+                </div>
+              ))}
+            </div>
+            <Button className="mt-4 w-full" variant="outline" onClick={() => setOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Apartment[] }) {
   const qc = useQueryClient()
   const [editing, setEditing] = useState(false)
   const [showFlats, setShowFlats] = useState(false)
@@ -187,6 +252,7 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelp; apartments: Apart
         </TableCell>
         <TableCell />
         <TableCell />
+        <TableCell />
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <Button size="sm" disabled={save.isPending || !name.trim()} onClick={() => save.mutate()}>
@@ -213,10 +279,14 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelp; apartments: Apart
           {help.idProofType ? `${help.idProofType}${help.idProofNumber ? ` · ${help.idProofNumber}` : ''}` : '—'}
         </TableCell>
         <TableCell>
+          <Rating avg={help.ratingAvg} count={help.reviewCount} />
+        </TableCell>
+        <TableCell>
           <Badge variant={help.isActive ? 'default' : 'secondary'}>{help.isActive ? 'Active' : 'Inactive'}</Badge>
         </TableCell>
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
+            <ReviewsButton helpId={help.id} name={help.name} />
             <Button size="sm" variant="ghost" onClick={() => setShowFlats((s) => !s)}>
               {showFlats ? 'Hide flats' : 'Flats'}
             </Button>
@@ -236,7 +306,7 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelp; apartments: Apart
       </TableRow>
       {showFlats && (
         <TableRow>
-          <TableCell colSpan={6} className="bg-muted/40">
+          <TableCell colSpan={7} className="bg-muted/40">
             <AssignmentsPanel helpId={help.id} apartments={apartments} />
           </TableCell>
         </TableRow>
@@ -353,6 +423,7 @@ function HouseHelpPage() {
                   <TableHead>Phone</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>ID proof</TableHead>
+                  <TableHead>Rating</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>

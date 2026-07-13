@@ -12,6 +12,8 @@ import type {
   CreateTicket,
   Guard,
   HouseHelp,
+  HouseHelpReview,
+  CreateHouseHelpReview,
   HouseHelpAssignment,
   HouseHelpAttendanceRow,
   Notice,
@@ -48,6 +50,14 @@ import type {
   VisitorPreApproval,
   VisitorStatus,
 } from '@opensociety/shared'
+
+// House help with its anonymous rating summary (from the directory list).
+export type HouseHelpRow = HouseHelp & { ratingAvg: number | null; reviewCount: number; trustScore: number }
+
+export type HouseHelpReviewsView = {
+  reviews: HouseHelpReview[]
+  summary: { average: number | null; count: number; trustScore: number }
+}
 
 // Collection analytics (#70): monthly rate trend, tower comparison, payer patterns.
 export type CollectionAnalytics = {
@@ -252,7 +262,10 @@ export const apiClient = {
     api<Ticket>(`/tickets/${id}/assign`, { method: 'PATCH', body: json({ assignedTo }) }),
 
   // House help (domestic staff registry)
-  listHouseHelp: (type?: string) => api<HouseHelp[]>(`/house-help${type ? `?type=${type}` : ''}`),
+  listHouseHelp: (type?: string) => api<HouseHelpRow[]>(`/house-help${type ? `?type=${type}` : ''}`),
+  getHouseHelpReviews: (id: string) => api<HouseHelpReviewsView>(`/house-help/${id}/reviews`),
+  createHouseHelpReview: (id: string, body: CreateHouseHelpReview) =>
+    api<{ ok: true; id: string; rating: number }>(`/house-help/${id}/reviews`, { method: 'POST', body: json(body) }),
   createHouseHelp: (body: CreateHouseHelp) => api<HouseHelp>('/house-help', { method: 'POST', body: json(body) }),
   updateHouseHelp: (id: string, body: UpdateHouseHelp) =>
     api<HouseHelp>(`/house-help/${id}`, { method: 'PUT', body: json(body) }),
