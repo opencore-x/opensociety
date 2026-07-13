@@ -1,6 +1,6 @@
-import { pgTable, uuid, text, timestamp, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core'
 import { users } from './users'
-import { houseHelpType, idProofType } from './enums'
+import { houseHelpType, idProofType, backgroundCheckStatus } from './enums'
 
 // A domestic worker (maid, cook, driver, ...) registered in the society's
 // registry. Assignments to specific apartments live in a separate junction
@@ -15,6 +15,10 @@ export const houseHelp = pgTable('house_help', {
   idProofType: idProofType('id_proof_type'),
   idProofNumber: text('id_proof_number'),
   idProofUrl: text('id_proof_url'),
+  // Verification & trust signals (#67), set by admins.
+  idVerified: boolean('id_verified').notNull().default(false),
+  backgroundCheck: backgroundCheckStatus('background_check').notNull().default('PENDING'),
+  incidentCount: integer('incident_count').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),
   registeredBy: uuid('registered_by').references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
