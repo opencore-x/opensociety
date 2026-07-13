@@ -1,8 +1,25 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { and, eq, gte, isNotNull, lte, sql } from 'drizzle-orm'
-import { maintenanceBills, payments, apartments, visitorEntries, societyConfig } from '@opensociety/db'
-import { analyzePayers, collectionRatePct, fillHours, peakHour, averagePerDay } from '@opensociety/shared'
+import {
+  maintenanceBills,
+  payments,
+  apartments,
+  visitorEntries,
+  societyConfig,
+  houseHelp,
+  houseHelpEntries,
+  maintenanceTickets,
+} from '@opensociety/db'
+import {
+  analyzePayers,
+  collectionRatePct,
+  fillHours,
+  peakHour,
+  averagePerDay,
+  fillDaysOfWeek,
+  avgResolutionHours,
+} from '@opensociety/shared'
 import type { VisitorTrends } from '@opensociety/shared'
 import { withDb, withAuth, requireRole } from '../middleware'
 import { renderVisitorTrendsPdf } from '../lib/visitor-trends-pdf'
@@ -178,6 +195,70 @@ async function computeVisitorTrends(c: Context<AppEnv>): Promise<VisitorTrends> 
 }
 
 reportRoutes.get('/visitor-trends', async (c) => c.json(await computeVisitorTrends(c)))
+
+// House-help insights (#69): active-help count, most-employed types, and
+// attendance patterns by day of week (IST).
+reportRoutes.get('/house-help-analytics', async (c) => {
+  const db = c.get('db')
+
+  const [{ totalActive }] = await db
+    .select({ totalActive: sql<number>`count(*)::int` })
+    .from(houseHelp)
+    .where(eq(houseHelp.isActive, true))
+
+  const types = await db
+    .select({ label: houseHelp.type, count: sql<number>`count(*)::int` })
+    .from(houseHelp)
+    .where(eq(houseHelp.isActive, true))
+    .groupBy(houseHelp.type)
+  const byType = types.map((t) => ({ label: t.label, count: Number(t.count) })).sort((a, b) => b.count - a.count)
+
+  const [{ totalAttendance }] = await db
+    .select({ totalAttendance: sql<number>`count(*)::int` })
+    .from(houseHelpEntries)
+
+  const istDow = sql`extract(dow from ((${houseHelpEntries.checkInAt} AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Kolkata'))`
+  const dows = await db
+    .select({ dow: sql<number>`${istDow}::int`, count: sql<number>`count(*)::int` })
+    .from(houseHelpEntries)
+    .groupBy(istDow)
+  const attendanceByDow = fillDaysOfWeek(dows.map((d) => ({ dow: Number(d.dow), count: Number(d.count) })))
+
+  return c.json({ totalActive: Number(totalActive), totalAttendance: Number(totalAttendance), byType, attendanceByDow })
+})
+
+// Maintenance insights (#69): category breakdown, status mix, pending count,
+// and average resolution time.
+reportRoutes.get('/maintenance-analytics', async (c) => {
+  const db = c.get('db')
+
+  const cats = await db
+    .select({ label: maintenanceTickets.category, count: sql<number>`count(*)::int` })
+    .from(maintenanceTickets)
+    .groupBy(maintenanceTickets.category)
+  const byCategory = cats.map((r) => ({ label: r.label, count: Number(r.count) })).sort((a, b) => b.count - a.count)
+
+  const stats = await db
+    .select({ label: maintenanceTickets.status, count: sql<number>`count(*)::int` })
+    .from(maintenanceTickets)
+    .groupBy(maintenanceTickets.status)
+  const byStatus = stats.map((r) => ({ label: r.label, count: Number(r.count) })).sort((a, b) => b.count - a.count)
+
+  const resolvedRows = await db
+    .select({ createdAt: maintenanceTickets.createdAt, resolvedAt: maintenanceTickets.resolvedAt })
+    .from(maintenanceTickets)
+  const avgHours = avgResolutionHours(
+    resolvedRows.map((r) => ({
+      createdMs: new Date(r.createdAt as unknown as string).getTime(),
+      resolvedMs: r.resolvedAt ? new Date(r.resolvedAt as unknown as string).getTime() : null,
+    })),
+  )
+
+  const total = byStatus.reduce((s, r) => s + r.count, 0)
+  const pending = byStatus.filter((r) => r.label === 'OPEN' || r.label === 'IN_PROGRESS').reduce((s, r) => s + r.count, 0)
+
+  return c.json({ total, pending, avgResolutionHours: avgHours, byCategory, byStatus })
+})
 
 // PDF export of the same visitor-trends report.
 reportRoutes.get('/visitor-trends/pdf', async (c) => {
