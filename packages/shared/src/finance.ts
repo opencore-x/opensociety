@@ -153,6 +153,67 @@ export function collectionReportToCsv(rows: CollectionRow[]): string {
   return [header.join(','), ...lines].join('\n')
 }
 
+// ----- Collection analytics (#70) -----
+
+export type TowerCollectionRow = { tower: string; billed: number; collected: number }
+
+// CSV of tower-wise collection with the collection rate appended.
+export function towerCollectionToCsv(rows: TowerCollectionRow[]): string {
+  const header = ['Tower', 'Billed', 'Collected', 'Collection %']
+  const lines = rows.map((r) =>
+    [r.tower, (r.billed / 100).toFixed(2), (r.collected / 100).toFixed(2), String(collectionRatePct(r.billed, r.collected))].join(','),
+  )
+  return [header.join(','), ...lines].join('\n')
+}
+
+// Whole days between a bill's due date and when it was settled. Negative = paid
+// early, 0 = on the due date, positive = paid late.
+export function payerTimingDays(dueDateMs: number, paidAtMs: number): number {
+  return Math.round((paidAtMs - dueDateMs) / 86_400_000)
+}
+
+export type PayerBucket = 'EARLY' | 'ON_TIME' | 'LATE'
+
+export function payerBucket(days: number): PayerBucket {
+  if (days < 0) return 'EARLY'
+  if (days === 0) return 'ON_TIME'
+  return 'LATE'
+}
+
+export interface PayerAnalytics {
+  early: number
+  onTime: number
+  late: number
+  outstanding: number // bills with a due date not yet fully paid
+  fullyPaid: number
+  avgDaysToPay: number | null // mean signed days (dueDate -> settled) over fully-paid bills
+}
+
+// Bucket every bill (that has a due date) by how promptly it was settled. A bill
+// counts as fully paid when its payments cover the total and a settle date is
+// known; otherwise it's outstanding.
+export function analyzePayers(
+  bills: { dueDateMs: number; total: number; paid: number; lastPaidAtMs: number | null }[],
+): PayerAnalytics {
+  const a: PayerAnalytics = { early: 0, onTime: 0, late: 0, outstanding: 0, fullyPaid: 0, avgDaysToPay: null }
+  let daySum = 0
+  for (const b of bills) {
+    const settled = b.paid >= b.total && b.total > 0 && b.lastPaidAtMs != null
+    if (!settled) {
+      a.outstanding++
+      continue
+    }
+    a.fullyPaid++
+    const days = payerTimingDays(b.dueDateMs, b.lastPaidAtMs as number)
+    daySum += days
+    if (days < 0) a.early++
+    else if (days === 0) a.onTime++
+    else a.late++
+  }
+  if (a.fullyPaid > 0) a.avgDaysToPay = Math.round((daySum / a.fullyPaid) * 10) / 10
+  return a
+}
+
 export type BillConfig = z.infer<typeof billConfigSchema>
 export type UpdateBillConfig = z.infer<typeof updateBillConfigSchema>
 export type GenerateBills = z.infer<typeof generateBillsSchema>
