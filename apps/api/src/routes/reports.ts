@@ -1,8 +1,11 @@
 import { Hono } from 'hono'
-import { and, eq, isNotNull, sql } from 'drizzle-orm'
-import { maintenanceBills, payments, apartments } from '@opensociety/db'
-import { analyzePayers, collectionRatePct } from '@opensociety/shared'
+import type { Context } from 'hono'
+import { and, eq, gte, isNotNull, lte, sql } from 'drizzle-orm'
+import { maintenanceBills, payments, apartments, visitorEntries, societyConfig } from '@opensociety/db'
+import { analyzePayers, collectionRatePct, fillHours, peakHour, averagePerDay } from '@opensociety/shared'
+import type { VisitorTrends } from '@opensociety/shared'
 import { withDb, withAuth, requireRole } from '../middleware'
+import { renderVisitorTrendsPdf } from '../lib/visitor-trends-pdf'
 import type { AppEnv } from '../types'
 
 export const reportRoutes = new Hono<AppEnv>()
@@ -122,5 +125,71 @@ reportRoutes.get('/collection-analytics', async (c) => {
     totalCollected,
     overallRatePct: collectionRatePct(totalBilled, totalCollected),
     fullyPaidPct: datedBills > 0 ? Math.round((payers.fullyPaid / datedBills) * 1000) / 10 : 0,
+  })
+})
+
+// Visitor trends (#68): peak hours, per-day counts, and type breakdown over a
+// date range (default: last 30 days). Times bucketed in IST. Shared by the JSON
+// dashboard endpoint and the PDF export.
+async function computeVisitorTrends(c: Context<AppEnv>): Promise<VisitorTrends> {
+  const db = c.get('db')
+  const toParam = c.req.query('to')
+  const fromParam = c.req.query('from')
+  const toDate = toParam ? new Date(`${toParam}T23:59:59.999Z`) : new Date()
+  const fromDate = fromParam ? new Date(`${fromParam}T00:00:00.000Z`) : new Date(Date.now() - 30 * 86_400_000)
+  const range = and(gte(visitorEntries.createdAt, fromDate), lte(visitorEntries.createdAt, toDate))
+  // Interpret the stored (UTC) timestamp in IST before bucketing.
+  const ist = sql`((${visitorEntries.createdAt} AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Kolkata')`
+
+  const hours = await db
+    .select({ hour: sql<number>`extract(hour from ${ist})::int`, count: sql<number>`count(*)::int` })
+    .from(visitorEntries)
+    .where(range)
+    .groupBy(sql`extract(hour from ${ist})`)
+  const byHour = fillHours(hours.map((h) => ({ hour: Number(h.hour), count: Number(h.count) })))
+
+  const types = await db
+    .select({ type: visitorEntries.type, count: sql<number>`count(*)::int` })
+    .from(visitorEntries)
+    .where(range)
+    .groupBy(visitorEntries.type)
+  const byType = types.map((t) => ({ type: t.type, count: Number(t.count) })).sort((a, b) => b.count - a.count)
+
+  const days = await db
+    .select({ date: sql<string>`to_char(${ist}, 'YYYY-MM-DD')`, count: sql<number>`count(*)::int` })
+    .from(visitorEntries)
+    .where(range)
+    .groupBy(sql`to_char(${ist}, 'YYYY-MM-DD')`)
+  const byDay = days.map((d) => ({ date: d.date, count: Number(d.count) })).sort((a, b) => a.date.localeCompare(b.date))
+
+  const total = byType.reduce((s, t) => s + t.count, 0)
+
+  return {
+    from: fromDate.toISOString().slice(0, 10),
+    to: toDate.toISOString().slice(0, 10),
+    total,
+    distinctDays: byDay.length,
+    avgPerDay: averagePerDay(total, byDay.length),
+    peakHour: peakHour(byHour),
+    byHour,
+    byType,
+    byDay,
+  }
+}
+
+reportRoutes.get('/visitor-trends', async (c) => c.json(await computeVisitorTrends(c)))
+
+// PDF export of the same visitor-trends report.
+reportRoutes.get('/visitor-trends/pdf', async (c) => {
+  const data = await computeVisitorTrends(c)
+  const [society] = await c.get('db').select({ name: societyConfig.name }).from(societyConfig).limit(1)
+  const pdf = await renderVisitorTrendsPdf(society?.name ?? 'Society', data)
+  const body = new ArrayBuffer(pdf.byteLength)
+  new Uint8Array(body).set(pdf)
+  return new Response(body, {
+    headers: {
+      'content-type': 'application/pdf',
+      'content-disposition': `inline; filename="visitor-trends-${data.from}-to-${data.to}.pdf"`,
+    },
   })
 })
