@@ -41,6 +41,7 @@ import type {
   BillConfig,
   UpdateBillConfig,
   FinanceReport,
+  VisitorTrends,
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
@@ -305,6 +306,22 @@ export const apiClient = {
   updateBillConfig: (body: UpdateBillConfig) => api<BillConfig>('/bill-config', { method: 'PUT', body: json(body) }),
   getFinanceReport: () => api<FinanceReport>('/reports/finance'),
   getCollectionAnalytics: () => api<CollectionAnalytics>('/reports/collection-analytics'),
+  getVisitorTrends: (from?: string, to?: string) => {
+    const q = new URLSearchParams()
+    if (from) q.set('from', from)
+    if (to) q.set('to', to)
+    const qs = q.toString()
+    return api<VisitorTrends>(`/reports/visitor-trends${qs ? `?${qs}` : ''}`)
+  },
+  visitorTrendsPdfObjectUrl: async (from?: string, to?: string): Promise<string> => {
+    const q = new URLSearchParams()
+    if (from) q.set('from', from)
+    if (to) q.set('to', to)
+    const qs = q.toString()
+    const res = await fetch(`${API_URL}/reports/visitor-trends/pdf${qs ? `?${qs}` : ''}`, { headers: await authHeaders() })
+    if (!res.ok) throw new Error(`PDF export failed (${res.status})`)
+    return URL.createObjectURL(await res.blob())
+  },
   // Auth-fetch a bill's PDF invoice and return a local object URL to open it.
   invoiceObjectUrl: async (billId: string): Promise<string> => {
     const res = await fetch(`${API_URL}/bills/${billId}/invoice`, { headers: await authHeaders() })
