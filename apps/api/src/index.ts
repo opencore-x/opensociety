@@ -13,6 +13,7 @@ import { guardRoutes } from './routes/guards'
 import { ticketRoutes } from './routes/tickets'
 import { houseHelpRoutes } from './routes/house-help'
 import { vehicleRoutes } from './routes/vehicles'
+import { parkingRoutes } from './routes/parking'
 import { uploadRoutes } from './routes/uploads'
 import { billRoutes } from './routes/bills'
 import { paymentRoutes } from './routes/payments'
@@ -38,6 +39,7 @@ app.route('/guards', guardRoutes)
 app.route('/tickets', ticketRoutes)
 app.route('/house-help', houseHelpRoutes)
 app.route('/vehicles', vehicleRoutes)
+app.route('/parking', parkingRoutes)
 app.route('/uploads', uploadRoutes)
 app.route('/bills', billRoutes)
 app.route('/payments', paymentRoutes)
