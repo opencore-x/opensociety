@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { hourLabel, visitorTrendsToCsv } from '@opensociety/shared'
-import type { HourCount, TypeCount } from '@opensociety/shared'
+import { hourLabel, visitorTrendsToCsv, dayOfWeekLabel } from '@opensociety/shared'
+import type { HourCount, TypeCount, LabelCount, DowCount } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
 import { PageHeader, QueryState } from '@/components/admin/ui'
@@ -61,6 +61,102 @@ function TypeBars({ byType }: { byType: TypeCount[] }) {
   )
 }
 
+function LabelBars({ rows, empty }: { rows: LabelCount[]; empty: string }) {
+  const max = Math.max(1, ...rows.map((r) => r.count))
+  if (rows.length === 0) return <p className="text-muted-foreground text-sm">{empty}</p>
+  return (
+    <div className="space-y-3">
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center gap-3">
+          <span className="w-28 text-sm font-medium">{r.label}</span>
+          <div className="bg-muted h-3 flex-1 overflow-hidden rounded">
+            <div className="bg-primary h-3 rounded" style={{ width: `${(r.count / max) * 100}%` }} />
+          </div>
+          <span className="text-muted-foreground w-10 text-right text-sm">{r.count}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function DowChart({ rows }: { rows: DowCount[] }) {
+  const max = Math.max(1, ...rows.map((r) => r.count))
+  return (
+    <div className="flex h-32 items-stretch gap-2">
+      {rows.map((r) => (
+        <div
+          key={r.dow}
+          className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+          title={`${dayOfWeekLabel(r.dow)}: ${r.count}`}
+        >
+          <div
+            className="bg-primary w-full rounded-t"
+            style={{ height: `${(r.count / max) * 100}%`, minHeight: r.count > 0 ? 2 : 0 }}
+          />
+          <span className="text-muted-foreground text-[10px]">{dayOfWeekLabel(r.dow)}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function OpsSection() {
+  const help = useQuery({ queryKey: ['house-help-analytics'], queryFn: apiClient.getHouseHelpAnalytics })
+  const maint = useQuery({ queryKey: ['maintenance-analytics'], queryFn: apiClient.getMaintenanceAnalytics })
+
+  return (
+    <>
+      {help.data && (
+        <Card>
+          <CardHeader>
+            <CardTitle>House help</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-wrap gap-10">
+              <Stat label="Active help" value={String(help.data.totalActive)} />
+              <Stat label="Total visits logged" value={String(help.data.totalAttendance)} />
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">Most employed types</p>
+              <LabelBars rows={help.data.byType} empty="No house help registered." />
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">Attendance by day (IST)</p>
+              <DowChart rows={help.data.attendanceByDow} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {maint.data && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Maintenance tickets</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-wrap gap-10">
+              <Stat label="Total tickets" value={String(maint.data.total)} />
+              <Stat label="Pending" value={String(maint.data.pending)} />
+              <Stat
+                label="Avg resolution"
+                value={maint.data.avgResolutionHours === null ? '—' : `${maint.data.avgResolutionHours}h`}
+              />
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">By category</p>
+              <LabelBars rows={maint.data.byCategory} empty="No tickets yet." />
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">By status</p>
+              <LabelBars rows={maint.data.byStatus} empty="No tickets yet." />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </>
+  )
+}
+
 function AnalyticsPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -80,7 +176,10 @@ function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Visitor analytics" description="Peak hours, daily footfall, and visitor-type trends." />
+      <PageHeader
+        title="Analytics"
+        description="Visitor footfall, house-help attendance, and maintenance insights."
+      />
 
       <Card>
         <CardContent className="flex flex-wrap items-end gap-4 pt-6">
@@ -158,6 +257,8 @@ function AnalyticsPage() {
           </>
         )}
       </QueryState>
+
+      <OpsSection />
     </div>
   )
 }

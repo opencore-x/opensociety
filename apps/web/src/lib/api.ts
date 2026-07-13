@@ -42,6 +42,8 @@ import type {
   UpdateBillConfig,
   FinanceReport,
   VisitorTrends,
+  HouseHelpAnalytics,
+  MaintenanceAnalytics,
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
@@ -313,6 +315,8 @@ export const apiClient = {
     const qs = q.toString()
     return api<VisitorTrends>(`/reports/visitor-trends${qs ? `?${qs}` : ''}`)
   },
+  getHouseHelpAnalytics: () => api<HouseHelpAnalytics>('/reports/house-help-analytics'),
+  getMaintenanceAnalytics: () => api<MaintenanceAnalytics>('/reports/maintenance-analytics'),
   visitorTrendsPdfObjectUrl: async (from?: string, to?: string): Promise<string> => {
     const q = new URLSearchParams()
     if (from) q.set('from', from)
