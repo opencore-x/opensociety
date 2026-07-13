@@ -29,6 +29,9 @@ import type {
   Vehicle,
   CreateVehicle,
   UpdateVehicle,
+  CreateParkingSlot,
+  UpdateParkingSlot,
+  AssignParkingSlot,
   MaintenanceBill,
   GenerateBills,
   CreateBill,
@@ -42,6 +45,32 @@ import type {
   VisitorPreApproval,
   VisitorStatus,
 } from '@opensociety/shared'
+
+// A parking slot with its resolved assigned-flat label (admin inventory view).
+export type ParkingSlotRow = {
+  id: string
+  slotNumber: string
+  type: 'COVERED' | 'OPEN'
+  apartmentId: string | null
+  isTemporary: boolean
+  assignedUntil: string | null
+  assignedBy: string | null
+  assignedAt: string | null
+  notes: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  apartment: string | null
+}
+
+// A public parking-directory row (active slots only).
+export type ParkingDirectoryRow = {
+  slotNumber: string
+  type: 'COVERED' | 'OPEN'
+  isTemporary: boolean
+  assignedUntil: string | null
+  apartment: string | null
+}
 
 // A row from the vehicle gate log (visitor entries that arrived with a vehicle).
 export type VehicleGateLogRow = {
@@ -205,6 +234,17 @@ export const apiClient = {
   updateVehicle: (id: string, body: UpdateVehicle) =>
     api<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: json(body) }),
   listVehicleGateLog: () => api<VehicleGateLogRow[]>('/vehicles/gate-log'),
+
+  // Parking (slot inventory + allocation)
+  listParkingSlots: () => api<ParkingSlotRow[]>('/parking/slots'),
+  listParkingDirectory: () => api<ParkingDirectoryRow[]>('/parking/directory'),
+  createParkingSlot: (body: CreateParkingSlot) =>
+    api<ParkingSlotRow>('/parking/slots', { method: 'POST', body: json(body) }),
+  updateParkingSlot: (id: string, body: UpdateParkingSlot) =>
+    api<ParkingSlotRow>(`/parking/slots/${id}`, { method: 'PUT', body: json(body) }),
+  assignParkingSlot: (id: string, body: AssignParkingSlot) =>
+    api<ParkingSlotRow>(`/parking/slots/${id}/assign`, { method: 'POST', body: json(body) }),
+  deleteParkingSlot: (id: string) => api<{ ok: true }>(`/parking/slots/${id}`, { method: 'DELETE' }),
 
   // Billing (finance)
   generateBills: (body: GenerateBills) =>
