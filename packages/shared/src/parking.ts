@@ -11,6 +11,9 @@ export const parkingSlotSchema = z.object({
   assignedUntil: z.string().nullable(),
   assignedBy: z.string().uuid().nullable(),
   assignedAt: z.string().nullable(),
+  isVisitor: z.boolean(),
+  occupiedByEntryId: z.string().uuid().nullable(),
+  occupiedAt: z.string().nullable(),
   notes: z.string().nullable(),
   isActive: z.boolean(),
   createdAt: z.string(),
@@ -20,12 +23,14 @@ export const parkingSlotSchema = z.object({
 export const createParkingSlotSchema = z.object({
   slotNumber: z.string().min(1),
   type: parkingSlotTypeSchema.default('OPEN'),
+  isVisitor: z.boolean().default(false),
   notes: z.string().optional(),
 })
 
 export const updateParkingSlotSchema = z.object({
   slotNumber: z.string().min(1).optional(),
   type: parkingSlotTypeSchema.optional(),
+  isVisitor: z.boolean().optional(),
   notes: z.string().nullable().optional(),
   isActive: z.boolean().optional(),
 })
@@ -121,6 +126,43 @@ export function summarizeParking(
     else s.inactive++
   }
   return s
+}
+
+// ----- Visitor parking pool (first-come) -----
+
+export interface VisitorParkingSummary {
+  total: number
+  available: number
+  occupied: number
+  isFull: boolean
+}
+
+// A visitor slot is free when it's an active visitor slot with no occupant.
+export function isVisitorSlotFree(slot: {
+  isActive: boolean
+  isVisitor: boolean
+  occupiedByEntryId: string | null
+}): boolean {
+  return slot.isActive && slot.isVisitor && slot.occupiedByEntryId === null
+}
+
+// The next slot a check-in should take: the first free visitor slot in the
+// given order (the caller sorts, e.g. by slotNumber). Returns null when full.
+export function nextFreeVisitorSlot<T extends { isActive: boolean; isVisitor: boolean; occupiedByEntryId: string | null }>(
+  slots: T[],
+): T | null {
+  return slots.find(isVisitorSlotFree) ?? null
+}
+
+// Occupancy rollup for the visitor pool. `isFull` is true when every active
+// visitor slot is occupied (and at least one exists).
+export function visitorParkingSummary(
+  slots: { isActive: boolean; isVisitor: boolean; occupiedByEntryId: string | null }[],
+): VisitorParkingSummary {
+  const pool = slots.filter((s) => s.isVisitor && s.isActive)
+  const occupied = pool.filter((s) => s.occupiedByEntryId !== null).length
+  const total = pool.length
+  return { total, occupied, available: total - occupied, isFull: total > 0 && occupied >= total }
 }
 
 export type ParkingSlot = z.infer<typeof parkingSlotSchema>
