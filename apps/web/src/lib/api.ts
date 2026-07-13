@@ -46,6 +46,24 @@ import type {
   VisitorStatus,
 } from '@opensociety/shared'
 
+// Collection analytics (#70): monthly rate trend, tower comparison, payer patterns.
+export type CollectionAnalytics = {
+  byMonth: { period: string; billed: number; collected: number; ratePct: number }[]
+  byTower: { tower: string; billed: number; collected: number }[]
+  payers: {
+    early: number
+    onTime: number
+    late: number
+    outstanding: number
+    fullyPaid: number
+    avgDaysToPay: number | null
+  }
+  totalBilled: number
+  totalCollected: number
+  overallRatePct: number
+  fullyPaidPct: number
+}
+
 // A parking slot with its resolved assigned-flat label (admin inventory view).
 export type ParkingSlotRow = {
   id: string
@@ -286,6 +304,7 @@ export const apiClient = {
   getBillConfig: () => api<BillConfig>('/bill-config'),
   updateBillConfig: (body: UpdateBillConfig) => api<BillConfig>('/bill-config', { method: 'PUT', body: json(body) }),
   getFinanceReport: () => api<FinanceReport>('/reports/finance'),
+  getCollectionAnalytics: () => api<CollectionAnalytics>('/reports/collection-analytics'),
   // Auth-fetch a bill's PDF invoice and return a local object URL to open it.
   invoiceObjectUrl: async (billId: string): Promise<string> => {
     const res = await fetch(`${API_URL}/bills/${billId}/invoice`, { headers: await authHeaders() })

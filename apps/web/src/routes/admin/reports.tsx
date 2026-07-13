@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { formatPaise, collectionRatePct, collectionReportToCsv } from '@opensociety/shared'
+import { formatPaise, collectionRatePct, collectionReportToCsv, towerCollectionToCsv } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
 import { PageHeader, QueryState } from '@/components/admin/ui'
@@ -15,6 +15,100 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="text-muted-foreground text-xs">{label}</p>
       <p className="text-2xl font-semibold">{value}</p>
     </div>
+  )
+}
+
+function csvDataHref(csv: string): string {
+  return `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`
+}
+
+function RateBar({ pct }: { pct: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="bg-muted h-2 w-full overflow-hidden rounded">
+        <div className="h-2 rounded bg-emerald-500" style={{ width: `${Math.min(pct, 100)}%` }} />
+      </div>
+      <span className="text-muted-foreground w-12 shrink-0 text-right text-xs">{pct}%</span>
+    </div>
+  )
+}
+
+function AnalyticsSection() {
+  const q = useQuery({ queryKey: ['collection-analytics'], queryFn: apiClient.getCollectionAnalytics })
+  const data = q.data
+  if (!data) return null
+  const { payers } = data
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Collection efficiency</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-10">
+          <Stat label="Overall collection rate" value={`${data.overallRatePct}%`} />
+          <Stat label="Bills paid in full" value={`${data.fullyPaidPct}%`} />
+          <Stat
+            label="Avg days to pay"
+            value={payers.avgDaysToPay === null ? '—' : `${payers.avgDaysToPay > 0 ? '+' : ''}${payers.avgDaysToPay}d`}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle>Collection by tower</CardTitle>
+          <a
+            href={csvDataHref(towerCollectionToCsv(data.byTower))}
+            download="collection-by-tower.csv"
+            className="border-input hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center rounded-md border px-4 text-sm font-medium transition-colors aria-disabled:pointer-events-none aria-disabled:opacity-50"
+            aria-disabled={data.byTower.length === 0}
+          >
+            Download CSV
+          </a>
+        </CardHeader>
+        <CardContent>
+          {data.byTower.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No bills yet.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tower</TableHead>
+                  <TableHead className="text-right">Billed</TableHead>
+                  <TableHead className="text-right">Collected</TableHead>
+                  <TableHead className="w-48">Collection %</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.byTower.map((t) => (
+                  <TableRow key={t.tower}>
+                    <TableCell className="font-medium">{t.tower}</TableCell>
+                    <TableCell className="text-right">{formatPaise(t.billed)}</TableCell>
+                    <TableCell className="text-right">{formatPaise(t.collected)}</TableCell>
+                    <TableCell>
+                      <RateBar pct={collectionRatePct(t.billed, t.collected)} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Payer patterns</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-10">
+          <Stat label="Early" value={String(payers.early)} />
+          <Stat label="On time" value={String(payers.onTime)} />
+          <Stat label="Late" value={String(payers.late)} />
+          <Stat label="Outstanding" value={String(payers.outstanding)} />
+        </CardContent>
+      </Card>
+    </>
   )
 }
 
@@ -78,12 +172,7 @@ function ReportsPage() {
                             <TableCell className="text-right">{formatPaise(r.billed)}</TableCell>
                             <TableCell className="text-right">{formatPaise(r.collected)}</TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="bg-muted h-2 w-full overflow-hidden rounded">
-                                  <div className="h-2 rounded bg-emerald-500" style={{ width: `${Math.min(pct, 100)}%` }} />
-                                </div>
-                                <span className="text-muted-foreground w-12 shrink-0 text-right text-xs">{pct}%</span>
-                              </div>
+                              <RateBar pct={pct} />
                             </TableCell>
                           </TableRow>
                         )
@@ -124,6 +213,7 @@ function ReportsPage() {
           </>
         )}
       </QueryState>
+      <AnalyticsSection />
     </div>
   )
 }
