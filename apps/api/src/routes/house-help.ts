@@ -18,9 +18,12 @@ import {
   checkInHouseHelpSchema,
   createHouseHelpAssignmentSchema,
   createHouseHelpReviewSchema,
+  updateVerificationSchema,
   canManageHouseHelp,
   canManageHouseHelpAssignment,
   trustScore,
+  computeTrustScore,
+  verificationLevel,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
@@ -86,14 +89,24 @@ houseHelpRoutes.get('/', async (c) => {
     .from(houseHelpReviews)
     .groupBy(houseHelpReviews.houseHelpId)
   const byHelp = new Map(agg.map((a) => [a.houseHelpId, { sum: Number(a.sum), count: Number(a.count) }]))
+  const now = Date.now()
   return c.json(
     rows.map((r) => {
       const s = byHelp.get(r.id) ?? { sum: 0, count: 0 }
+      const tenureDays = Math.floor((now - new Date(r.createdAt as unknown as string).getTime()) / 86_400_000)
       return {
         ...r,
         ratingAvg: s.count > 0 ? Math.round((s.sum / s.count) * 10) / 10 : null,
         reviewCount: s.count,
-        trustScore: trustScore(s.sum, s.count),
+        // Composite trust: ratings + ID/background verification + tenure - incidents.
+        trustScore: computeTrustScore({
+          ratingTrust: trustScore(s.sum, s.count),
+          idVerified: r.idVerified,
+          backgroundCheck: r.backgroundCheck,
+          tenureDays,
+          incidentCount: r.incidentCount,
+        }),
+        verificationLevel: verificationLevel(r.idVerified, r.backgroundCheck),
       }
     }),
   )
@@ -148,6 +161,21 @@ houseHelpRoutes.post('/:id/reviews', requireRole('RESIDENT', 'ADMIN'), zValidato
     })
     .returning({ id: houseHelpReviews.id, rating: houseHelpReviews.rating })
   return c.json({ ok: true, id: saved.id, rating: saved.rating }, 201)
+})
+
+// Admin sets verification/trust signals: ID verified, background-check status,
+// and the running incident count. 404 if the help is missing.
+houseHelpRoutes.post('/:id/verification', requireRole('ADMIN'), zValidator('json', updateVerificationSchema), async (c) => {
+  const db = c.get('db')
+  const id = c.req.param('id')
+  const input = c.req.valid('json')
+  const [updated] = await db
+    .update(houseHelp)
+    .set({ ...input, updatedAt: new Date() })
+    .where(eq(houseHelp.id, id))
+    .returning()
+  if (!updated) return c.json({ error: 'not found' }, 404)
+  return c.json(updated)
 })
 
 // Residents register the domestic staff they employ; admins may register any.
