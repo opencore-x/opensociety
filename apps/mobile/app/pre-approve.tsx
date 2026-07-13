@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import QRCode from 'react-native-qrcode-svg'
 import type { VisitorPreApproval } from '@opensociety/shared'
+import { preApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
 import { Button } from '../components/Button'
 
@@ -31,11 +33,14 @@ export default function PreApprove() {
   if (created) {
     return (
       <View style={styles.codeWrap}>
-        <Text style={styles.codeLabel}>Share this code with {created.visitorName}</Text>
+        <Text style={styles.codeLabel}>Show this to {created.visitorName}</Text>
+        <View style={styles.qrBox}>
+          <QRCode value={preApprovalQrValue(created.code)} size={200} />
+        </View>
         <Text style={styles.code} selectable>
           {created.code}
         </Text>
-        <Text style={styles.dim}>The guard enters it at the gate to let them in.</Text>
+        <Text style={styles.dim}>The guard scans the QR, or enters this code at the gate.</Text>
         <Button
           label="Pre-approve another"
           variant="outline"
@@ -136,6 +141,7 @@ const styles = StyleSheet.create({
   error: { color: '#e11d48', fontSize: 13 },
   codeWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   codeLabel: { fontSize: 15, color: '#3f3f46', textAlign: 'center' },
+  qrBox: { backgroundColor: '#fff', padding: 16, borderRadius: 12 },
   code: { fontSize: 44, fontWeight: '800', letterSpacing: 6, color: '#0e7490' },
   dim: { color: '#71717a', fontSize: 13, textAlign: 'center', marginBottom: 8 },
 })
