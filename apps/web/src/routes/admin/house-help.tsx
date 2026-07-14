@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Modal } from '@/components/ui/modal'
 
 export const Route = createFileRoute('/admin/house-help')({ component: HouseHelpPage })
 
@@ -177,55 +178,40 @@ function VerificationButton({ help }: { help: HouseHelpRow }) {
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
         Verify
       </Button>
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <div className="bg-background w-full max-w-sm space-y-4 rounded-lg p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
-            <p className="text-lg font-semibold">{help.name} — verification</p>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={idVerified} onChange={(e) => setIdVerified(e.target.checked)} />
-              ID proof verified
-            </label>
-            <div className="space-y-1.5">
-              <Label>Background check</Label>
-              <Select value={backgroundCheck} onValueChange={(v) => setBackgroundCheck(v as BackgroundCheckStatus)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {backgroundCheckStatusSchema.options.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="incidents">Incident reports</Label>
-              <Input
-                id="incidents"
-                type="number"
-                min={0}
-                value={incidents}
-                onChange={(e) => setIncidents(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button className="flex-1" disabled={save.isPending} onClick={() => save.mutate()}>
-                {save.isPending ? 'Saving…' : 'Save'}
-              </Button>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
+      <Modal open={open} onClose={() => setOpen(false)} className="w-full max-w-sm space-y-4">
+        <p className="text-lg font-semibold">{help.name} — verification</p>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={idVerified} onChange={(e) => setIdVerified(e.target.checked)} />
+          ID proof verified
+        </label>
+        <div className="space-y-1.5">
+          <Label>Background check</Label>
+          <Select value={backgroundCheck} onValueChange={(v) => setBackgroundCheck(v as BackgroundCheckStatus)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {backgroundCheckStatusSchema.options.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      )}
+        <div className="space-y-1.5">
+          <Label htmlFor="incidents">Incident reports</Label>
+          <Input id="incidents" type="number" min={0} value={incidents} onChange={(e) => setIncidents(e.target.value)} />
+        </div>
+        <div className="flex gap-2 pt-1">
+          <Button className="flex-1" disabled={save.isPending} onClick={() => save.mutate()}>
+            {save.isPending ? 'Saving…' : 'Save'}
+          </Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+        </div>
+      </Modal>
     </>
   )
 }
@@ -252,45 +238,31 @@ function ReviewsButton({ helpId, name }: { helpId: string; name: string }) {
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
         Reviews
       </Button>
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="bg-background max-h-[80vh] w-full max-w-md overflow-auto rounded-lg p-6 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="mb-1 text-lg font-semibold">{name}</p>
-            {reviews.data && (
-              <p className="text-muted-foreground mb-4 text-sm">
-                <span className="text-amber-500">★</span> {reviews.data.summary.average ?? '—'} · Trust{' '}
-                {reviews.data.summary.trustScore}/100 · {reviews.data.summary.count} review
-                {reviews.data.summary.count === 1 ? '' : 's'}
+      <Modal open={open} onClose={() => setOpen(false)} className="max-h-[80vh] w-full max-w-md overflow-auto">
+        <p className="mb-1 text-lg font-semibold">{name}</p>
+        {reviews.data && (
+          <p className="text-muted-foreground mb-4 text-sm">
+            <span className="text-amber-500">★</span> {reviews.data.summary.average ?? '—'} · Trust{' '}
+            {reviews.data.summary.trustScore}/100 · {reviews.data.summary.count} review
+            {reviews.data.summary.count === 1 ? '' : 's'}
+          </p>
+        )}
+        <div className="space-y-3">
+          {reviews.data?.reviews.length === 0 && <p className="text-muted-foreground text-sm">No reviews yet.</p>}
+          {reviews.data?.reviews.map((r) => (
+            <div key={r.id} className="border-border border-b pb-2 last:border-0">
+              <p className="text-sm">
+                <span className="text-amber-500">{'★'.repeat(r.rating)}</span>
+                <span className="text-muted-foreground">{'★'.repeat(5 - r.rating)}</span>
               </p>
-            )}
-            <div className="space-y-3">
-              {reviews.data?.reviews.length === 0 && (
-                <p className="text-muted-foreground text-sm">No reviews yet.</p>
-              )}
-              {reviews.data?.reviews.map((r) => (
-                <div key={r.id} className="border-border border-b pb-2 last:border-0">
-                  <p className="text-sm">
-                    <span className="text-amber-500">{'★'.repeat(r.rating)}</span>
-                    <span className="text-muted-foreground">{'★'.repeat(5 - r.rating)}</span>
-                  </p>
-                  {r.comment && <p className="text-muted-foreground text-sm">{r.comment}</p>}
-                </div>
-              ))}
+              {r.comment && <p className="text-muted-foreground text-sm">{r.comment}</p>}
             </div>
-            <Button className="mt-4 w-full" variant="outline" onClick={() => setOpen(false)}>
-              Close
-            </Button>
-          </div>
+          ))}
         </div>
-      )}
+        <Button className="mt-4 w-full" variant="outline" onClick={() => setOpen(false)}>
+          Close
+        </Button>
+      </Modal>
     </>
   )
 }

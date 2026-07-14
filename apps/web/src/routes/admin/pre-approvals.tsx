@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Modal } from '@/components/ui/modal'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   Select,
@@ -151,29 +152,17 @@ function QrButton({ code, visitorName }: { code: string; visitorName: string }) 
       <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
         QR
       </Button>
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="bg-background w-full max-w-xs rounded-lg p-6 text-center shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="font-medium">{visitorName}</p>
-            <p className="text-muted-foreground mb-4 text-sm">Show this QR at the gate</p>
-            <div className="mx-auto inline-block rounded bg-white p-3">
-              <QRCode value={preApprovalQrValue(code)} size={196} />
-            </div>
-            <p className="mt-4 font-mono text-lg tracking-widest">{code}</p>
-            <Button className="mt-4 w-full" variant="outline" onClick={() => setOpen(false)}>
-              Close
-            </Button>
-          </div>
+      <Modal open={open} onClose={() => setOpen(false)} className="w-full max-w-xs text-center">
+        <p className="font-medium">{visitorName}</p>
+        <p className="text-muted-foreground mb-4 text-sm">Show this QR at the gate</p>
+        <div className="mx-auto inline-block rounded bg-white p-3">
+          <QRCode value={preApprovalQrValue(code)} size={196} />
         </div>
-      )}
+        <p className="mt-4 font-mono text-lg tracking-widest">{code}</p>
+        <Button className="mt-4 w-full" variant="outline" onClick={() => setOpen(false)}>
+          Close
+        </Button>
+      </Modal>
     </>
   )
 }
