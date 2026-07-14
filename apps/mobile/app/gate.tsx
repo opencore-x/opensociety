@@ -7,6 +7,7 @@ import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/s
 import { apiClient } from '../api/client'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
 import { OfflineBanner } from '../components/offline-banner'
+import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
@@ -69,6 +70,7 @@ export default function Gate() {
       ListHeaderComponent={
         <>
         <OfflineBanner className="-mx-4 -mt-4 mb-2 rounded-none" />
+        <SyncErrorTray className="mb-2" />
         <View className="mb-1 gap-2">
           <View className="flex-row items-center gap-2">
             <Input

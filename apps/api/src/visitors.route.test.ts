@@ -74,3 +74,29 @@ describe('visitor routes — handler', () => {
     expect(res.status).toBe(201)
   })
 })
+
+describe('visitor routes — idempotent create (offline replay)', () => {
+  const APARTMENT_ID = '11111111-1111-1111-1111-111111111111'
+  const CLIENT_ID = '22222222-2222-2222-2222-222222222222'
+  const entry = (over: Record<string, unknown> = {}) => ({
+    id: 'v1',
+    clientId: CLIENT_ID,
+    visitorName: 'Rahul',
+    status: 'PENDING',
+    ...over,
+  })
+
+  it('creates a new entry (201) for an unseen clientId', async () => {
+    setQueue([[GUARD], [entry()]]) // user, insert…returning() yields the new row
+    const res = await post('/', GUARD, JSON.stringify({ apartmentId: APARTMENT_ID, visitorName: 'Rahul', clientId: CLIENT_ID }))
+    expect(res.status).toBe(201)
+    expect(await res.json()).toMatchObject({ id: 'v1', clientId: CLIENT_ID })
+  })
+
+  it('dedupes a replayed clientId to the existing row (200, not a duplicate)', async () => {
+    setQueue([[GUARD], [], [entry()]]) // user, insert hits the unique index → [], then select existing
+    const res = await post('/', GUARD, JSON.stringify({ apartmentId: APARTMENT_ID, visitorName: 'Rahul', clientId: CLIENT_ID }))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({ id: 'v1', clientId: CLIENT_ID })
+  })
+})
