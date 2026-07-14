@@ -25,20 +25,21 @@ const loc = (lat: number | null, lng: number | null) =>
 const time = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '—')
 
 function OnDutyNow() {
+  const { t } = useT()
   const active = useQuery({ queryKey: ['duty-active'], queryFn: apiClient.listActiveDuty })
   return (
     <Card>
       <CardHeader>
-        <CardTitle>On duty now</CardTitle>
+        <CardTitle>{t('page.duty.onDutyNow')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <QueryState q={active} empty={active.isSuccess && active.data?.length === 0} emptyText="No guards on duty.">
+        <QueryState q={active} empty={active.isSuccess && active.data?.length === 0} emptyText={t('page.duty.noGuardsOnDuty')}>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Guard</TableHead>
-                <TableHead>Since</TableHead>
-                <TableHead>Clock-in location</TableHead>
+                <TableHead>{t('page.duty.guard')}</TableHead>
+                <TableHead>{t('common.since')}</TableHead>
+                <TableHead>{t('page.duty.clockInLocation')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -58,6 +59,7 @@ function OnDutyNow() {
 }
 
 function ShiftReport() {
+  const { t } = useT()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const sessions = useQuery({
@@ -79,16 +81,16 @@ function ShiftReport() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Shift report</CardTitle>
+        <CardTitle>{t('page.duty.shiftReport')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="duty-from">From</Label>
+            <Label htmlFor="duty-from">{t('common.from')}</Label>
             <Input id="duty-from" type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="duty-to">To</Label>
+            <Label htmlFor="duty-to">{t('common.to')}</Label>
             <Input id="duty-to" type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           {(from || to) && (
@@ -100,21 +102,21 @@ function ShiftReport() {
                 setTo('')
               }}
             >
-              Clear
+              {t('common.clear')}
             </Button>
           )}
         </div>
 
-        <QueryState q={sessions} empty={sessions.isSuccess && rows.length === 0} emptyText="No shifts in this range.">
+        <QueryState q={sessions} empty={sessions.isSuccess && rows.length === 0} emptyText={t('page.duty.noShifts')}>
           <div className="space-y-2">
-            <p className="text-sm font-medium">Hours per guard</p>
+            <p className="text-sm font-medium">{t('page.duty.hoursPerGuard')}</p>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Guard</TableHead>
-                  <TableHead className="text-right">Shifts</TableHead>
-                  <TableHead className="text-right">Hours</TableHead>
-                  <TableHead className="text-right">Status</TableHead>
+                  <TableHead>{t('page.duty.guard')}</TableHead>
+                  <TableHead className="text-right">{t('page.duty.shifts')}</TableHead>
+                  <TableHead className="text-right">{t('common.hours')}</TableHead>
+                  <TableHead className="text-right">{t('common.status')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -124,7 +126,7 @@ function ShiftReport() {
                     <TableCell className="text-right">{s.sessions}</TableCell>
                     <TableCell className="text-right">{formatWorkedMinutes(s.totalMinutes)}</TableCell>
                     <TableCell className="text-right">
-                      {s.onDuty ? <Badge variant="default">On duty</Badge> : <Badge variant="secondary">Off</Badge>}
+                      {s.onDuty ? <Badge variant="default">{t('page.duty.onDuty')}</Badge> : <Badge variant="secondary">{t('page.duty.off')}</Badge>}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -133,15 +135,15 @@ function ShiftReport() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium">Shift log</p>
+            <p className="text-sm font-medium">{t('page.duty.shiftLog')}</p>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Guard</TableHead>
-                  <TableHead>Clock-in</TableHead>
-                  <TableHead>Clock-out</TableHead>
-                  <TableHead className="text-right">Duration</TableHead>
-                  <TableHead className="text-right">Entries</TableHead>
+                  <TableHead>{t('page.duty.guard')}</TableHead>
+                  <TableHead>{t('page.duty.clockIn')}</TableHead>
+                  <TableHead>{t('page.duty.clockOut')}</TableHead>
+                  <TableHead className="text-right">{t('common.duration')}</TableHead>
+                  <TableHead className="text-right">{t('page.duty.entries')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

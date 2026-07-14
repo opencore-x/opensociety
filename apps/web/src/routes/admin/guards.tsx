@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 export const Route = createFileRoute('/admin/guards')({ component: GuardsPage })
 
 function AddGuard() {
+  const { t } = useT()
   const qc = useQueryClient()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -45,15 +46,15 @@ function AddGuard() {
       }}
     >
       <div className="space-y-1.5">
-        <Label htmlFor="g-name">Name</Label>
+        <Label htmlFor="g-name">{t('common.name')}</Label>
         <Input id="g-name" placeholder="Ramesh Kumar" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="g-phone">Phone</Label>
+        <Label htmlFor="g-phone">{t('common.phone')}</Label>
         <Input id="g-phone" placeholder="+91…" value={phone} onChange={(e) => setPhone(e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="g-code">Employee code</Label>
+        <Label htmlFor="g-code">{t('page.guards.employeeCode')}</Label>
         <Input
           id="g-code"
           placeholder="G-001"
@@ -62,7 +63,7 @@ function AddGuard() {
         />
       </div>
       <Button type="submit" disabled={mutation.isPending || !name.trim()}>
-        {mutation.isPending ? 'Adding…' : 'Add guard'}
+        {mutation.isPending ? t('common.adding') : t('page.guards.addButton')}
       </Button>
       {mutation.isError && (
         <p className="text-destructive col-span-full text-sm">{(mutation.error as Error).message}</p>
@@ -72,6 +73,7 @@ function AddGuard() {
 }
 
 function GuardRow({ guard }: { guard: Guard }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [editing, setEditing] = useState(false)
   const [showDevice, setShowDevice] = useState(false)
@@ -115,10 +117,10 @@ function GuardRow({ guard }: { guard: Guard }) {
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <Button size="sm" disabled={save.isPending || !name.trim()} onClick={() => save.mutate()}>
-              {save.isPending ? '…' : 'Save'}
+              {save.isPending ? '…' : t('common.save')}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         </TableCell>
@@ -133,15 +135,15 @@ function GuardRow({ guard }: { guard: Guard }) {
         <TableCell className="text-muted-foreground">{guard.phone ?? '—'}</TableCell>
         <TableCell className="text-muted-foreground">{guard.employeeCode ?? '—'}</TableCell>
         <TableCell>
-          <Badge variant={guard.isActive ? 'default' : 'secondary'}>{guard.isActive ? 'Active' : 'Inactive'}</Badge>
+          <Badge variant={guard.isActive ? 'default' : 'secondary'}>{guard.isActive ? t('common.active') : t('common.inactive')}</Badge>
         </TableCell>
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <Button size="sm" variant="ghost" onClick={() => setShowDevice((s) => !s)}>
-              {showDevice ? 'Hide device' : 'Device'}
+              {showDevice ? t('page.guards.hideDevice') : t('page.guards.device')}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-              Edit
+              {t('common.edit')}
             </Button>
             <Button
               size="sm"
@@ -149,7 +151,7 @@ function GuardRow({ guard }: { guard: Guard }) {
               onClick={() => toggleActive.mutate()}
               disabled={toggleActive.isPending}
             >
-              {toggleActive.isPending ? '…' : guard.isActive ? 'Deactivate' : 'Activate'}
+              {toggleActive.isPending ? '…' : guard.isActive ? t('common.deactivate') : t('common.activate')}
             </Button>
           </div>
         </TableCell>
@@ -166,6 +168,7 @@ function GuardRow({ guard }: { guard: Guard }) {
 }
 
 function GuardDevices({ guardId }: { guardId: string }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const devices = useQuery({ queryKey: ['guard-devices', guardId], queryFn: () => apiClient.listGuardDevices(guardId) })
   const revoke = useMutation({
@@ -178,23 +181,23 @@ function GuardDevices({ guardId }: { guardId: string }) {
 
   return (
     <div className="space-y-2 py-1 text-sm">
-      <p className="font-medium">Bound device</p>
-      {devices.isLoading && <p className="text-muted-foreground">Loading…</p>}
+      <p className="font-medium">{t('page.guards.boundDevice')}</p>
+      {devices.isLoading && <p className="text-muted-foreground">{t('common.loading')}</p>}
       {devices.isSuccess && active.length === 0 && (
-        <p className="text-muted-foreground">No device bound — the guard&rsquo;s first clock-in will auto-bind their device.</p>
+        <p className="text-muted-foreground">{t('page.guards.noDevice')}</p>
       )}
       {active.map((d) => (
         <div key={d.id} className="flex items-center gap-3">
-          <span className="font-medium">{d.model ?? 'Unknown model'}</span>
-          <span className="text-muted-foreground text-xs">last active {fmt(d.lastActiveAt)}</span>
+          <span className="font-medium">{d.model ?? t('page.guards.unknownModel')}</span>
+          <span className="text-muted-foreground text-xs">{t('page.guards.lastActive')} {fmt(d.lastActiveAt)}</span>
           <Button size="sm" variant="outline" onClick={() => revoke.mutate(d.deviceId)} disabled={revoke.isPending}>
-            {revoke.isPending ? '…' : 'Revoke'}
+            {revoke.isPending ? '…' : t('common.revoke')}
           </Button>
         </div>
       ))}
       {revoked.length > 0 && (
         <p className="text-muted-foreground text-xs">
-          Revoked: {revoked.map((d) => d.model ?? d.deviceId.slice(0, 8)).join(', ')}
+          {t('page.guards.revoked')} {revoked.map((d) => d.model ?? d.deviceId.slice(0, 8)).join(', ')}
         </p>
       )}
     </div>
@@ -209,12 +212,12 @@ function GuardsPage() {
     <div className="space-y-6">
       <PageHeader
         title={t('nav.guards')}
-        description={`${guards.data?.length ?? 0} guard${guards.data?.length === 1 ? '' : 's'} registered`}
+        description={`${guards.data?.length ?? 0} ${guards.data?.length === 1 ? t('page.guards.guardOne') : t('page.guards.guardMany')} ${t('common.registered')}`}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Register guard</CardTitle>
+          <CardTitle>{t('page.guards.registerTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <AddGuard />
@@ -223,22 +226,22 @@ function GuardsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All guards</CardTitle>
+          <CardTitle>{t('page.guards.allTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <QueryState
             q={guards}
             empty={guards.isSuccess && guards.data?.length === 0}
-            emptyText="No guards yet. Register one above."
+            emptyText={t('page.guards.empty')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Employee code</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('common.name')}</TableHead>
+                  <TableHead>{t('common.phone')}</TableHead>
+                  <TableHead>{t('page.guards.employeeCode')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-right">{t('common.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
