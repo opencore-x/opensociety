@@ -47,6 +47,14 @@ const en: Dict = {
   'page.tickets.desc': 'Requests raised by residents — triage, work and resolve them here.',
   'page.analytics.desc': 'Visitor footfall, house-help attendance, and maintenance insights.',
   'page.preApprovals.desc': 'Expected visitors — generate a code a guard redeems at the gate.',
+  'common.loading': 'Loading…',
+  'common.apiUnreachable': 'API unreachable',
+  'common.empty': 'Nothing here yet.',
+  'overview.notConfigured': 'Society not configured yet',
+  'overview.pendingResidents': 'Pending residents',
+  'overview.awaitingApproval': 'Awaiting approval',
+  'overview.pending': 'pending',
+  'overview.gettingStarted': 'Getting started',
 }
 
 const hi: Dict = {
@@ -89,6 +97,14 @@ const hi: Dict = {
   'page.tickets.desc': 'निवासियों द्वारा उठाए गए अनुरोध — यहाँ उन्हें छाँटें, कार्य करें और हल करें।',
   'page.analytics.desc': 'आगंतुक आवाजाही, घरेलू सहायक उपस्थिति और रखरखाव अंतर्दृष्टि।',
   'page.preApprovals.desc': 'अपेक्षित आगंतुक — एक कोड बनाएँ जिसे गार्ड गेट पर रिडीम करता है।',
+  'common.loading': 'लोड हो रहा है…',
+  'common.apiUnreachable': 'API अनुपलब्ध',
+  'common.empty': 'यहाँ अभी कुछ नहीं है।',
+  'overview.notConfigured': 'सोसायटी अभी कॉन्फ़िगर नहीं है',
+  'overview.pendingResidents': 'लंबित निवासी',
+  'overview.awaitingApproval': 'स्वीकृति की प्रतीक्षा में',
+  'overview.pending': 'लंबित',
+  'overview.gettingStarted': 'शुरू करें',
 }
 
 const resources: Record<Language, Dict> = { en, hi }

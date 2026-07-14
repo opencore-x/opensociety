@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useT } from '@/lib/i18n'
 
 export function PageHeader({
   title,
@@ -23,7 +24,7 @@ export function PageHeader({
 export function QueryState({
   q,
   empty,
-  emptyText = 'Nothing here yet.',
+  emptyText,
   children,
 }: {
   q: { isLoading: boolean; isError: boolean; error?: unknown }
@@ -31,13 +32,14 @@ export function QueryState({
   emptyText?: string
   children: ReactNode
 }) {
-  if (q.isLoading) return <p className="text-muted-foreground text-sm">Loading…</p>
+  const { t } = useT()
+  if (q.isLoading) return <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
   if (q.isError)
     return (
       <p className="text-destructive text-sm">
-        API unreachable ({String((q.error as Error)?.message ?? 'error')})
+        {t('common.apiUnreachable')} ({String((q.error as Error)?.message ?? 'error')})
       </p>
     )
-  if (empty) return <p className="text-muted-foreground text-sm">{emptyText}</p>
+  if (empty) return <p className="text-muted-foreground text-sm">{emptyText ?? t('common.empty')}</p>
   return <>{children}</>
 }

@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 
 import { apiClient } from '../../lib/api'
 import { PageHeader } from '@/components/admin/ui'
+import { useT } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -40,6 +41,7 @@ function StatCard({
 }
 
 function Overview() {
+  const { t } = useT()
   const society = useQuery({ queryKey: ['society'], queryFn: apiClient.getSociety })
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
   const visitors = useQuery({ queryKey: ['visitors'], queryFn: () => apiClient.listVisitors() })
@@ -51,37 +53,37 @@ function Overview() {
   return (
     <div>
       <PageHeader
-        title="Overview"
-        description={society.data ? society.data.name : 'Society not configured yet'}
+        title={t('nav.overview')}
+        description={society.data ? society.data.name : t('overview.notConfigured')}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={Building2}
-          label="Apartments"
+          label={t('nav.apartments')}
           value={apartments.data?.length ?? '—'}
           to="/admin/apartments"
         />
         <StatCard
           icon={Users}
-          label="Pending residents"
+          label={t('overview.pendingResidents')}
           value={pending.data?.length ?? '—'}
           to="/admin/residents"
-          hint="Awaiting approval"
+          hint={t('overview.awaitingApproval')}
         />
         <StatCard
           icon={UserCheck}
-          label="Visitors"
+          label={t('nav.visitors')}
           value={visitors.data?.length ?? '—'}
           to="/admin/visitors"
-          hint={`${pendingVisitors} pending`}
+          hint={`${pendingVisitors} ${t('overview.pending')}`}
         />
-        <StatCard icon={Megaphone} label="Notices" value={notices.data?.length ?? '—'} to="/admin/notices" />
+        <StatCard icon={Megaphone} label={t('nav.notices')} value={notices.data?.length ?? '—'} to="/admin/notices" />
       </div>
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Getting started</CardTitle>
+          <CardTitle>{t('overview.gettingStarted')}</CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground space-y-2 text-sm">
           <p className="text-foreground">
