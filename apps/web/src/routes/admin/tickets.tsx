@@ -10,6 +10,7 @@ import {
 } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -214,6 +215,7 @@ function AssignCell({
 }
 
 function TicketsPage() {
+  const { t } = useT()
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const tickets = useQuery({
     queryKey: ['tickets', statusFilter],
@@ -249,8 +251,8 @@ function TicketsPage() {
   return (
     <div>
       <PageHeader
-        title="Maintenance tickets"
-        description="Requests raised by residents — triage, work and resolve them here."
+        title={t('page.tickets.title')}
+        description={t('page.tickets.desc')}
       />
 
       <CreateForm apartmentOptions={apartmentOptions} />

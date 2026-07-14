@@ -5,6 +5,7 @@ import type { Apartment, CreateVehicle, Vehicle, VehicleType } from '@opensociet
 import { vehicleTypeSchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -261,13 +262,14 @@ function GateLog() {
 }
 
 function VehiclesPage() {
+  const { t } = useT()
   const { apartments, labelOf } = useApartmentLabels()
   const vehicles = useQuery({ queryKey: ['vehicles'], queryFn: () => apiClient.listVehicles() })
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Vehicles"
+        title={t('nav.vehicles')}
         description={`${vehicles.data?.length ?? 0} vehicle${vehicles.data?.length === 1 ? '' : 's'} registered`}
       />
 

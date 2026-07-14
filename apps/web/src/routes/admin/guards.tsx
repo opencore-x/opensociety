@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { CreateGuard, Guard } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -201,12 +202,13 @@ function GuardDevices({ guardId }: { guardId: string }) {
 }
 
 function GuardsPage() {
+  const { t } = useT()
   const guards = useQuery({ queryKey: ['guards'], queryFn: apiClient.listGuards })
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Guards"
+        title={t('nav.guards')}
         description={`${guards.data?.length ?? 0} guard${guards.data?.length === 1 ? '' : 's'} registered`}
       />
 

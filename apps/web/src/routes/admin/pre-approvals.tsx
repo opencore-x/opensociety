@@ -6,6 +6,7 @@ import type { PreApprovalType } from '@opensociety/shared'
 import { preApprovalTypeSchema, preApprovalQrValue } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -191,6 +192,7 @@ function RevokeButton({ id }: { id: string }) {
 }
 
 function PreApprovalsPage() {
+  const { t } = useT()
   const preApprovals = useQuery({ queryKey: ['pre-approvals'], queryFn: () => apiClient.listPreApprovals() })
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
 
@@ -210,8 +212,8 @@ function PreApprovalsPage() {
   return (
     <div>
       <PageHeader
-        title="Pre-approvals"
-        description="Expected visitors — generate a code a guard redeems at the gate."
+        title={t('nav.preApprovals')}
+        description={t('page.preApprovals.desc')}
       />
 
       <CreateForm apartmentOptions={apartmentOptions} />

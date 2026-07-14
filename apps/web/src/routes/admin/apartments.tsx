@@ -5,6 +5,7 @@ import type { Apartment, BhkType, CreateApartment, UpdateApartment } from '@open
 import { bhkTypeSchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { parseBulk } from '@/lib/apartments-csv'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
@@ -256,12 +257,13 @@ function ApartmentRow({ apt }: { apt: Apartment }) {
 }
 
 function ApartmentsPage() {
+  const { t } = useT()
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Apartments"
+        title={t('nav.apartments')}
         description={`${apartments.data?.length ?? 0} unit${apartments.data?.length === 1 ? '' : 's'} registered`}
       />
 
