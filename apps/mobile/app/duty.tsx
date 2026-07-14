@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, FlatList, View } from 'react-native'
 import { apiClient } from '../api/client'
-import { Button } from '../components/Button'
+import { cn } from '../lib/utils'
+import { Button } from '../components/ui/button'
+import { Text } from '../components/ui/text'
 
 // Guard duty screen: each active guard clocks in / out of their shift. An open
 // duty session marks a guard ON DUTY. (Location capture on native needs
@@ -37,36 +39,45 @@ export default function Duty() {
   if (guards.isError)
     return (
       <Centered>
-        <Text style={styles.error}>API unreachable</Text>
-        <Text style={styles.dim}>{String((guards.error as Error)?.message ?? 'error')}</Text>
+        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-sm text-muted-foreground">{String((guards.error as Error)?.message ?? 'error')}</Text>
       </Centered>
     )
 
   return (
     <FlatList
-      contentContainerStyle={styles.list}
+      contentContainerClassName="gap-2 p-4"
       data={rows}
       keyExtractor={(g) => g.id}
-      ListEmptyComponent={<Text style={styles.dim}>No active guards.</Text>}
+      ListEmptyComponent={<Text className="text-sm text-muted-foreground">No active guards.</Text>}
       renderItem={({ item }) => {
         const sessionId = sessionByGuard.get(item.id)
         const onDuty = sessionId != null
         return (
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.dim}>{item.employeeCode ?? '—'}</Text>
+          <View className="gap-2.5 rounded-xl bg-muted p-3">
+            <View className="flex-row items-center">
+              <View className="flex-1">
+                <Text className="text-base font-semibold">{item.name}</Text>
+                <Text className="text-sm text-muted-foreground">{item.employeeCode ?? '—'}</Text>
               </View>
-              <Text style={[styles.badge, onDuty ? styles.badgeOn : styles.badgeOff]}>
+              <Text
+                className={cn(
+                  'overflow-hidden rounded-md px-2 py-1 text-xs',
+                  onDuty ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'
+                )}
+              >
                 {onDuty ? 'ON DUTY' : 'OFF'}
               </Text>
             </View>
-            <View style={styles.actions}>
+            <View className="flex-row gap-2">
               {onDuty ? (
-                <Button label="Clock out" variant="outline" onPress={() => clockOut.mutate(sessionId!)} disabled={busy} />
+                <Button variant="outline" onPress={() => clockOut.mutate(sessionId!)} disabled={busy}>
+                  <Text>Clock out</Text>
+                </Button>
               ) : (
-                <Button label="Clock in" onPress={() => clockIn.mutate(item.id)} disabled={busy} />
+                <Button onPress={() => clockIn.mutate(item.id)} disabled={busy}>
+                  <Text>Clock in</Text>
+                </Button>
               )}
             </View>
           </View>
@@ -77,19 +88,5 @@ export default function Duty() {
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View style={styles.centered}>{children}</View>
+  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
 }
-
-const styles = StyleSheet.create({
-  list: { padding: 16, gap: 8 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  card: { padding: 12, borderRadius: 10, backgroundColor: '#f4f4f5', gap: 10 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  name: { fontSize: 16, fontWeight: '600' },
-  dim: { color: '#71717a', fontSize: 13 },
-  error: { color: '#e11d48', fontSize: 16, fontWeight: '600' },
-  badge: { fontSize: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, overflow: 'hidden' },
-  badgeOn: { color: '#166534', backgroundColor: '#dcfce7' },
-  badgeOff: { color: '#71717a', backgroundColor: '#e4e4e7' },
-  actions: { flexDirection: 'row', gap: 8 },
-})

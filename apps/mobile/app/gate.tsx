@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'expo-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, FlatList, Modal, Platform, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, FlatList, Modal, Platform, View } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
-import { Button } from '../components/Button'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Text } from '../components/ui/text'
 
 // Guard gate view: the visitors a guard acts on — APPROVED (expected at the
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
@@ -45,8 +47,8 @@ export default function Gate() {
   if (isError)
     return (
       <Centered>
-        <Text style={styles.error}>API unreachable</Text>
-        <Text style={styles.dim}>{String((error as Error)?.message ?? 'error')}</Text>
+        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-sm text-muted-foreground">{String((error as Error)?.message ?? 'error')}</Text>
       </Centered>
     )
 
@@ -55,14 +57,14 @@ export default function Gate() {
   return (
     <>
     <FlatList
-      contentContainerStyle={styles.list}
+      contentContainerClassName="gap-2 p-4"
       data={gate}
       keyExtractor={(v) => v.id}
       ListHeaderComponent={
-        <View style={styles.header}>
-          <View style={styles.redeemRow}>
-            <TextInput
-              style={styles.codeInput}
+        <View className="mb-1 gap-2">
+          <View className="flex-row items-center gap-2">
+            <Input
+              className="flex-1 tracking-widest"
               placeholder="Pre-approval code"
               autoCapitalize="characters"
               autoCorrect={false}
@@ -70,43 +72,47 @@ export default function Gate() {
               onChangeText={setCode}
             />
             <Button
-              label={redeem.isPending ? 'Redeeming…' : 'Redeem'}
               onPress={() => redeem.mutate(code.trim().toUpperCase())}
               disabled={redeem.isPending || code.trim().length === 0}
-            />
+            >
+              <Text>{redeem.isPending ? 'Redeeming…' : 'Redeem'}</Text>
+            </Button>
           </View>
-          <Button label="Scan QR code" variant="outline" onPress={() => setScanning(true)} />
+          <Button variant="outline" onPress={() => setScanning(true)}>
+            <Text>Scan QR code</Text>
+          </Button>
           {redeem.isError && (
-            <Text style={styles.redeemError}>{String((redeem.error as Error)?.message ?? 'Invalid code')}</Text>
+            <Text className="text-sm text-destructive">{String((redeem.error as Error)?.message ?? 'Invalid code')}</Text>
           )}
-          <Link href="/register" style={styles.register}>
+          <Link href="/register" className="py-1 text-base font-semibold text-primary">
             + Register visitor
           </Link>
         </View>
       }
-      ListEmptyComponent={<Text style={styles.dim}>No visitors at the gate.</Text>}
+      ListEmptyComponent={<Text className="text-sm text-muted-foreground">No visitors at the gate.</Text>}
       renderItem={({ item }) => {
         const actions = availableVisitorActions(item.status)
         return (
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.visitorName}</Text>
-                <Text style={styles.dim}>{item.type}</Text>
+          <View className="gap-2.5 rounded-xl bg-muted p-3">
+            <View className="flex-row items-center">
+              <View className="flex-1">
+                <Text className="text-base font-semibold">{item.visitorName}</Text>
+                <Text className="text-sm text-muted-foreground">{item.type}</Text>
               </View>
-              <Text style={styles.badge}>{item.status}</Text>
+              <Text className="overflow-hidden rounded-md bg-primary/10 px-2 py-1 text-xs text-primary">
+                {item.status}
+              </Text>
             </View>
-            <View style={styles.actions}>
+            <View className="flex-row gap-2">
               {actions.includes('checkin') && (
-                <Button label="Check in" onPress={() => checkIn.mutate(item.id)} disabled={busy} />
+                <Button onPress={() => checkIn.mutate(item.id)} disabled={busy}>
+                  <Text>Check in</Text>
+                </Button>
               )}
               {actions.includes('checkout') && (
-                <Button
-                  label="Check out"
-                  variant="outline"
-                  onPress={() => checkOut.mutate(item.id)}
-                  disabled={busy}
-                />
+                <Button variant="outline" onPress={() => checkOut.mutate(item.id)} disabled={busy}>
+                  <Text>Check out</Text>
+                </Button>
               )}
             </View>
           </View>
@@ -146,24 +152,26 @@ function QrScannerModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.scanner}>
+      <View className="flex-1 items-center justify-center bg-black">
         {Platform.OS === 'web' ? (
-          <View style={styles.scannerMsg}>
-            <Text style={styles.scannerMsgText}>
+          <View className="items-center gap-4 p-6">
+            <Text className="text-center text-base leading-6 text-white">
               QR scanning uses the device camera. Open the app on a phone, or enter the code manually.
             </Text>
           </View>
         ) : !permission ? (
           <ActivityIndicator />
         ) : !permission.granted ? (
-          <View style={styles.scannerMsg}>
-            <Text style={styles.scannerMsgText}>Camera access is needed to scan pre-approval QR codes.</Text>
-            <Button label="Grant camera access" onPress={requestPermission} />
+          <View className="items-center gap-4 p-6">
+            <Text className="text-center text-base leading-6 text-white">Camera access is needed to scan pre-approval QR codes.</Text>
+            <Button onPress={requestPermission}>
+              <Text>Grant camera access</Text>
+            </Button>
           </View>
         ) : (
           <>
             <CameraView
-              style={StyleSheet.absoluteFill}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
               barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
               onBarcodeScanned={({ data }) => {
                 if (handledRef.current) return
@@ -173,13 +181,15 @@ function QrScannerModal({
                 onScan(code)
               }}
             />
-            <View style={styles.scannerHint} pointerEvents="none">
-              <Text style={styles.scannerHintText}>Point the camera at the pre-approval QR code</Text>
+            <View className="absolute inset-x-0 bottom-[120px] items-center" pointerEvents="none">
+              <Text className="overflow-hidden rounded-md bg-black/50 px-3 py-2 text-sm text-white">Point the camera at the pre-approval QR code</Text>
             </View>
           </>
         )}
-        <View style={styles.scannerCancel}>
-          <Button label="Cancel" variant="outline" onPress={onClose} />
+        <View className="absolute inset-x-6 bottom-10">
+          <Button variant="outline" onPress={onClose}>
+            <Text>Cancel</Text>
+          </Button>
         </View>
       </View>
     </Modal>
@@ -187,53 +197,5 @@ function QrScannerModal({
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View style={styles.centered}>{children}</View>
+  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
 }
-
-const styles = StyleSheet.create({
-  list: { padding: 16, gap: 8 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  card: { padding: 12, borderRadius: 10, backgroundColor: '#f4f4f5', gap: 10 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  name: { fontSize: 16, fontWeight: '600' },
-  dim: { color: '#71717a', fontSize: 13 },
-  error: { color: '#e11d48', fontSize: 16, fontWeight: '600' },
-  badge: {
-    fontSize: 12,
-    color: '#0e7490',
-    backgroundColor: '#cffafe',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  actions: { flexDirection: 'row', gap: 8 },
-  header: { gap: 8, marginBottom: 4 },
-  redeemRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  codeInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    letterSpacing: 2,
-  },
-  redeemError: { color: '#e11d48', fontSize: 13 },
-  register: { color: '#0e7490', fontWeight: '600', fontSize: 15, paddingVertical: 4 },
-  scanner: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
-  scannerMsg: { padding: 24, gap: 16, alignItems: 'center' },
-  scannerMsgText: { color: '#fff', fontSize: 15, textAlign: 'center', lineHeight: 22 },
-  scannerHint: { position: 'absolute', bottom: 120, left: 0, right: 0, alignItems: 'center' },
-  scannerHintText: {
-    color: '#fff',
-    fontSize: 14,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  scannerCancel: { position: 'absolute', bottom: 40, left: 24, right: 24 },
-})

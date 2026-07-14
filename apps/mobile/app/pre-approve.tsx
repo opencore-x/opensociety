@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, ScrollView, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import type { VisitorPreApproval } from '@opensociety/shared'
 import { preApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
-import { Button } from '../components/Button'
+import { Button } from '../components/ui/button'
+import { Chip } from '../components/ui/chip'
+import { Input } from '../components/ui/input'
+import { Text } from '../components/ui/text'
 
 export default function PreApprove() {
   const qc = useQueryClient()
@@ -32,17 +35,18 @@ export default function PreApprove() {
 
   if (created) {
     return (
-      <View style={styles.codeWrap}>
-        <Text style={styles.codeLabel}>Show this to {created.visitorName}</Text>
-        <View style={styles.qrBox}>
+      <View className="flex-1 items-center justify-center gap-3 p-6">
+        <Text className="text-center text-base">Show this to {created.visitorName}</Text>
+        <View className="rounded-xl bg-card p-4">
           <QRCode value={preApprovalQrValue(created.code)} size={200} />
         </View>
-        <Text style={styles.code} selectable>
+        <Text className="text-[44px] font-extrabold tracking-[6px] text-primary" selectable>
           {created.code}
         </Text>
-        <Text style={styles.dim}>The guard scans the QR, or enters this code at the gate.</Text>
+        <Text className="mb-2 text-center text-sm text-muted-foreground">
+          The guard scans the QR, or enters this code at the gate.
+        </Text>
         <Button
-          label="Pre-approve another"
           variant="outline"
           onPress={() => {
             setCreated(null)
@@ -50,7 +54,9 @@ export default function PreApprove() {
             setPhone('')
             setApartmentId(null)
           }}
-        />
+        >
+          <Text>Pre-approve another</Text>
+        </Button>
       </View>
     )
   }
@@ -58,13 +64,12 @@ export default function PreApprove() {
   const canSubmit = name.trim().length > 0 && !!apartmentId && !create.isPending
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerClassName="gap-4 p-4">
       <Field label="Visitor name">
-        <TextInput style={styles.input} placeholder="e.g. Priya" value={name} onChangeText={setName} autoFocus />
+        <Input placeholder="e.g. Priya" value={name} onChangeText={setName} autoFocus />
       </Field>
       <Field label="Phone (optional)">
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder="10-digit number"
           value={phone}
           onChangeText={setPhone}
@@ -75,9 +80,9 @@ export default function PreApprove() {
         {apartments.isLoading ? (
           <ActivityIndicator />
         ) : apartments.isError ? (
-          <Text style={styles.error}>Could not load apartments</Text>
+          <Text className="text-sm text-destructive">Could not load apartments</Text>
         ) : (
-          <View style={styles.chips}>
+          <View className="flex-row flex-wrap gap-2">
             {(apartments.data ?? []).map((a) => (
               <Chip
                 key={a.id}
@@ -89,14 +94,14 @@ export default function PreApprove() {
           </View>
         )}
       </Field>
-      <View style={styles.submit}>
-        <Button
-          label={create.isPending ? 'Generating…' : 'Generate code'}
-          onPress={() => create.mutate()}
-          disabled={!canSubmit}
-        />
+      <View className="mt-1 gap-2">
+        <Button onPress={() => create.mutate()} disabled={!canSubmit}>
+          <Text>{create.isPending ? 'Generating…' : 'Generate code'}</Text>
+        </Button>
         {create.isError && (
-          <Text style={styles.error}>{String((create.error as Error)?.message ?? 'Failed')}</Text>
+          <Text className="text-sm text-destructive">
+            {String((create.error as Error)?.message ?? 'Failed')}
+          </Text>
         )}
       </View>
     </ScrollView>
@@ -105,43 +110,9 @@ export default function PreApprove() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+    <View className="gap-1.5">
+      <Text className="text-sm font-medium">{label}</Text>
       {children}
     </View>
   )
 }
-
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipSelected]}>
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
-    </Pressable>
-  )
-}
-
-const styles = StyleSheet.create({
-  container: { padding: 16, gap: 16 },
-  field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: '#3f3f46' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#d4d4d8' },
-  chipSelected: { backgroundColor: '#0e7490', borderColor: '#0e7490' },
-  chipText: { color: '#3f3f46', fontSize: 13, fontWeight: '500' },
-  chipTextSelected: { color: '#fff' },
-  submit: { gap: 8, marginTop: 4 },
-  error: { color: '#e11d48', fontSize: 13 },
-  codeWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
-  codeLabel: { fontSize: 15, color: '#3f3f46', textAlign: 'center' },
-  qrBox: { backgroundColor: '#fff', padding: 16, borderRadius: 12 },
-  code: { fontSize: 44, fontWeight: '800', letterSpacing: 6, color: '#0e7490' },
-  dim: { color: '#71717a', fontSize: 13, textAlign: 'center', marginBottom: 8 },
-})
