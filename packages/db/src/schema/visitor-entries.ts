@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core'
 import { apartments } from './apartments'
 import { users } from './users'
 import { guards } from './guards'
@@ -11,6 +11,10 @@ export const visitorEntries = pgTable(
   'visitor_entries',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    // Client-supplied idempotency key for offline registration. When a guard's
+    // app queues an entry offline and later replays it (possibly more than once
+    // after a lost ack), the unique index below dedupes to a single row.
+    clientId: uuid('client_id'),
     apartmentId: uuid('apartment_id')
       .notNull()
       .references(() => apartments.id),
@@ -36,5 +40,8 @@ export const visitorEntries = pgTable(
     index('visitor_entries_status_idx').on(t.status),
     index('visitor_entries_apartment_id_idx').on(t.apartmentId),
     index('visitor_entries_created_at_idx').on(t.createdAt),
+    // Nullable, so pre-existing rows (client_id IS NULL) coexist; Postgres treats
+    // NULLs as distinct, and only offline-registered entries carry a key.
+    uniqueIndex('visitor_entries_client_id_idx').on(t.clientId),
   ],
 )

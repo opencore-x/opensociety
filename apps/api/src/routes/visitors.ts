@@ -175,9 +175,24 @@ visitorRoutes.get('/', async (c) => {
 })
 
 // Guard registers a visitor arriving at the gate (PENDING until a resident approves).
+// Idempotent on clientId: an offline registration replayed after a lost ack
+// resolves to the existing row (200) instead of creating a duplicate (201).
+// Entries with no clientId (null) never collide, so this stays a plain insert.
 visitorRoutes.post('/', requireRole('GUARD', 'ADMIN'), zValidator('json', createVisitorEntrySchema), async (c) => {
-  const [created] = await c.get('db').insert(visitorEntries).values(c.req.valid('json')).returning()
-  return c.json(created, 201)
+  const db = c.get('db')
+  const body = c.req.valid('json')
+  const [created] = await db
+    .insert(visitorEntries)
+    .values(body)
+    .onConflictDoNothing({ target: visitorEntries.clientId })
+    .returning()
+  if (created) return c.json(created, 201)
+  const [existing] = await db
+    .select()
+    .from(visitorEntries)
+    .where(eq(visitorEntries.clientId, body.clientId!))
+    .limit(1)
+  return c.json(existing, 200)
 })
 
 // Resident approves/denies a visitor to their apartment (admins may override).

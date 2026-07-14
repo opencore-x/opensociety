@@ -4,6 +4,8 @@ import type { PreApprovalType } from './enums'
 
 export const visitorEntrySchema = z.object({
   id: z.string().uuid(),
+  // Idempotency key from the offline queue; null for entries created online.
+  clientId: z.string().uuid().nullable(),
   apartmentId: z.string().uuid(),
   preApprovalId: z.string().uuid().nullable(),
   visitorName: z.string(),
@@ -31,6 +33,9 @@ export const createVisitorEntrySchema = z.object({
   type: visitorTypeSchema.default('GUEST'),
   purpose: z.string().optional(),
   vehicleNumber: z.string().optional(),
+  // Idempotency key set by the offline queue so a replayed registration dedupes
+  // to a single entry server-side instead of creating duplicates.
+  clientId: z.string().uuid().optional(),
 })
 
 export const denyVisitorSchema = z.object({ reason: z.string().min(1) })
