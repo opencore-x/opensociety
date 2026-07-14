@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, ScrollView, View } from 'react-native'
 import { visitorTypeSchema, type VisitorType } from '@opensociety/shared'
+
 import { apiClient } from '../api/client'
-import { Button } from '../components/Button'
+import { Button } from '../components/ui/button'
+import { Chip } from '../components/ui/chip'
+import { Input } from '../components/ui/input'
+import { Text } from '../components/ui/text'
 
 const TYPES = visitorTypeSchema.options
 
@@ -35,14 +39,13 @@ export default function Register() {
   const canSubmit = name.trim().length > 0 && !!apartmentId && !create.isPending
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
       <Field label="Visitor name">
-        <TextInput style={styles.input} placeholder="e.g. Rahul" value={name} onChangeText={setName} autoFocus />
+        <Input placeholder="e.g. Rahul" value={name} onChangeText={setName} autoFocus />
       </Field>
 
       <Field label="Phone (optional)">
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder="10-digit number"
           value={phone}
           onChangeText={setPhone}
@@ -51,7 +54,7 @@ export default function Register() {
       </Field>
 
       <Field label="Type">
-        <View style={styles.chips}>
+        <View className="flex-row flex-wrap gap-2">
           {TYPES.map((t) => (
             <Chip key={t} label={t} selected={type === t} onPress={() => setType(t)} />
           ))}
@@ -62,9 +65,9 @@ export default function Register() {
         {apartments.isLoading ? (
           <ActivityIndicator />
         ) : apartments.isError ? (
-          <Text style={styles.error}>Could not load apartments</Text>
+          <Text className="text-sm text-destructive">Could not load apartments</Text>
         ) : (
-          <View style={styles.chips}>
+          <View className="flex-row flex-wrap gap-2">
             {(apartments.data ?? []).map((a) => (
               <Chip
                 key={a.id}
@@ -77,14 +80,14 @@ export default function Register() {
         )}
       </Field>
 
-      <View style={styles.submit}>
-        <Button
-          label={create.isPending ? 'Registering…' : 'Register visitor'}
-          onPress={() => create.mutate()}
-          disabled={!canSubmit}
-        />
+      <View className="mt-1 gap-2">
+        <Button onPress={() => create.mutate()} disabled={!canSubmit}>
+          <Text>{create.isPending ? 'Registering…' : 'Register visitor'}</Text>
+        </Button>
         {create.isError && (
-          <Text style={styles.error}>{String((create.error as Error)?.message ?? 'Failed')}</Text>
+          <Text className="text-sm text-destructive">
+            {String((create.error as Error)?.message ?? 'Failed')}
+          </Text>
         )}
       </View>
     </ScrollView>
@@ -93,38 +96,9 @@ export default function Register() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+    <View className="gap-1.5">
+      <Text className="text-sm font-medium">{label}</Text>
       {children}
     </View>
   )
 }
-
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipSelected]}>
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
-    </Pressable>
-  )
-}
-
-const styles = StyleSheet.create({
-  container: { padding: 16, gap: 16 },
-  field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: '#3f3f46' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#d4d4d8' },
-  chipSelected: { backgroundColor: '#0e7490', borderColor: '#0e7490' },
-  chipText: { color: '#3f3f46', fontSize: 13, fontWeight: '500' },
-  chipTextSelected: { color: '#fff' },
-  submit: { gap: 8, marginTop: 4 },
-  error: { color: '#e11d48', fontSize: 13 },
-})

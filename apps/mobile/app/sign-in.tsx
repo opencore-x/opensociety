@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useSignIn } from '@clerk/clerk-expo'
-import { StyleSheet, Text, TextInput, View } from 'react-native'
-import { Button } from '../components/Button'
+import { View } from 'react-native'
+
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Text } from '../components/ui/text'
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn()
@@ -34,9 +37,8 @@ export default function SignInScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
+    <View className="flex-1 justify-center gap-3 bg-background p-6">
+      <Input
         placeholder="Email"
         autoCapitalize="none"
         autoCorrect={false}
@@ -44,32 +46,14 @@ export default function SignInScreen() {
         value={email}
         onChangeText={setEmail}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       <Button
-        label={pending ? 'Signing in…' : 'Sign in'}
         onPress={onSubmit}
         disabled={!isLoaded || pending || !email.trim() || !password}
-      />
-      {error && <Text style={styles.error}>{error}</Text>}
+      >
+        <Text>{pending ? 'Signing in…' : 'Sign in'}</Text>
+      </Button>
+      {error && <Text className="text-sm text-destructive">{error}</Text>}
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', gap: 12, padding: 24, backgroundColor: '#fff' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-  },
-  error: { color: '#e11d48', fontSize: 13 },
-})

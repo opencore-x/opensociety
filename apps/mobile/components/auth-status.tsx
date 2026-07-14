@@ -1,6 +1,8 @@
 import { Link } from 'expo-router'
-import { Pressable, StyleSheet, Text } from 'react-native'
+import { Pressable } from 'react-native'
 import { useAuth, useClerk } from '@clerk/clerk-expo'
+
+import { Text } from './ui/text'
 
 // True when a Clerk publishable key is configured. Callers gate mounting
 // <AuthStatus /> on this so Clerk hooks only run inside <ClerkProvider>.
@@ -12,15 +14,11 @@ export function AuthStatus() {
   if (!isLoaded) return null
   return isSignedIn ? (
     <Pressable onPress={() => signOut()}>
-      <Text style={styles.link}>Sign out</Text>
+      <Text className="text-base font-semibold text-primary">Sign out</Text>
     </Pressable>
   ) : (
-    <Link href="/sign-in" style={styles.link}>
+    <Link href="/sign-in" className="text-base font-semibold text-primary">
       Sign in →
     </Link>
   )
 }
-
-const styles = StyleSheet.create({
-  link: { marginTop: 16, fontSize: 16, color: '#0e7490', fontWeight: '600' },
-})
