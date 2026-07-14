@@ -1,70 +1,74 @@
 import { StatusBar } from 'expo-status-bar'
 import { Link } from 'expo-router'
-import { StyleSheet, Text, View } from 'react-native'
-import { AuthStatus, CLERK_ENABLED } from '../components/auth-status'
+import { ScrollView, View } from 'react-native'
 
-export default function Index() {
+import { AuthStatus, CLERK_ENABLED } from '../components/auth-status'
+import { cn } from '../lib/utils'
+import { Text } from '../components/ui/text'
+
+const RESIDENT = [
+  { href: '/visitors', label: 'Visitors' },
+  { href: '/pre-approve', label: 'Pre-approve' },
+  { href: '/notices', label: 'Notices' },
+  { href: '/tickets', label: 'Maintenance' },
+  { href: '/my-house-help', label: 'House help' },
+  { href: '/my-vehicles', label: 'Vehicles' },
+  { href: '/bills', label: 'Bills' },
+] as const
+
+const GUARD = [
+  { href: '/gate', label: 'Gate' },
+  { href: '/duty', label: 'Duty' },
+  { href: '/house-help', label: 'House help' },
+] as const
+
+function NavGroup({
+  title,
+  items,
+}: {
+  title: string
+  items: readonly { href: string; label: string }[]
+}) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>OpenSociety</Text>
-      <Text style={styles.subtitle}>Privacy-first society management</Text>
-      <Link href="/visitors" style={styles.link}>
-        Resident · Visitors →
-      </Link>
-      <Link href="/pre-approve" style={styles.link}>
-        Resident · Pre-approve →
-      </Link>
-      <Link href="/notices" style={styles.link}>
-        Resident · Notices →
-      </Link>
-      <Link href="/tickets" style={styles.link}>
-        Resident · Maintenance →
-      </Link>
-      <Link href="/my-house-help" style={styles.link}>
-        Resident · House help →
-      </Link>
-      <Link href="/my-vehicles" style={styles.link}>
-        Resident · Vehicles →
-      </Link>
-      <Link href="/bills" style={styles.link}>
-        Resident · Bills →
-      </Link>
-      <Link href="/gate" style={styles.link}>
-        Guard · Gate →
-      </Link>
-      <Link href="/duty" style={styles.link}>
-        Guard · Duty →
-      </Link>
-      <Link href="/house-help" style={styles.link}>
-        Guard · House help →
-      </Link>
-      {CLERK_ENABLED && <AuthStatus />}
-      <StatusBar style="auto" />
+    <View className="gap-2">
+      <Text className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </Text>
+      <View className="overflow-hidden rounded-xl border border-border bg-card">
+        {items.map((item, i) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'px-4 py-3.5 text-base text-foreground',
+              i > 0 && 'border-t border-border'
+            )}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </View>
     </View>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  link: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#0e7490',
-    fontWeight: '600',
-  },
-})
+export default function Index() {
+  return (
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="gap-6 p-4">
+      <View className="gap-1 pt-2">
+        <Text className="text-3xl font-bold">OpenSociety</Text>
+        <Text className="text-muted-foreground">Privacy-first society management</Text>
+      </View>
+
+      <NavGroup title="Resident" items={RESIDENT} />
+      <NavGroup title="Guard" items={GUARD} />
+
+      {CLERK_ENABLED && (
+        <View className="pt-2">
+          <AuthStatus />
+        </View>
+      )}
+      <StatusBar style="auto" />
+    </ScrollView>
+  )
+}
