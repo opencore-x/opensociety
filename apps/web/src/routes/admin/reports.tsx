@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { formatPaise, collectionRatePct, collectionReportToCsv, towerCollectionToCsv } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -113,6 +114,7 @@ function AnalyticsSection() {
 }
 
 function ReportsPage() {
+  const { t } = useT()
   const report = useQuery({ queryKey: ['finance-report'], queryFn: apiClient.getFinanceReport })
   const csvHref = report.data
     ? `data:text/csv;charset=utf-8,${encodeURIComponent(collectionReportToCsv(report.data.byMonth))}`
@@ -120,7 +122,7 @@ function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Financial reports" description="Collection summary, method breakdown, and export." />
+      <PageHeader title={t('page.reports.title')} description={t('page.reports.desc')} />
       <QueryState q={report} empty={false} emptyText="">
         {report.data && (
           <>

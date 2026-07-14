@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import type { CreateApartment, UpdateSocietyConfig } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { parseBulk } from '../../lib/apartments-csv'
 import {
   EMPTY_SOCIETY,
@@ -64,6 +65,7 @@ function Stepper({ current }: { current: number }) {
 }
 
 function SetupWizard() {
+  const { t } = useT()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [society, setSociety] = useState<UpdateSocietyConfig>(EMPTY_SOCIETY)
@@ -86,7 +88,7 @@ function SetupWizard() {
 
   return (
     <div>
-      <PageHeader title="Society setup" description="Get your society ready in three quick steps." />
+      <PageHeader title={t('page.setup.title')} description={t('page.setup.desc')} />
       <Card>
         <CardContent className="pt-6">
           <Stepper current={step} />

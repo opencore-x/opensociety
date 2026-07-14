@@ -5,6 +5,7 @@ import type { ResidencyRelation, User, UserRole, UserStatus } from '@opensociety
 import { residencyRelationSchema, userRoleSchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -127,6 +128,7 @@ function RoleSelect({ user }: { user: User }) {
 }
 
 function ResidentsPage() {
+  const { t } = useT()
   const [filter, setFilter] = useState<UserStatus | 'ALL'>('ALL')
   const [approving, setApproving] = useState<string | null>(null)
   const users = useQuery({
@@ -136,7 +138,7 @@ function ResidentsPage() {
 
   return (
     <div>
-      <PageHeader title="Residents" description="Approve new residents and manage their roles." />
+      <PageHeader title={t('nav.residents')} description={t('page.residents.desc')} />
 
       <div className="mb-4 flex gap-2">
         {FILTERS.map((f) => (

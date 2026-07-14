@@ -5,6 +5,7 @@ import type { Apartment, ParkingSlotType, ParkingSummary } from '@opensociety/sh
 import { parkingSlotTypeSchema, parkingSlotStatus, summarizeParking } from '@opensociety/shared'
 
 import { apiClient, type ParkingSlotRow } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -291,6 +292,7 @@ function SummaryCard({ summary }: { summary: ParkingSummary }) {
 }
 
 function ParkingPage() {
+  const { t } = useT()
   const slots = useQuery({ queryKey: ['parking-slots'], queryFn: apiClient.listParkingSlots })
   const apartmentsQ = useQuery({ queryKey: ['apartments'], queryFn: apiClient.listApartments })
   const apartments = apartmentsQ.data ?? []
@@ -312,7 +314,7 @@ function ParkingPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Parking" description="Allocate parking slots to flats and keep a live directory." />
+      <PageHeader title={t('nav.parking')} description={t('page.parking.desc')} />
 
       <SummaryCard summary={summary} />
 

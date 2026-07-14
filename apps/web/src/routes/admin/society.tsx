@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { UpdateSocietyConfig } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -62,11 +63,12 @@ function SocietyForm({ initial }: { initial: UpdateSocietyConfig }) {
 }
 
 function SocietyPage() {
+  const { t } = useT()
   const society = useQuery({ queryKey: ['society'], queryFn: apiClient.getSociety })
 
   return (
     <div>
-      <PageHeader title="Society" description="Configure the basic details for your society." />
+      <PageHeader title={t('nav.society')} description={t('page.society.desc')} />
       <Card>
         <CardHeader>
           <CardTitle>Society details</CardTitle>

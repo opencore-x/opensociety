@@ -9,6 +9,7 @@ import {
 } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -165,10 +166,11 @@ function ShiftReport() {
 }
 
 function DutyPage() {
+  const { t } = useT()
   const active = useQuery({ queryKey: ['duty-active'], queryFn: apiClient.listActiveDuty })
   return (
     <div className="space-y-6">
-      <PageHeader title="Guard duty" description={`${active.data?.length ?? 0} on duty now`} />
+      <PageHeader title={t('nav.duty')} description={`${active.data?.length ?? 0} ${t('page.duty.desc')}`} />
       <OnDutyNow />
       <ShiftReport />
     </div>

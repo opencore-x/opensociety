@@ -32,6 +32,16 @@ const en: Dict = {
   'lang.label': 'Language',
   'lang.english': 'English',
   'lang.hindi': 'हिंदी',
+  'page.billing.desc': 'Generate maintenance bills, record payments, and track dues.',
+  'page.duty.desc': 'on duty now',
+  'page.notices.desc': 'Publish announcements to residents.',
+  'page.residents.desc': 'Approve new residents and manage their roles.',
+  'page.parking.desc': 'Allocate parking slots to flats and keep a live directory.',
+  'page.reports.title': 'Financial reports',
+  'page.reports.desc': 'Collection summary, method breakdown, and export.',
+  'page.setup.title': 'Society setup',
+  'page.setup.desc': 'Get your society ready in three quick steps.',
+  'page.society.desc': 'Configure the basic details for your society.',
 }
 
 const hi: Dict = {
@@ -59,6 +69,16 @@ const hi: Dict = {
   'lang.label': 'भाषा',
   'lang.english': 'English',
   'lang.hindi': 'हिंदी',
+  'page.billing.desc': 'रखरखाव बिल बनाएँ, भुगतान दर्ज करें और बकाया ट्रैक करें।',
+  'page.duty.desc': 'अभी ड्यूटी पर',
+  'page.notices.desc': 'निवासियों के लिए घोषणाएँ प्रकाशित करें।',
+  'page.residents.desc': 'नए निवासियों को स्वीकृत करें और उनकी भूमिकाएँ प्रबंधित करें।',
+  'page.parking.desc': 'फ्लैटों को पार्किंग स्लॉट आवंटित करें और लाइव निर्देशिका रखें।',
+  'page.reports.title': 'वित्तीय रिपोर्ट',
+  'page.reports.desc': 'संग्रह सारांश, विधि विवरण और निर्यात।',
+  'page.setup.title': 'सोसायटी सेटअप',
+  'page.setup.desc': 'तीन आसान चरणों में अपनी सोसायटी तैयार करें।',
+  'page.society.desc': 'अपनी सोसायटी के बुनियादी विवरण कॉन्फ़िगर करें।',
 }
 
 const resources: Record<Language, Dict> = { en, hi }
