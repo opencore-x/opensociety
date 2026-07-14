@@ -5,6 +5,7 @@ import { hourLabel, visitorTrendsToCsv, dayOfWeekLabel } from '@opensociety/shar
 import type { HourCount, TypeCount, LabelCount, DowCount } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -158,6 +159,7 @@ function OpsSection() {
 }
 
 function AnalyticsPage() {
+  const { t } = useT()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const trends = useQuery({
@@ -177,8 +179,8 @@ function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Analytics"
-        description="Visitor footfall, house-help attendance, and maintenance insights."
+        title={t('nav.analytics')}
+        description={t('page.analytics.desc')}
       />
 
       <Card>

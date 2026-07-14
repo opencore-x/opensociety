@@ -42,6 +42,11 @@ const en: Dict = {
   'page.setup.title': 'Society setup',
   'page.setup.desc': 'Get your society ready in three quick steps.',
   'page.society.desc': 'Configure the basic details for your society.',
+  'page.visitors.title': 'Visitor logs',
+  'page.tickets.title': 'Maintenance tickets',
+  'page.tickets.desc': 'Requests raised by residents — triage, work and resolve them here.',
+  'page.analytics.desc': 'Visitor footfall, house-help attendance, and maintenance insights.',
+  'page.preApprovals.desc': 'Expected visitors — generate a code a guard redeems at the gate.',
 }
 
 const hi: Dict = {
@@ -79,6 +84,11 @@ const hi: Dict = {
   'page.setup.title': 'सोसायटी सेटअप',
   'page.setup.desc': 'तीन आसान चरणों में अपनी सोसायटी तैयार करें।',
   'page.society.desc': 'अपनी सोसायटी के बुनियादी विवरण कॉन्फ़िगर करें।',
+  'page.visitors.title': 'आगंतुक लॉग',
+  'page.tickets.title': 'रखरखाव टिकट',
+  'page.tickets.desc': 'निवासियों द्वारा उठाए गए अनुरोध — यहाँ उन्हें छाँटें, कार्य करें और हल करें।',
+  'page.analytics.desc': 'आगंतुक आवाजाही, घरेलू सहायक उपस्थिति और रखरखाव अंतर्दृष्टि।',
+  'page.preApprovals.desc': 'अपेक्षित आगंतुक — एक कोड बनाएँ जिसे गार्ड गेट पर रिडीम करता है।',
 }
 
 const resources: Record<Language, Dict> = { en, hi }

@@ -5,6 +5,7 @@ import { availableVisitorActions } from '@opensociety/shared'
 import type { VisitorEntry, VisitorStatus } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -93,6 +94,7 @@ function TransitionButton({
 }
 
 function VisitorsPage() {
+  const { t } = useT()
   const [filter, setFilter] = useState<VisitorStatus | 'ALL'>('ALL')
   const [denying, setDenying] = useState<string | null>(null)
 
@@ -116,7 +118,7 @@ function VisitorsPage() {
   return (
     <div>
       <PageHeader
-        title="Visitor logs"
+        title={t('page.visitors.title')}
         description={`${visitors.data?.length ?? 0} total entries`}
       />
 

@@ -14,6 +14,7 @@ import {
 } from '@opensociety/shared'
 
 import { apiClient, type HouseHelpRow } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -482,13 +483,14 @@ function AssignmentsPanel({ helpId, apartments }: { helpId: string; apartments: 
 }
 
 function HouseHelpPage() {
+  const { t } = useT()
   const help = useQuery({ queryKey: ['house-help'], queryFn: () => apiClient.listHouseHelp() })
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: apiClient.listApartments })
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="House help"
+        title={t('nav.houseHelp')}
         description={`${help.data?.length ?? 0} domestic worker${help.data?.length === 1 ? '' : 's'} registered`}
       />
 
