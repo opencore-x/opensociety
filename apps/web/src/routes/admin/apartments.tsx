@@ -28,6 +28,7 @@ export const Route = createFileRoute('/admin/apartments')({ component: Apartment
 const BHK_OPTIONS = bhkTypeSchema.options
 
 function AddSingle() {
+  const { t } = useT()
   const qc = useQueryClient()
   const [tower, setTower] = useState('')
   const [apartmentNo, setApartmentNo] = useState('')
@@ -59,15 +60,15 @@ function AddSingle() {
       }}
     >
       <div className="space-y-1.5">
-        <Label htmlFor="tower">Tower</Label>
+        <Label htmlFor="tower">{t('common.tower')}</Label>
         <Input id="tower" placeholder="A" value={tower} onChange={(e) => setTower(e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="no">Number</Label>
+        <Label htmlFor="no">{t('page.apartments.number')}</Label>
         <Input id="no" placeholder="101" value={apartmentNo} onChange={(e) => setApartmentNo(e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="floor">Floor</Label>
+        <Label htmlFor="floor">{t('page.apartments.floor')}</Label>
         <Input
           id="floor"
           type="number"
@@ -92,7 +93,7 @@ function AddSingle() {
         </Select>
       </div>
       <Button type="submit" disabled={mutation.isPending || !tower || !apartmentNo}>
-        {mutation.isPending ? 'Adding…' : 'Add'}
+        {mutation.isPending ? t('common.adding') : t('common.add')}
       </Button>
       {mutation.isError && (
         <p className="text-destructive col-span-full text-sm">{(mutation.error as Error).message}</p>
@@ -102,6 +103,7 @@ function AddSingle() {
 }
 
 function BulkAdd() {
+  const { t } = useT()
   const qc = useQueryClient()
   const [text, setText] = useState('')
   const { rows, errors } = parseBulk(text)
@@ -117,7 +119,7 @@ function BulkAdd() {
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
-        <Label htmlFor="bulk">CSV rows — one per line: tower,number,floor,bhk</Label>
+        <Label htmlFor="bulk">{t('page.apartments.csvLabel')}</Label>
         <Textarea
           id="bulk"
           rows={5}
@@ -132,7 +134,13 @@ function BulkAdd() {
           {errors.slice(0, 5).map((err) => (
             <li key={err}>{err}</li>
           ))}
-          {errors.length > 5 && <li>…and {errors.length - 5} more</li>}
+          {errors.length > 5 && (
+            <li>
+              {t('page.apartments.andMorePrefix')}
+              {errors.length - 5}
+              {t('page.apartments.andMoreSuffix')}
+            </li>
+          )}
         </ul>
       )}
       <div className="flex items-center gap-3">
@@ -140,10 +148,12 @@ function BulkAdd() {
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending || rows.length === 0 || errors.length > 0}
         >
-          {mutation.isPending ? 'Importing…' : `Import ${rows.length || ''} apartment${rows.length === 1 ? '' : 's'}`}
+          {mutation.isPending
+            ? t('page.apartments.importing')
+            : `${t('page.apartments.import')} ${rows.length || ''} ${rows.length === 1 ? t('common.apartmentWordOne') : t('common.apartmentWordMany')}`}
         </Button>
         {mutation.isSuccess && (
-          <span className="text-sm text-emerald-600 dark:text-emerald-400">Imported ✓</span>
+          <span className="text-sm text-emerald-600 dark:text-emerald-400">{t('page.apartments.imported')}</span>
         )}
         {mutation.isError && <span className="text-destructive text-sm">{(mutation.error as Error).message}</span>}
       </div>
@@ -152,6 +162,7 @@ function BulkAdd() {
 }
 
 function ApartmentRow({ apt }: { apt: Apartment }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [editing, setEditing] = useState(false)
   const [tower, setTower] = useState(apt.tower)
@@ -217,10 +228,10 @@ function ApartmentRow({ apt }: { apt: Apartment }) {
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <Button size="sm" disabled={save.isPending || !tower || !apartmentNo} onClick={() => save.mutate()}>
-              {save.isPending ? '…' : 'Save'}
+              {save.isPending ? '…' : t('common.save')}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         </TableCell>
@@ -235,12 +246,12 @@ function ApartmentRow({ apt }: { apt: Apartment }) {
       <TableCell className="text-muted-foreground">{apt.floor ?? '—'}</TableCell>
       <TableCell className="text-muted-foreground">{apt.bhkType ?? '—'}</TableCell>
       <TableCell>
-        <Badge variant={apt.isActive ? 'default' : 'secondary'}>{apt.isActive ? 'Active' : 'Inactive'}</Badge>
+        <Badge variant={apt.isActive ? 'default' : 'secondary'}>{apt.isActive ? t('common.active') : t('common.inactive')}</Badge>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end gap-2">
           <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-            Edit
+            {t('common.edit')}
           </Button>
           <Button
             size="sm"
@@ -248,7 +259,7 @@ function ApartmentRow({ apt }: { apt: Apartment }) {
             disabled={toggleActive.isPending}
             onClick={() => toggleActive.mutate()}
           >
-            {toggleActive.isPending ? '…' : apt.isActive ? 'Deactivate' : 'Activate'}
+            {toggleActive.isPending ? '…' : apt.isActive ? t('common.deactivate') : t('common.activate')}
           </Button>
         </div>
       </TableCell>
@@ -264,12 +275,12 @@ function ApartmentsPage() {
     <div className="space-y-6">
       <PageHeader
         title={t('nav.apartments')}
-        description={`${apartments.data?.length ?? 0} unit${apartments.data?.length === 1 ? '' : 's'} registered`}
+        description={`${apartments.data?.length ?? 0} ${apartments.data?.length === 1 ? t('page.apartments.unitOne') : t('page.apartments.unitMany')} ${t('common.registered')}`}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Add apartment</CardTitle>
+          <CardTitle>{t('page.apartments.addTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <AddSingle />
@@ -278,7 +289,7 @@ function ApartmentsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Bulk import</CardTitle>
+          <CardTitle>{t('page.apartments.bulkTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <BulkAdd />
@@ -287,23 +298,23 @@ function ApartmentsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All apartments</CardTitle>
+          <CardTitle>{t('page.apartments.allTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <QueryState
             q={apartments}
             empty={apartments.isSuccess && apartments.data?.length === 0}
-            emptyText="No apartments yet. Add one above."
+            emptyText={t('page.apartments.empty')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tower</TableHead>
-                  <TableHead>Number</TableHead>
-                  <TableHead>Floor</TableHead>
+                  <TableHead>{t('common.tower')}</TableHead>
+                  <TableHead>{t('page.apartments.number')}</TableHead>
+                  <TableHead>{t('page.apartments.floor')}</TableHead>
                   <TableHead>BHK</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-right">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

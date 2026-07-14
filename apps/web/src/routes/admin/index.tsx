@@ -87,26 +87,31 @@ function Overview() {
         </CardHeader>
         <CardContent className="text-muted-foreground space-y-2 text-sm">
           <p className="text-foreground">
-            New here? Run the{' '}
+            {t('overview.newHerePrefix')}
             <Button asChild size="sm" className="mx-1 align-middle">
-              <Link to="/admin/setup">guided setup wizard</Link>
-            </Button>{' '}
-            to configure your society and import apartments in one flow — or follow the steps below.
+              <Link to="/admin/setup">{t('overview.wizardLink')}</Link>
+            </Button>
+            {t('overview.newHereSuffix')}
           </p>
           <p>
-            1. Configure your society in <Link to="/admin/society" className="text-foreground underline">Society</Link>.
+            {t('overview.step1Prefix')}
+            <Link to="/admin/society" className="text-foreground underline">{t('nav.society')}</Link>
+            {t('overview.step1Suffix')}
           </p>
           <p>
-            2. Add units in{' '}
-            <Link to="/admin/apartments" className="text-foreground underline">Apartments</Link> (single or bulk).
+            {t('overview.step2Prefix')}
+            <Link to="/admin/apartments" className="text-foreground underline">{t('nav.apartments')}</Link>
+            {t('overview.step2Suffix')}
           </p>
           <p>
-            3. Approve residents as they sign up under{' '}
-            <Link to="/admin/residents" className="text-foreground underline">Residents</Link>.
+            {t('overview.step3Prefix')}
+            <Link to="/admin/residents" className="text-foreground underline">{t('nav.residents')}</Link>
+            {t('overview.step3Suffix')}
           </p>
           <p>
-            4. Register gate staff in{' '}
-            <Link to="/admin/guards" className="text-foreground underline">Guards</Link>.
+            {t('overview.step4Prefix')}
+            <Link to="/admin/guards" className="text-foreground underline">{t('nav.guards')}</Link>
+            {t('overview.step4Suffix')}
           </p>
         </CardContent>
       </Card>

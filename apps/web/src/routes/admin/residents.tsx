@@ -22,11 +22,11 @@ import {
 
 export const Route = createFileRoute('/admin/residents')({ component: ResidentsPage })
 
-const FILTERS: { label: string; value: UserStatus | 'ALL' }[] = [
-  { label: 'All', value: 'ALL' },
-  { label: 'Pending', value: 'PENDING' },
-  { label: 'Approved', value: 'APPROVED' },
-  { label: 'Suspended', value: 'SUSPENDED' },
+const FILTERS: { labelKey: string; value: UserStatus | 'ALL' }[] = [
+  { labelKey: 'common.all', value: 'ALL' },
+  { labelKey: 'page.residents.pending', value: 'PENDING' },
+  { labelKey: 'page.residents.approved', value: 'APPROVED' },
+  { labelKey: 'page.residents.suspended', value: 'SUSPENDED' },
 ]
 
 const STATUS_VARIANT: Record<UserStatus, 'default' | 'secondary' | 'destructive'> = {
@@ -36,6 +36,7 @@ const STATUS_VARIANT: Record<UserStatus, 'default' | 'secondary' | 'destructive'
 }
 
 function ApprovePanel({ user, onDone }: { user: User; onDone: () => void }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
   const [apartmentId, setApartmentId] = useState('')
@@ -53,10 +54,10 @@ function ApprovePanel({ user, onDone }: { user: User; onDone: () => void }) {
   return (
     <div className="bg-muted/40 flex flex-wrap items-end gap-3 rounded-md p-3">
       <div className="space-y-1.5">
-        <Label>Apartment</Label>
+        <Label>{t('common.apartment')}</Label>
         <Select value={apartmentId} onValueChange={setApartmentId}>
           <SelectTrigger className="w-44">
-            <SelectValue placeholder="Select unit" />
+            <SelectValue placeholder={t('common.selectUnit')} />
           </SelectTrigger>
           <SelectContent>
             {apartments.data?.map((a) => (
@@ -68,7 +69,7 @@ function ApprovePanel({ user, onDone }: { user: User; onDone: () => void }) {
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label>Relation</Label>
+        <Label>{t('page.residents.relation')}</Label>
         <Select value={relation} onValueChange={(v) => setRelation(v as ResidencyRelation)}>
           <SelectTrigger className="w-36">
             <SelectValue />
@@ -89,16 +90,16 @@ function ApprovePanel({ user, onDone }: { user: User; onDone: () => void }) {
           onChange={(e) => setIsPrimary(e.target.checked)}
           className="accent-primary size-4"
         />
-        Primary resident
+        {t('page.residents.primaryResident')}
       </label>
       <Button onClick={() => mutation.mutate()} disabled={!apartmentId || mutation.isPending}>
-        {mutation.isPending ? 'Approving…' : 'Confirm'}
+        {mutation.isPending ? t('page.residents.approving') : t('common.confirm')}
       </Button>
       <Button variant="ghost" onClick={onDone}>
-        Cancel
+        {t('common.cancel')}
       </Button>
       {apartments.isSuccess && apartments.data?.length === 0 && (
-        <p className="text-destructive w-full text-xs">Add apartments first before approving residents.</p>
+        <p className="text-destructive w-full text-xs">{t('page.residents.addAptsFirst')}</p>
       )}
       {mutation.isError && <p className="text-destructive w-full text-xs">{(mutation.error as Error).message}</p>}
     </div>
@@ -148,7 +149,7 @@ function ResidentsPage() {
             variant={filter === f.value ? 'default' : 'outline'}
             onClick={() => setFilter(f.value)}
           >
-            {f.label}
+            {t(f.labelKey)}
           </Button>
         ))}
       </div>
@@ -158,16 +159,16 @@ function ResidentsPage() {
           <QueryState
             q={users}
             empty={users.isSuccess && users.data?.length === 0}
-            emptyText="No residents in this view yet."
+            emptyText={t('page.residents.empty')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('common.name')}</TableHead>
+                  <TableHead>{t('page.residents.contact')}</TableHead>
+                  <TableHead>{t('page.residents.role')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-right">{t('common.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -189,7 +190,7 @@ function ResidentsPage() {
                             variant={approving === u.id ? 'secondary' : 'default'}
                             onClick={() => setApproving(approving === u.id ? null : u.id)}
                           >
-                            {approving === u.id ? 'Close' : 'Approve'}
+                            {approving === u.id ? t('common.close') : t('common.approve')}
                           </Button>
                         )}
                       </TableCell>

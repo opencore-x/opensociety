@@ -15,16 +15,17 @@ export const Route = createFileRoute('/admin/society')({ component: SocietyPage 
 
 const EMPTY: UpdateSocietyConfig = { name: '', address: '', city: '', state: '', pincode: '', gstin: '' }
 
-const FIELDS: { key: keyof UpdateSocietyConfig; label: string; placeholder: string }[] = [
-  { key: 'name', label: 'Society name', placeholder: 'Green Valley Heights' },
-  { key: 'address', label: 'Address', placeholder: '123 Main Road' },
-  { key: 'city', label: 'City', placeholder: 'Bengaluru' },
-  { key: 'state', label: 'State', placeholder: 'Karnataka' },
-  { key: 'pincode', label: 'Pincode', placeholder: '560001' },
-  { key: 'gstin', label: 'GSTIN (for invoices, optional)', placeholder: '29ABCDE1234F1Z5' },
+const FIELDS: { key: keyof UpdateSocietyConfig; labelKey: string; placeholder: string }[] = [
+  { key: 'name', labelKey: 'page.society.fieldName', placeholder: 'Green Valley Heights' },
+  { key: 'address', labelKey: 'common.address', placeholder: '123 Main Road' },
+  { key: 'city', labelKey: 'common.city', placeholder: 'Bengaluru' },
+  { key: 'state', labelKey: 'common.state', placeholder: 'Karnataka' },
+  { key: 'pincode', labelKey: 'common.pincode', placeholder: '560001' },
+  { key: 'gstin', labelKey: 'page.society.fieldGstin', placeholder: '29ABCDE1234F1Z5' },
 ]
 
 function SocietyForm({ initial }: { initial: UpdateSocietyConfig }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [form, setForm] = useState<UpdateSocietyConfig>(initial)
   const mutation = useMutation({
@@ -40,9 +41,9 @@ function SocietyForm({ initial }: { initial: UpdateSocietyConfig }) {
         mutation.mutate()
       }}
     >
-      {FIELDS.map(({ key, label, placeholder }) => (
+      {FIELDS.map(({ key, labelKey, placeholder }) => (
         <div key={key} className="space-y-1.5">
-          <Label htmlFor={key}>{label}</Label>
+          <Label htmlFor={key}>{t(labelKey)}</Label>
           <Input
             id={key}
             placeholder={placeholder}
@@ -53,10 +54,10 @@ function SocietyForm({ initial }: { initial: UpdateSocietyConfig }) {
       ))}
       <div className="flex items-center gap-3 pt-1">
         <Button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Saving…' : 'Save changes'}
+          {mutation.isPending ? t('common.saving') : t('common.saveChanges')}
         </Button>
-        {mutation.isSuccess && <span className="text-sm text-emerald-600 dark:text-emerald-400">Saved ✓</span>}
-        {mutation.isError && <span className="text-destructive text-sm">Save failed</span>}
+        {mutation.isSuccess && <span className="text-sm text-emerald-600 dark:text-emerald-400">{t('common.saved')}</span>}
+        {mutation.isError && <span className="text-destructive text-sm">{t('common.saveFailed')}</span>}
       </div>
     </form>
   )
@@ -71,7 +72,7 @@ function SocietyPage() {
       <PageHeader title={t('nav.society')} description={t('page.society.desc')} />
       <Card>
         <CardHeader>
-          <CardTitle>Society details</CardTitle>
+          <CardTitle>{t('page.society.detailsTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <QueryState q={society}>

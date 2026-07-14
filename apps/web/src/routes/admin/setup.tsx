@@ -22,15 +22,22 @@ import { Textarea } from '@/components/ui/textarea'
 
 export const Route = createFileRoute('/admin/setup')({ component: SetupWizard })
 
-const SOCIETY_FIELDS: { key: SocietyField; label: string; placeholder: string }[] = [
-  { key: 'name', label: 'Society name', placeholder: 'Green Valley Heights' },
-  { key: 'address', label: 'Address', placeholder: '123 Main Road' },
-  { key: 'city', label: 'City', placeholder: 'Bengaluru' },
-  { key: 'state', label: 'State', placeholder: 'Karnataka' },
-  { key: 'pincode', label: 'Pincode', placeholder: '560001' },
+const SOCIETY_FIELDS: { key: SocietyField; labelKey: string; placeholder: string }[] = [
+  { key: 'name', labelKey: 'page.society.fieldName', placeholder: 'Green Valley Heights' },
+  { key: 'address', labelKey: 'common.address', placeholder: '123 Main Road' },
+  { key: 'city', labelKey: 'common.city', placeholder: 'Bengaluru' },
+  { key: 'state', labelKey: 'common.state', placeholder: 'Karnataka' },
+  { key: 'pincode', labelKey: 'common.pincode', placeholder: '560001' },
 ]
 
+const STEP_LABEL_KEY: Record<string, string> = {
+  society: 'nav.society',
+  apartments: 'nav.apartments',
+  review: 'page.setup.stepReview',
+}
+
 function Stepper({ current }: { current: number }) {
+  const { t } = useT()
   return (
     <ol className="mb-8 flex items-center gap-2">
       {SETUP_STEPS.map((step, i) => {
@@ -54,7 +61,7 @@ function Stepper({ current }: { current: number }) {
                 'text-sm font-medium ' + (state === 'todo' ? 'text-muted-foreground' : 'text-foreground')
               }
             >
-              {step.label}
+              {t(STEP_LABEL_KEY[step.key])}
             </span>
             {i < SETUP_STEPS.length - 1 && <span className="bg-border mx-2 h-px flex-1" />}
           </li>
@@ -95,9 +102,9 @@ function SetupWizard() {
 
           {step === 0 && (
             <div className="max-w-xl space-y-4">
-              {SOCIETY_FIELDS.map(({ key, label, placeholder }) => (
+              {SOCIETY_FIELDS.map(({ key, labelKey, placeholder }) => (
                 <div key={key} className="space-y-1.5">
-                  <Label htmlFor={key}>{label}</Label>
+                  <Label htmlFor={key}>{t(labelKey)}</Label>
                   <Input
                     id={key}
                     placeholder={placeholder}
@@ -114,7 +121,7 @@ function SetupWizard() {
           {step === 1 && (
             <div className="max-w-2xl space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="csv">Apartments (one per line: tower,number,floor,bhk)</Label>
+                <Label htmlFor="csv">{t('page.setup.csvLabel')}</Label>
                 <Textarea
                   id="csv"
                   rows={8}
@@ -124,8 +131,9 @@ function SetupWizard() {
                 />
               </div>
               <p className="text-muted-foreground text-sm">
-                {apartments.length} valid {apartments.length === 1 ? 'apartment' : 'apartments'} parsed. You can
-                also skip this and add apartments later.
+                {apartments.length} {t('page.setup.validWord')}{' '}
+                {apartments.length === 1 ? t('common.apartmentWordOne') : t('common.apartmentWordMany')}{' '}
+                {t('page.setup.parsedSuffix')}
               </p>
               {csvErrors.length > 0 && (
                 <ul className="text-destructive space-y-0.5 text-xs">
@@ -140,20 +148,22 @@ function SetupWizard() {
           {step === 2 && (
             <div className="max-w-xl space-y-4">
               <div>
-                <h3 className="text-sm font-semibold">Society</h3>
+                <h3 className="text-sm font-semibold">{t('nav.society')}</h3>
                 <p className="text-muted-foreground text-sm">
                   {society.name} — {society.address}, {society.city}, {society.state} {society.pincode}
                 </p>
               </div>
               <div>
-                <h3 className="text-sm font-semibold">Apartments</h3>
+                <h3 className="text-sm font-semibold">{t('nav.apartments')}</h3>
                 <p className="text-muted-foreground text-sm">
-                  {apartments.length} {apartments.length === 1 ? 'apartment' : 'apartments'} will be imported.
+                  {apartments.length}{' '}
+                  {apartments.length === 1 ? t('common.apartmentWordOne') : t('common.apartmentWordMany')}{' '}
+                  {t('page.setup.willImport')}
                 </p>
               </div>
               {finish.isError && (
                 <p className="text-destructive text-sm">
-                  Setup failed: {String((finish.error as Error)?.message ?? 'error')}
+                  {t('page.setup.setupFailed')} {String((finish.error as Error)?.message ?? 'error')}
                 </p>
               )}
             </div>
@@ -161,18 +171,18 @@ function SetupWizard() {
 
           <div className="mt-8 flex items-center justify-between">
             <Button variant="outline" onClick={() => setStep((s) => s - 1)} disabled={step === 0}>
-              Back
+              {t('common.back')}
             </Button>
             {step < SETUP_STEPS.length - 1 ? (
               <Button
                 onClick={() => setStep((s) => s + 1)}
                 disabled={(step === 0 && !societyValid) || (step === 1 && csvErrors.length > 0)}
               >
-                Next
+                {t('common.next')}
               </Button>
             ) : (
               <Button onClick={() => finish.mutate()} disabled={!societyValid || finish.isPending}>
-                {finish.isPending ? 'Finishing…' : 'Finish setup'}
+                {finish.isPending ? t('page.setup.finishing') : t('page.setup.finish')}
               </Button>
             )}
           </div>
