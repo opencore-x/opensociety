@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react'
-import { ActivityIndicator, FlatList, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, FlatList, Linking, Pressable, View } from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Notice } from '@opensociety/shared'
 import { noticeMatchesQuery } from '@opensociety/shared'
 import { apiClient } from '../api/client'
+import { Input } from '../components/ui/input'
+import { Text } from '../components/ui/text'
+import { cn } from '../lib/utils'
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
@@ -39,48 +42,69 @@ export default function Notices() {
 
   if (isLoading)
     return (
-      <View style={styles.centered}>
+      <View className="flex-1 items-center justify-center gap-1 bg-background">
         <ActivityIndicator />
       </View>
     )
   if (isError)
     return (
-      <View style={styles.centered}>
-        <Text style={styles.error}>Couldn’t load notices</Text>
-        <Text style={styles.dim}>{String((error as Error)?.message ?? 'error')}</Text>
+      <View className="flex-1 items-center justify-center gap-1 bg-background">
+        <Text className="text-base font-semibold text-destructive">Couldn’t load notices</Text>
+        <Text className="text-sm text-muted-foreground">{String((error as Error)?.message ?? 'error')}</Text>
       </View>
     )
 
   return (
     <FlatList
-      contentContainerStyle={styles.list}
+      className="bg-background"
+      contentContainerClassName="gap-2 p-4"
       data={notices}
       keyExtractor={(n) => n.id}
       ListHeaderComponent={
-        <TextInput
-          style={styles.search}
+        <Input
+          className="mb-1"
           placeholder="Search notices"
           autoCorrect={false}
           value={search}
           onChangeText={setSearch}
         />
       }
-      ListEmptyComponent={<Text style={styles.dim}>{search ? 'No matching notices.' : 'No notices yet.'}</Text>}
+      ListEmptyComponent={
+        <Text className="text-sm text-muted-foreground">
+          {search ? 'No matching notices.' : 'No notices yet.'}
+        </Text>
+      }
       renderItem={({ item }) => (
-        <Pressable style={styles.card} onPress={() => item.read === false && markRead.mutate(item.id)}>
-          <View style={styles.row}>
-            <Text style={styles.title}>{item.title}</Text>
-            {item.read === false && <Text style={styles.newBadge}>NEW</Text>}
-            <Text style={[styles.badge, isUrgent(item.priority) && styles.badgeUrgent]}>{item.priority}</Text>
+        <Pressable
+          className="gap-1.5 rounded-xl bg-muted p-3"
+          onPress={() => item.read === false && markRead.mutate(item.id)}
+        >
+          <View className="flex-row items-center gap-2">
+            <Text className="flex-1 text-base font-semibold">{item.title}</Text>
+            {item.read === false && (
+              <Text className="overflow-hidden rounded-md bg-primary px-1.5 py-0.5 text-xs font-bold text-primary-foreground">
+                NEW
+              </Text>
+            )}
+            <Text
+              className={cn(
+                'overflow-hidden rounded-md px-2 py-0.5 text-xs',
+                isUrgent(item.priority) ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
+              )}
+            >
+              {item.priority}
+            </Text>
           </View>
-          <View style={styles.metaRow}>
-            <Text style={styles.category}>{item.category}</Text>
-            <Text style={styles.dim}>{formatDate(item.publishedAt)}</Text>
+          <View className="flex-row items-center justify-between">
+            <Text className="overflow-hidden rounded-md bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
+              {item.category}
+            </Text>
+            <Text className="text-sm text-muted-foreground">{formatDate(item.publishedAt)}</Text>
           </View>
-          <Text style={styles.body}>{item.body}</Text>
+          <Text className="text-sm leading-5 text-foreground">{item.body}</Text>
           {item.attachmentUrl && (
-            <Pressable onPress={() => openAttachment(item.attachmentUrl!)} style={styles.attachment}>
-              <Text style={styles.attachmentText}>📎 {item.attachmentName ?? 'Attachment'}</Text>
+            <Pressable className="self-start py-1" onPress={() => openAttachment(item.attachmentUrl!)}>
+              <Text className="text-sm font-semibold text-primary">📎 {item.attachmentName ?? 'Attachment'}</Text>
             </Pressable>
           )}
         </Pressable>
@@ -88,56 +112,3 @@ export default function Notices() {
     />
   )
 }
-
-const styles = StyleSheet.create({
-  list: { padding: 16, gap: 8 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  search: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    marginBottom: 4,
-  },
-  card: { padding: 12, borderRadius: 10, backgroundColor: '#f4f4f5', gap: 6 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { flex: 1, fontSize: 16, fontWeight: '600' },
-  body: { color: '#3f3f46', fontSize: 14, lineHeight: 20 },
-  dim: { color: '#71717a', fontSize: 13 },
-  category: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#3f3f46',
-    backgroundColor: '#e4e4e7',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  error: { color: '#e11d48', fontSize: 16, fontWeight: '600' },
-  badge: {
-    fontSize: 12,
-    color: '#0e7490',
-    backgroundColor: '#cffafe',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  badgeUrgent: { color: '#b91c1c', backgroundColor: '#fee2e2' },
-  newBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
-    backgroundColor: '#0e7490',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  attachment: { alignSelf: 'flex-start', paddingVertical: 4 },
-  attachmentText: { color: '#0e7490', fontWeight: '600', fontSize: 14 },
-})

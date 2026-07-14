@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
 import type { Apartment } from '@opensociety/shared'
 import { apiClient, type HouseHelpWithRating } from '../api/client'
-import { Button } from '../components/Button'
+import { Button } from '../components/ui/button'
+import { Text } from '../components/ui/text'
+import { cn } from '../lib/utils'
 
 // Resident view: manage which registered house help serves each of their flats.
 export default function MyHouseHelp() {
@@ -18,8 +20,10 @@ export default function MyHouseHelp() {
   if (apts.isError)
     return (
       <Centered>
-        <Text style={styles.error}>API unreachable</Text>
-        <Text style={styles.dim}>{String((apts.error as Error)?.message ?? 'error')}</Text>
+        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-sm text-muted-foreground">
+          {String((apts.error as Error)?.message ?? 'error')}
+        </Text>
       </Centered>
     )
 
@@ -27,12 +31,12 @@ export default function MyHouseHelp() {
   if (myApts.length === 0)
     return (
       <Centered>
-        <Text style={styles.dim}>You have no flats assigned yet.</Text>
+        <Text className="text-sm text-muted-foreground">You have no flats assigned yet.</Text>
       </Centered>
     )
 
   return (
-    <ScrollView contentContainerStyle={styles.list}>
+    <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
       {myApts.map((a) => (
         <ApartmentAssignments key={a.id} apartment={a} registry={registry.data ?? []} />
       ))}
@@ -47,14 +51,19 @@ function StarRating({ help, apartmentKey }: { help: HouseHelpWithRating; apartme
     onSuccess: () => qc.invalidateQueries({ queryKey: ['house-help-for-apartment', apartmentKey] }),
   })
   return (
-    <View style={styles.rating}>
-      <Text style={styles.dim}>
+    <View className="gap-0.5">
+      <Text className="text-sm text-muted-foreground">
         {help.ratingAvg === null ? 'Not rated yet' : `★ ${help.ratingAvg} (${help.reviewCount})`}
       </Text>
-      <View style={styles.stars}>
+      <View className="flex-row gap-0.5">
         {[1, 2, 3, 4, 5].map((n) => (
           <Pressable key={n} onPress={() => rate.mutate(n)} disabled={rate.isPending} hitSlop={4}>
-            <Text style={[styles.star, help.ratingAvg !== null && n <= Math.round(help.ratingAvg) && styles.starOn]}>
+            <Text
+              className={cn(
+                'text-2xl text-muted-foreground',
+                help.ratingAvg !== null && n <= Math.round(help.ratingAvg) && 'text-amber-600'
+              )}
+            >
               ★
             </Text>
           </Pressable>
@@ -85,43 +94,59 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
   const unassigned = registry.filter((h) => h.isActive && !assignedIds.has(h.id))
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.aptTitle}>
+    <View className="gap-2">
+      <Text className="text-lg font-bold">
         {apartment.tower}-{apartment.apartmentNo}
       </Text>
 
-      <Text style={styles.label}>Assigned help</Text>
-      {(assigned.data ?? []).length === 0 && <Text style={styles.dim}>None yet.</Text>}
+      <Text className="mt-1 text-sm font-semibold text-foreground">Assigned help</Text>
+      {(assigned.data ?? []).length === 0 && (
+        <Text className="text-sm text-muted-foreground">None yet.</Text>
+      )}
       {(assigned.data ?? []).map((h) => (
-        <View key={h.id} style={styles.card}>
-          <View style={{ flex: 1, gap: 6 }}>
-            <View style={styles.nameRow}>
-              <Text style={styles.name}>{h.name}</Text>
-              <View style={[styles.badge, h.verificationLevel === 'VERIFIED' ? styles.badgeOk : styles.badgeMuted]}>
-                <Text style={[styles.badgeText, h.verificationLevel === 'VERIFIED' && styles.badgeTextOk]}>
+        <View key={h.id} className="flex-row items-center gap-3 rounded-xl bg-muted p-3">
+          <View className="flex-1 gap-1.5">
+            <View className="flex-row flex-wrap items-center gap-2">
+              <Text className="text-base font-semibold">{h.name}</Text>
+              <View
+                className={cn(
+                  'rounded-full px-2 py-0.5',
+                  h.verificationLevel === 'VERIFIED' ? 'bg-green-100' : 'bg-secondary'
+                )}
+              >
+                <Text
+                  className={cn(
+                    'text-xs font-semibold text-muted-foreground',
+                    h.verificationLevel === 'VERIFIED' && 'text-green-700'
+                  )}
+                >
                   {h.verificationLevel === 'VERIFIED' ? '✓ Verified' : 'Unverified'}
                 </Text>
               </View>
             </View>
-            <Text style={styles.dim}>
+            <Text className="text-sm text-muted-foreground">
               {h.type} · Trust {h.trustScore}/100
             </Text>
             <StarRating help={h} apartmentKey={apartment.id} />
           </View>
-          <Button label="Remove" variant="outline" onPress={() => remove.mutate(h.id)} disabled={busy} />
+          <Button variant="outline" onPress={() => remove.mutate(h.id)} disabled={busy}>
+            <Text>Remove</Text>
+          </Button>
         </View>
       ))}
 
       {unassigned.length > 0 && (
         <>
-          <Text style={styles.label}>Add help</Text>
+          <Text className="mt-1 text-sm font-semibold text-foreground">Add help</Text>
           {unassigned.map((h) => (
-            <View key={h.id} style={styles.card}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{h.name}</Text>
-                <Text style={styles.dim}>{h.type}</Text>
+            <View key={h.id} className="flex-row items-center gap-3 rounded-xl bg-muted p-3">
+              <View className="flex-1">
+                <Text className="text-base font-semibold">{h.name}</Text>
+                <Text className="text-sm text-muted-foreground">{h.type}</Text>
               </View>
-              <Button label="Assign" onPress={() => assign.mutate(h.id)} disabled={busy} />
+              <Button onPress={() => assign.mutate(h.id)} disabled={busy}>
+                <Text>Assign</Text>
+              </Button>
             </View>
           ))}
         </>
@@ -131,34 +156,5 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View style={styles.centered}>{children}</View>
+  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
 }
-
-const styles = StyleSheet.create({
-  list: { padding: 16, gap: 16 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  section: { gap: 8 },
-  aptTitle: { fontSize: 18, fontWeight: '700' },
-  label: { fontSize: 13, fontWeight: '600', color: '#3f3f46', marginTop: 4 },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: '#f4f4f5',
-    gap: 10,
-  },
-  name: { fontSize: 16, fontWeight: '600' },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
-  badgeOk: { backgroundColor: '#dcfce7' },
-  badgeMuted: { backgroundColor: '#e4e4e7' },
-  badgeText: { fontSize: 11, fontWeight: '600', color: '#71717a' },
-  badgeTextOk: { color: '#15803d' },
-  dim: { color: '#71717a', fontSize: 13 },
-  rating: { gap: 2 },
-  stars: { flexDirection: 'row', gap: 2 },
-  star: { fontSize: 22, color: '#d4d4d8' },
-  starOn: { color: '#f59e0b' },
-  error: { color: '#e11d48', fontSize: 16, fontWeight: '600' },
-})

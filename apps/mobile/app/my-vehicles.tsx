@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, ScrollView, View } from 'react-native'
 import type { Apartment, CreateVehicle, VehicleType } from '@opensociety/shared'
 import { vehicleTypeSchema } from '@opensociety/shared'
 import { apiClient } from '../api/client'
-import { Button } from '../components/Button'
+import { Button } from '../components/ui/button'
+import { Chip } from '../components/ui/chip'
+import { Input } from '../components/ui/input'
+import { Text } from '../components/ui/text'
+import { cn } from '../lib/utils'
 
 // Resident view: register and manage the vehicles for their own flat(s).
 export default function MyVehicles() {
@@ -50,23 +54,25 @@ export default function MyVehicles() {
   if (apts.isError)
     return (
       <Centered>
-        <Text style={styles.error}>API unreachable</Text>
-        <Text style={styles.dim}>{String((apts.error as Error)?.message ?? 'error')}</Text>
+        <Text className="text-sm font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-sm text-muted-foreground">
+          {String((apts.error as Error)?.message ?? 'error')}
+        </Text>
       </Centered>
     )
   if (myApts.length === 0)
     return (
       <Centered>
-        <Text style={styles.dim}>You have no flats assigned yet.</Text>
+        <Text className="text-sm text-muted-foreground">You have no flats assigned yet.</Text>
       </Centered>
     )
 
   const canAdd = flat != null && registrationNumber.trim().length > 0 && !add.isPending
 
   return (
-    <ScrollView contentContainerStyle={styles.list}>
-      <View style={styles.section}>
-        <Text style={styles.heading}>Register a vehicle</Text>
+    <ScrollView className="bg-background" contentContainerClassName="gap-5 p-4">
+      <View className="gap-2.5">
+        <Text className="text-base font-bold">Register a vehicle</Text>
         {myApts.length > 1 && (
           <Chips
             options={myApts.map((a: Apartment) => ({ value: a.id, label: `${a.tower}-${a.apartmentNo}` }))}
@@ -74,8 +80,7 @@ export default function MyVehicles() {
             onSelect={setApartmentId}
           />
         )}
-        <TextInput
-          style={styles.input}
+        <Input
           placeholder="Reg. number (KA 01 AB 1234)"
           autoCapitalize="characters"
           autoCorrect={false}
@@ -87,27 +92,39 @@ export default function MyVehicles() {
           selected={type}
           onSelect={(v) => setType(v as VehicleType)}
         />
-        <Button label={add.isPending ? 'Adding…' : 'Add vehicle'} onPress={() => add.mutate()} disabled={!canAdd} />
-        {add.isError && <Text style={styles.error}>{String((add.error as Error)?.message ?? 'Failed')}</Text>}
+        <Button onPress={() => add.mutate()} disabled={!canAdd}>
+          <Text>{add.isPending ? 'Adding…' : 'Add vehicle'}</Text>
+        </Button>
+        {add.isError && (
+          <Text className="text-sm text-destructive">
+            {String((add.error as Error)?.message ?? 'Failed')}
+          </Text>
+        )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.heading}>My vehicles</Text>
-        {(vehicles.data ?? []).length === 0 && <Text style={styles.dim}>No vehicles registered yet.</Text>}
+      <View className="gap-2.5">
+        <Text className="text-base font-bold">My vehicles</Text>
+        {(vehicles.data ?? []).length === 0 && (
+          <Text className="text-sm text-muted-foreground">No vehicles registered yet.</Text>
+        )}
         {(vehicles.data ?? []).map((v) => (
-          <View key={v.id} style={[styles.card, v.isActive ? null : styles.inactive]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.plate}>{v.registrationNumber}</Text>
-              <Text style={styles.dim}>
+          <View
+            key={v.id}
+            className={cn('flex-row items-center gap-3 rounded-xl bg-muted p-3', !v.isActive && 'opacity-60')}
+          >
+            <View className="flex-1">
+              <Text className="text-base font-semibold tabular-nums">{v.registrationNumber}</Text>
+              <Text className="text-sm text-muted-foreground">
                 {v.type} · {labelOf(v.apartmentId)}
               </Text>
             </View>
             <Button
-              label={v.isActive ? 'Deactivate' : 'Activate'}
-              variant={v.isActive ? 'outline' : 'primary'}
+              variant={v.isActive ? 'outline' : 'default'}
               onPress={() => toggle.mutate({ id: v.id, isActive: v.isActive })}
               disabled={toggle.isPending}
-            />
+            >
+              <Text>{v.isActive ? 'Deactivate' : 'Activate'}</Text>
+            </Button>
           </View>
         ))}
       </View>
@@ -125,44 +142,19 @@ function Chips({
   onSelect: (v: string) => void
 }) {
   return (
-    <View style={styles.chips}>
-      {options.map((o) => {
-        const on = o.value === selected
-        return (
-          <Pressable key={o.value} onPress={() => onSelect(o.value)} style={[styles.chip, on && styles.chipOn]}>
-            <Text style={[styles.chipText, on && styles.chipTextOn]}>{o.label}</Text>
-          </Pressable>
-        )
-      })}
+    <View className="flex-row flex-wrap gap-2">
+      {options.map((o) => (
+        <Chip
+          key={o.value}
+          label={o.label}
+          selected={o.value === selected}
+          onPress={() => onSelect(o.value)}
+        />
+      ))}
     </View>
   )
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View style={styles.centered}>{children}</View>
+  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
 }
-
-const styles = StyleSheet.create({
-  list: { padding: 16, gap: 20 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  section: { gap: 10 },
-  heading: { fontSize: 16, fontWeight: '700' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-  },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { borderWidth: 1, borderColor: '#d4d4d8', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  chipOn: { backgroundColor: '#0e7490', borderColor: '#0e7490' },
-  chipText: { color: '#3f3f46', fontSize: 13, fontWeight: '600' },
-  chipTextOn: { color: '#fff' },
-  card: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, backgroundColor: '#f4f4f5', gap: 10 },
-  inactive: { opacity: 0.55 },
-  plate: { fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  dim: { color: '#71717a', fontSize: 13 },
-  error: { color: '#e11d48', fontSize: 13 },
-})

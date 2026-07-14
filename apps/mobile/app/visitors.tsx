@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, FlatList, View } from 'react-native'
 import { availableVisitorActions } from '@opensociety/shared'
 import { apiClient } from '../api/client'
-import { Button } from '../components/Button'
+import { Button } from '../components/ui/button'
+import { Card } from '../components/ui/card'
+import { Input } from '../components/ui/input'
+import { Text } from '../components/ui/text'
 
 export default function Visitors() {
   const qc = useQueryClient()
@@ -39,75 +42,79 @@ export default function Visitors() {
   if (isError)
     return (
       <Centered>
-        <Text style={styles.error}>API unreachable</Text>
-        <Text style={styles.dim}>{String((error as Error)?.message ?? 'error')}</Text>
+        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-sm text-muted-foreground">
+          {String((error as Error)?.message ?? 'error')}
+        </Text>
       </Centered>
     )
 
   return (
     <FlatList
-      contentContainerStyle={styles.list}
+      contentContainerClassName="gap-2 p-4"
       data={data ?? []}
       keyExtractor={(v) => v.id}
-      ListEmptyComponent={<Text style={styles.dim}>No visitors yet.</Text>}
+      ListEmptyComponent={<Text className="text-sm text-muted-foreground">No visitors yet.</Text>}
       renderItem={({ item }) => {
         const actions = availableVisitorActions(item.status)
         const denying = denyingId === item.id
         return (
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.visitorName}</Text>
-                <Text style={styles.dim}>{item.type}</Text>
+          <Card className="gap-2.5 p-3">
+            <View className="flex-row items-center">
+              <View className="flex-1">
+                <Text className="text-base font-semibold">{item.visitorName}</Text>
+                <Text className="text-sm text-muted-foreground">{item.type}</Text>
               </View>
-              <Text style={styles.badge}>{item.status}</Text>
+              <Text className="overflow-hidden rounded-md bg-secondary px-2 py-1 text-xs text-primary">
+                {item.status}
+              </Text>
             </View>
 
             {actions.length > 0 && !denying && (
-              <View style={styles.actions}>
+              <View className="flex-row gap-2">
                 {actions.includes('approve') && (
-                  <Button label="Approve" onPress={() => approve.mutate(item.id)} disabled={busy} />
+                  <Button onPress={() => approve.mutate(item.id)} disabled={busy}>
+                    <Text>Approve</Text>
+                  </Button>
                 )}
                 {actions.includes('deny') && (
-                  <Button
-                    label="Deny"
-                    variant="outline"
-                    onPress={() => setDenyingId(item.id)}
-                    disabled={busy}
-                  />
+                  <Button variant="outline" onPress={() => setDenyingId(item.id)} disabled={busy}>
+                    <Text>Deny</Text>
+                  </Button>
                 )}
               </View>
             )}
 
             {denying && (
-              <View style={styles.denyPanel}>
-                <TextInput
-                  style={styles.input}
+              <View className="gap-2">
+                <Input
                   placeholder="Reason for denial"
                   value={reason}
                   onChangeText={setReason}
                   autoFocus
                 />
-                <View style={styles.actions}>
+                <View className="flex-row gap-2">
                   <Button
-                    label={deny.isPending ? 'Denying…' : 'Confirm'}
-                    variant="danger"
+                    variant="destructive"
                     onPress={() => deny.mutate({ id: item.id, reason })}
                     disabled={busy || !reason.trim()}
-                  />
+                  >
+                    <Text>{deny.isPending ? 'Denying…' : 'Confirm'}</Text>
+                  </Button>
                   <Button
-                    label="Cancel"
                     variant="outline"
                     onPress={() => {
                       setDenyingId(null)
                       setReason('')
                     }}
                     disabled={busy}
-                  />
+                  >
+                    <Text>Cancel</Text>
+                  </Button>
                 </View>
               </View>
             )}
-          </View>
+          </Card>
         )
       }}
     />
@@ -115,34 +122,5 @@ export default function Visitors() {
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View style={styles.centered}>{children}</View>
+  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
 }
-
-const styles = StyleSheet.create({
-  list: { padding: 16, gap: 8 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  card: { padding: 12, borderRadius: 10, backgroundColor: '#f4f4f5', gap: 10 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  name: { fontSize: 16, fontWeight: '600' },
-  dim: { color: '#71717a', fontSize: 13 },
-  error: { color: '#e11d48', fontSize: 16, fontWeight: '600' },
-  badge: {
-    fontSize: 12,
-    color: '#0e7490',
-    backgroundColor: '#cffafe',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  actions: { flexDirection: 'row', gap: 8 },
-  denyPanel: { gap: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-  },
-})

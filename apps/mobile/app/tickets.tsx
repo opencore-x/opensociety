@@ -1,17 +1,21 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, ScrollView, View } from 'react-native'
 import type { TicketCategory, TicketPriority, TicketStatus } from '@opensociety/shared'
 import { ticketCategorySchema, ticketPrioritySchema } from '@opensociety/shared'
 import { apiClient } from '../api/client'
-import { Button } from '../components/Button'
+import { Button } from '../components/ui/button'
+import { Chip } from '../components/ui/chip'
+import { Input } from '../components/ui/input'
+import { Text } from '../components/ui/text'
+import { cn } from '../lib/utils'
 
 const STATUS_COLOR: Record<TicketStatus, string> = {
-  OPEN: '#0e7490',
-  IN_PROGRESS: '#0e7490',
-  RESOLVED: '#15803d',
-  CLOSED: '#71717a',
-  CANCELLED: '#71717a',
+  OPEN: 'text-amber-600',
+  IN_PROGRESS: 'text-primary',
+  RESOLVED: 'text-green-700',
+  CLOSED: 'text-muted-foreground',
+  CANCELLED: 'text-muted-foreground',
 }
 
 export default function Tickets() {
@@ -50,15 +54,15 @@ export default function Tickets() {
   const rows = tickets.data ?? []
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.section}>Raise a ticket</Text>
+    <ScrollView className="bg-background" contentContainerClassName="gap-3.5 p-4">
+      <Text className="text-lg font-bold">Raise a ticket</Text>
 
       <Field label="Title">
-        <TextInput style={styles.input} placeholder="e.g. Leaking tap" value={title} onChangeText={setTitle} />
+        <Input placeholder="e.g. Leaking tap" value={title} onChangeText={setTitle} />
       </Field>
       <Field label="Description">
-        <TextInput
-          style={[styles.input, styles.multiline]}
+        <Input
+          className="h-auto min-h-16 py-2"
           placeholder="What needs fixing?"
           value={description}
           onChangeText={setDescription}
@@ -69,9 +73,9 @@ export default function Tickets() {
         {apartments.isLoading ? (
           <ActivityIndicator />
         ) : apartments.isError ? (
-          <Text style={styles.error}>Could not load apartments</Text>
+          <Text className="text-sm text-destructive">Could not load apartments</Text>
         ) : (
-          <View style={styles.chips}>
+          <View className="flex-row flex-wrap gap-2">
             {(apartments.data ?? []).map((a) => (
               <Chip
                 key={a.id}
@@ -84,44 +88,44 @@ export default function Tickets() {
         )}
       </Field>
       <Field label="Category">
-        <View style={styles.chips}>
+        <View className="flex-row flex-wrap gap-2">
           {ticketCategorySchema.options.map((c) => (
             <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />
           ))}
         </View>
       </Field>
       <Field label="Priority">
-        <View style={styles.chips}>
+        <View className="flex-row flex-wrap gap-2">
           {ticketPrioritySchema.options.map((p) => (
             <Chip key={p} label={p} selected={priority === p} onPress={() => setPriority(p)} />
           ))}
         </View>
       </Field>
-      <View style={styles.submit}>
-        <Button
-          label={create.isPending ? 'Submitting…' : 'Submit ticket'}
-          onPress={() => create.mutate()}
-          disabled={!canSubmit}
-        />
+      <View className="mt-1 gap-2">
+        <Button onPress={() => create.mutate()} disabled={!canSubmit}>
+          <Text>{create.isPending ? 'Submitting…' : 'Submit ticket'}</Text>
+        </Button>
         {create.isError && (
-          <Text style={styles.error}>{String((create.error as Error)?.message ?? 'Failed')}</Text>
+          <Text className="text-sm text-destructive">
+            {String((create.error as Error)?.message ?? 'Failed')}
+          </Text>
         )}
       </View>
 
-      <Text style={[styles.section, styles.listHeading]}>Your tickets</Text>
+      <Text className="mt-3 text-lg font-bold">Your tickets</Text>
       {tickets.isLoading ? (
         <ActivityIndicator />
       ) : rows.length === 0 ? (
-        <Text style={styles.dim}>No tickets yet.</Text>
+        <Text className="text-sm text-muted-foreground">No tickets yet.</Text>
       ) : (
         rows.map((t) => (
-          <View key={t.id} style={styles.ticket}>
-            <View style={styles.ticketHead}>
-              <Text style={styles.ticketTitle}>{t.title}</Text>
-              <Text style={[styles.status, { color: STATUS_COLOR[t.status] }]}>{t.status}</Text>
+          <View key={t.id} className="gap-1 rounded-xl border border-border bg-card p-3">
+            <View className="flex-row items-center justify-between">
+              <Text className="shrink text-base font-semibold">{t.title}</Text>
+              <Text className={cn('text-xs font-bold', STATUS_COLOR[t.status])}>{t.status}</Text>
             </View>
-            <Text style={styles.dim}>{t.description}</Text>
-            <Text style={styles.meta}>
+            <Text className="text-sm text-muted-foreground">{t.description}</Text>
+            <Text className="mt-0.5 text-xs text-muted-foreground">
               {t.category} · {t.priority}
             </Text>
           </View>
@@ -133,47 +137,9 @@ export default function Tickets() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+    <View className="gap-1.5">
+      <Text className="text-sm font-medium">{label}</Text>
       {children}
     </View>
   )
 }
-
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipSelected]}>
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
-    </Pressable>
-  )
-}
-
-const styles = StyleSheet.create({
-  container: { padding: 16, gap: 14 },
-  section: { fontSize: 17, fontWeight: '700', color: '#18181b' },
-  listHeading: { marginTop: 12 },
-  field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: '#3f3f46' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  multiline: { minHeight: 64, textAlignVertical: 'top' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#d4d4d8' },
-  chipSelected: { backgroundColor: '#0e7490', borderColor: '#0e7490' },
-  chipText: { color: '#3f3f46', fontSize: 13, fontWeight: '500' },
-  chipTextSelected: { color: '#fff' },
-  submit: { gap: 8, marginTop: 4 },
-  error: { color: '#e11d48', fontSize: 13 },
-  dim: { color: '#71717a', fontSize: 13 },
-  ticket: { borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 10, padding: 12, gap: 4, backgroundColor: '#fff' },
-  ticketHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  ticketTitle: { fontSize: 15, fontWeight: '600', color: '#18181b', flexShrink: 1 },
-  status: { fontSize: 12, fontWeight: '700' },
-  meta: { fontSize: 12, color: '#a1a1aa', marginTop: 2 },
-})
