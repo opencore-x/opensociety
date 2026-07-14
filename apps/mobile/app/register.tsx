@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { ActivityIndicator, ScrollView, View } from 'react-native'
-import { visitorTypeSchema, type VisitorType } from '@opensociety/shared'
+import { visitorTypeSchema, type CreateVisitorEntry, type VisitorEntry, type VisitorType } from '@opensociety/shared'
 
 import { apiClient } from '../api/client'
+import { CREATE_VISITOR_KEY } from '../lib/offline/mutation-defaults'
+import { useSyncStatus } from '../lib/offline/use-sync-status'
+import { OfflineBanner } from '../components/offline-banner'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
@@ -14,7 +17,7 @@ const TYPES = visitorTypeSchema.options
 
 export default function Register() {
   const router = useRouter()
-  const qc = useQueryClient()
+  const { isOnline } = useSyncStatus()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [type, setType] = useState<VisitorType>('GUEST')
@@ -22,24 +25,31 @@ export default function Register() {
 
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
 
-  const create = useMutation({
-    mutationFn: () =>
-      apiClient.createVisitor({
-        apartmentId: apartmentId!,
-        visitorName: name.trim(),
-        visitorPhone: phone.trim() || undefined,
-        type,
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['visitors'] })
-      router.replace('/gate')
-    },
+  // Uses the offline-capable mutation registered on the client (see
+  // mutation-defaults): the fn, optimistic update, and cache reconcile live
+  // there so a queued write can replay after an app restart.
+  const create = useMutation<VisitorEntry, Error, CreateVisitorEntry>({
+    mutationKey: CREATE_VISITOR_KEY,
+    onSuccess: () => router.replace('/gate'),
   })
+
+  function submit() {
+    create.mutate({
+      apartmentId: apartmentId!,
+      visitorName: name.trim(),
+      visitorPhone: phone.trim() || undefined,
+      type,
+    })
+    // Offline the mutation pauses (no onSuccess), but the optimistic entry is
+    // already in the gate list — take the guard straight there.
+    if (!isOnline) router.replace('/gate')
+  }
 
   const canSubmit = name.trim().length > 0 && !!apartmentId && !create.isPending
 
   return (
     <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
+      <OfflineBanner className="-mx-4 -mt-4 mb-0 rounded-none" />
       <Field label="Visitor name">
         <Input placeholder="e.g. Rahul" value={name} onChangeText={setName} autoFocus />
       </Field>
@@ -81,9 +91,14 @@ export default function Register() {
       </Field>
 
       <View className="mt-1 gap-2">
-        <Button onPress={() => create.mutate()} disabled={!canSubmit}>
+        <Button onPress={submit} disabled={!canSubmit}>
           <Text>{create.isPending ? 'Registering…' : 'Register visitor'}</Text>
         </Button>
+        {!isOnline && (
+          <Text className="text-sm text-muted-foreground">
+            You&apos;re offline — this visitor will be saved and synced when you reconnect.
+          </Text>
+        )}
         {create.isError && (
           <Text className="text-sm text-destructive">
             {String((create.error as Error)?.message ?? 'Failed')}

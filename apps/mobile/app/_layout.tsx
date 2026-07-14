@@ -2,15 +2,20 @@ import '../global.css'
 
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo'
 
 import { tokenCache } from '../lib/token-cache'
 import { setAuthTokenGetter } from '../api/client'
+import { queryClient, persistOptions } from '../lib/offline/query-client'
+import { setupOnlineManager } from '../lib/offline/network'
+import { registerOfflineMutationDefaults } from '../lib/offline/mutation-defaults'
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
-})
+// Drive offline state from the device network and teach the client how to
+// replay queued writes after a restart. Module scope: runs once per app load,
+// before the first render.
+setupOnlineManager()
+registerOfflineMutationDefaults(queryClient)
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
 
@@ -47,9 +52,17 @@ function Nav() {
 
 export default function RootLayout() {
   const content = (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={persistOptions}
+      onSuccess={() => {
+        // Cache restored from disk — flush any writes that were queued offline
+        // in a previous session.
+        queryClient.resumePausedMutations()
+      }}
+    >
       <Nav />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   )
   // Clerk is optional: without a publishable key the app runs on the dev
   // x-user-id fallback, mirroring the API's own conditional auth.

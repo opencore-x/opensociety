@@ -5,6 +5,8 @@ import { ActivityIndicator, FlatList, Modal, Platform, View } from 'react-native
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
+import { useSyncStatus } from '../lib/offline/use-sync-status'
+import { OfflineBanner } from '../components/offline-banner'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
@@ -13,6 +15,7 @@ import { Text } from '../components/ui/text'
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
 export default function Gate() {
   const qc = useQueryClient()
+  const { isOnline } = useSyncStatus()
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['visitors'],
     queryFn: () => apiClient.listVisitors(),
@@ -44,7 +47,10 @@ export default function Gate() {
         <ActivityIndicator />
       </Centered>
     )
-  if (isError)
+  // Only take over the screen when there's nothing to show. Offline, a failed
+  // background refetch still leaves the last-synced list (persisted cache) in
+  // `data` — keep showing it under the offline banner rather than blanking out.
+  if (isError && !data)
     return (
       <Centered>
         <Text className="text-base font-semibold text-destructive">API unreachable</Text>
@@ -61,6 +67,8 @@ export default function Gate() {
       data={gate}
       keyExtractor={(v) => v.id}
       ListHeaderComponent={
+        <>
+        <OfflineBanner className="-mx-4 -mt-4 mb-2 rounded-none" />
         <View className="mb-1 gap-2">
           <View className="flex-row items-center gap-2">
             <Input
@@ -73,21 +81,28 @@ export default function Gate() {
             />
             <Button
               onPress={() => redeem.mutate(code.trim().toUpperCase())}
-              disabled={redeem.isPending || code.trim().length === 0}
+              disabled={redeem.isPending || code.trim().length === 0 || !isOnline}
             >
               <Text>{redeem.isPending ? 'Redeeming…' : 'Redeem'}</Text>
             </Button>
           </View>
-          <Button variant="outline" onPress={() => setScanning(true)}>
+          <Button variant="outline" onPress={() => setScanning(true)} disabled={!isOnline}>
             <Text>Scan QR code</Text>
           </Button>
           {redeem.isError && (
             <Text className="text-sm text-destructive">{String((redeem.error as Error)?.message ?? 'Invalid code')}</Text>
           )}
+          {!isOnline && (
+            <Text className="text-sm text-muted-foreground">
+              Code redemption and check-in/out need a connection. You can still register visitors — they&apos;ll sync
+              when you reconnect.
+            </Text>
+          )}
           <Link href="/register" className="py-1 text-base font-semibold text-primary">
             + Register visitor
           </Link>
         </View>
+        </>
       }
       ListEmptyComponent={<Text className="text-sm text-muted-foreground">No visitors at the gate.</Text>}
       renderItem={({ item }) => {
@@ -105,12 +120,12 @@ export default function Gate() {
             </View>
             <View className="flex-row gap-2">
               {actions.includes('checkin') && (
-                <Button onPress={() => checkIn.mutate(item.id)} disabled={busy}>
+                <Button onPress={() => checkIn.mutate(item.id)} disabled={busy || !isOnline}>
                   <Text>Check in</Text>
                 </Button>
               )}
               {actions.includes('checkout') && (
-                <Button variant="outline" onPress={() => checkOut.mutate(item.id)} disabled={busy}>
+                <Button variant="outline" onPress={() => checkOut.mutate(item.id)} disabled={busy || !isOnline}>
                   <Text>Check out</Text>
                 </Button>
               )}
