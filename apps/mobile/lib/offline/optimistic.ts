@@ -1,3 +1,4 @@
+import * as Crypto from 'expo-crypto'
 import type { CreateVisitorEntry, VisitorEntry } from '@opensociety/shared'
 
 // Optimistic visitor entries created offline get a client-side id with this
@@ -9,9 +10,16 @@ export function isLocalId(id: string): boolean {
   return id.startsWith(LOCAL_ID_PREFIX)
 }
 
-function tempId(): string {
-  const uuid = globalThis.crypto?.randomUUID?.()
-  return `${LOCAL_ID_PREFIX}${uuid ?? `${Date.now()}-${Math.round(Math.random() * 1e9)}`}`
+// A fresh UUID for a new registration. Fed to createVisitor as its idempotency
+// key so a replayed offline entry dedupes to one row server-side. expo-crypto
+// guarantees a real v4 UUID on native and web (the server validates uuid()),
+// unlike globalThis.crypto.randomUUID which isn't present in Hermes.
+export function newClientId(): string {
+  return Crypto.randomUUID()
+}
+
+function tempId(clientId?: string): string {
+  return `${LOCAL_ID_PREFIX}${clientId ?? newClientId()}`
 }
 
 // Build the visitor entry to show immediately when a guard registers someone,
@@ -22,7 +30,8 @@ export function buildOptimisticVisitor(
   nowIso: string = new Date().toISOString(),
 ): VisitorEntry {
   return {
-    id: tempId(),
+    id: tempId(vars.clientId),
+    clientId: vars.clientId ?? null,
     apartmentId: vars.apartmentId,
     preApprovalId: null,
     visitorName: vars.visitorName,

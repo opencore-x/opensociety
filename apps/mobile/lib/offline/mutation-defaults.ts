@@ -32,7 +32,18 @@ export function registerOfflineMutationDefaults(queryClient: QueryClient) {
       await queryClient.cancelQueries({ queryKey: VISITORS_KEY })
       const previous = queryClient.getQueryData<VisitorEntry[]>(VISITORS_KEY)
       const optimistic = buildOptimisticVisitor(vars)
-      queryClient.setQueryData<VisitorEntry[]>(VISITORS_KEY, (old) => [optimistic, ...(old ?? [])])
+      queryClient.setQueryData<VisitorEntry[]>(VISITORS_KEY, (old) => {
+        const list = old ?? []
+        // A manual retry replays the same clientId — replace the prior optimistic
+        // row in place rather than stacking a duplicate.
+        const idx = vars.clientId ? list.findIndex((v) => v.clientId === vars.clientId) : -1
+        if (idx >= 0) {
+          const next = list.slice()
+          next[idx] = optimistic
+          return next
+        }
+        return [optimistic, ...list]
+      })
       return { previous, optimisticId: optimistic.id }
     },
     onError: (_err, _vars, context) => {

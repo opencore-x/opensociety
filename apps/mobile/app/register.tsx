@@ -6,8 +6,10 @@ import { visitorTypeSchema, type CreateVisitorEntry, type VisitorEntry, type Vis
 
 import { apiClient } from '../api/client'
 import { CREATE_VISITOR_KEY } from '../lib/offline/mutation-defaults'
+import { newClientId } from '../lib/offline/optimistic'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
 import { OfflineBanner } from '../components/offline-banner'
+import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
@@ -39,6 +41,9 @@ export default function Register() {
       visitorName: name.trim(),
       visitorPhone: phone.trim() || undefined,
       type,
+      // Idempotency key so a queued entry replayed after a lost ack dedupes to
+      // one row instead of creating a duplicate.
+      clientId: newClientId(),
     })
     // Offline the mutation pauses (no onSuccess), but the optimistic entry is
     // already in the gate list — take the guard straight there.
@@ -50,6 +55,7 @@ export default function Register() {
   return (
     <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
       <OfflineBanner className="-mx-4 -mt-4 mb-0 rounded-none" />
+      <SyncErrorTray />
       <Field label="Visitor name">
         <Input placeholder="e.g. Rahul" value={name} onChangeText={setName} autoFocus />
       </Field>
