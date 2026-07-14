@@ -1,34 +1,28 @@
-import { useEffect, useMemo, useState } from 'react'
-import { onlineManager, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useSyncExternalStore } from 'react'
+import { onlineManager, useMutationState, useQueryClient } from '@tanstack/react-query'
 import type { CreateVisitorEntry } from '@opensociety/shared'
 
 import { CREATE_VISITOR_KEY } from './mutation-defaults'
 
-const CREATE_VISITOR_KEY_ID = CREATE_VISITOR_KEY.join('/')
-
-function isCreateVisitor(mutationKey: readonly unknown[] | undefined): boolean {
-  return mutationKey?.join('/') === CREATE_VISITOR_KEY_ID
+// Render-safe read of connectivity via React's external-store machinery, so a
+// network flip never triggers a setState mid-render.
+function useOnline(): boolean {
+  return useSyncExternalStore(
+    (cb) => onlineManager.subscribe(cb),
+    () => onlineManager.isOnline(),
+    () => true,
+  )
 }
 
-// Live view of connectivity + how many writes are waiting to sync. `pending`
-// counts both queued-while-offline (paused) mutations and ones currently
-// in-flight, so the UI can show "Offline — N queued" and "Syncing N…".
+// Live view of connectivity + how many registrations are waiting to sync.
+// `pending` counts queued-while-offline (paused) and in-flight createVisitor
+// mutations, so the UI can show "Offline — N queued" and "Syncing N…".
 export function useSyncStatus(): { isOnline: boolean; pending: number } {
-  const queryClient = useQueryClient()
-  const [isOnline, setIsOnline] = useState(() => onlineManager.isOnline())
-  const [pending, setPending] = useState(0)
-
-  useEffect(() => onlineManager.subscribe(setIsOnline), [])
-
-  useEffect(() => {
-    const cache = queryClient.getMutationCache()
-    const recount = () => {
-      setPending(cache.getAll().filter((m) => m.state.isPaused || m.state.status === 'pending').length)
-    }
-    recount()
-    return cache.subscribe(recount)
-  }, [queryClient])
-
+  const isOnline = useOnline()
+  const pending = useMutationState({
+    filters: { mutationKey: [...CREATE_VISITOR_KEY], exact: true },
+    select: (m) => m.state.isPaused || m.state.status === 'pending',
+  }).filter(Boolean).length
   return { isOnline, pending }
 }
 
@@ -48,39 +42,34 @@ export function useSyncErrors(): {
   dismiss: (mutationId: number) => void
 } {
   const queryClient = useQueryClient()
-  const [errors, setErrors] = useState<SyncError[]>([])
 
-  useEffect(() => {
-    const cache = queryClient.getMutationCache()
-    const recompute = () => {
-      const failed = cache
-        .getAll()
-        .filter((m) => isCreateVisitor(m.options.mutationKey) && m.state.status === 'error')
-      setErrors(
-        failed.map((m) => ({
-          mutationId: m.mutationId,
-          visitorName: (m.state.variables as CreateVisitorEntry | undefined)?.visitorName?.trim() || 'Visitor',
-          message: (m.state.error as Error | null)?.message ?? 'Failed to sync',
-        })),
-      )
-    }
-    recompute()
-    return cache.subscribe(recompute)
-  }, [queryClient])
+  const errors = useMutationState<SyncError>({
+    filters: { mutationKey: [...CREATE_VISITOR_KEY], exact: true, status: 'error' },
+    select: (m) => ({
+      mutationId: m.mutationId,
+      visitorName: (m.state.variables as CreateVisitorEntry | undefined)?.visitorName?.trim() || 'Visitor',
+      message: (m.state.error as Error | null)?.message ?? 'Failed to sync',
+    }),
+  })
 
-  return useMemo(() => {
-    const cache = queryClient.getMutationCache()
-    const find = (id: number) => cache.getAll().find((m) => m.mutationId === id)
-    return {
-      errors,
-      retry: (id: number) => {
-        const m = find(id)
-        if (m) void m.execute(m.state.variables)
-      },
-      dismiss: (id: number) => {
-        const m = find(id)
-        if (m) cache.remove(m)
-      },
-    }
-  }, [errors, queryClient])
+  const find = useCallback(
+    (id: number) => queryClient.getMutationCache().getAll().find((m) => m.mutationId === id),
+    [queryClient],
+  )
+  const retry = useCallback(
+    (id: number) => {
+      const m = find(id)
+      if (m) void m.execute(m.state.variables)
+    },
+    [find],
+  )
+  const dismiss = useCallback(
+    (id: number) => {
+      const m = find(id)
+      if (m) queryClient.getMutationCache().remove(m)
+    },
+    [find, queryClient],
+  )
+
+  return { errors, retry, dismiss }
 }
