@@ -5,6 +5,7 @@ import type { BillConfig, GenerateBills, MaintenanceBill, PaymentMethod } from '
 import { formatPaise, paymentMethodSchema, billStatusSchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -343,9 +344,10 @@ function BillConfigCard() {
 }
 
 function BillingPage() {
+  const { t } = useT()
   return (
     <div className="space-y-6">
-      <PageHeader title="Billing" description="Generate maintenance bills, record payments, and track dues." />
+      <PageHeader title={t('nav.billing')} description={t('page.billing.desc')} />
       <BillConfigCard />
       <Card>
         <CardHeader>

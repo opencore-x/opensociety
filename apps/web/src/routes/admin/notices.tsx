@@ -5,6 +5,7 @@ import type { CreateNotice, NoticeCategory, NoticePriority } from '@opensociety/
 import { noticePrioritySchema, noticeCategorySchema } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
+import { useT } from '@/lib/i18n'
 import { PageHeader, QueryState } from '@/components/admin/ui'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -219,6 +220,7 @@ function CreateNoticeForm() {
 const ALL = 'ALL'
 
 function NoticesPage() {
+  const { t } = useT()
   const [q, setQ] = useState('')
   const [category, setCategory] = useState<string>(ALL)
   const notices = useQuery({
@@ -228,7 +230,7 @@ function NoticesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Notices" description="Publish announcements to residents." />
+      <PageHeader title={t('nav.notices')} description={t('page.notices.desc')} />
 
       <Card>
         <CardHeader>
