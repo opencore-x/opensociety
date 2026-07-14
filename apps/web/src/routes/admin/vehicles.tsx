@@ -27,6 +27,7 @@ function useApartmentLabels() {
 }
 
 function AddVehicle({ apartments }: { apartments: Apartment[] }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [apartmentId, setApartmentId] = useState('')
   const [registrationNumber, setRegistrationNumber] = useState('')
@@ -65,10 +66,10 @@ function AddVehicle({ apartments }: { apartments: Apartment[] }) {
       }}
     >
       <div className="space-y-1.5">
-        <Label>Flat</Label>
+        <Label>{t('common.flat')}</Label>
         <Select value={apartmentId} onValueChange={setApartmentId}>
           <SelectTrigger className="w-32">
-            <SelectValue placeholder="Select flat" />
+            <SelectValue placeholder={t('common.selectFlat')} />
           </SelectTrigger>
           <SelectContent>
             {apartments.map((a) => (
@@ -80,7 +81,7 @@ function AddVehicle({ apartments }: { apartments: Apartment[] }) {
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="v-reg">Reg. number</Label>
+        <Label htmlFor="v-reg">{t('page.vehicles.regNumber')}</Label>
         <Input
           id="v-reg"
           className="w-40"
@@ -90,30 +91,30 @@ function AddVehicle({ apartments }: { apartments: Apartment[] }) {
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Type</Label>
+        <Label>{t('common.type')}</Label>
         <Select value={type} onValueChange={(v) => setType(v as VehicleType)}>
           <SelectTrigger className="w-32">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {vehicleTypeSchema.options.map((t) => (
-              <SelectItem key={t} value={t}>
-                {t}
+            {vehicleTypeSchema.options.map((opt) => (
+              <SelectItem key={opt} value={opt}>
+                {opt}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="v-make">Make</Label>
+        <Label htmlFor="v-make">{t('page.vehicles.make')}</Label>
         <Input id="v-make" className="w-40" placeholder="Honda City" value={make} onChange={(e) => setMake(e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="v-color">Color</Label>
+        <Label htmlFor="v-color">{t('page.vehicles.color')}</Label>
         <Input id="v-color" className="w-28" placeholder="White" value={color} onChange={(e) => setColor(e.target.value)} />
       </div>
       <Button type="submit" disabled={mutation.isPending || !canSubmit}>
-        {mutation.isPending ? 'Adding…' : 'Add vehicle'}
+        {mutation.isPending ? t('common.adding') : t('page.vehicles.addButton')}
       </Button>
       {mutation.isError && <p className="text-destructive w-full text-sm">{(mutation.error as Error).message}</p>}
     </form>
@@ -121,6 +122,7 @@ function AddVehicle({ apartments }: { apartments: Apartment[] }) {
 }
 
 function VehicleRow({ vehicle, labelOf }: { vehicle: Vehicle; labelOf: (id: string) => string }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [editing, setEditing] = useState(false)
   const [registrationNumber, setRegistrationNumber] = useState(vehicle.registrationNumber)
@@ -153,9 +155,9 @@ function VehicleRow({ vehicle, labelOf }: { vehicle: Vehicle; labelOf: (id: stri
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {vehicleTypeSchema.options.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+              {vehicleTypeSchema.options.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -169,10 +171,10 @@ function VehicleRow({ vehicle, labelOf }: { vehicle: Vehicle; labelOf: (id: stri
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <Button size="sm" disabled={save.isPending || !registrationNumber.trim()} onClick={() => save.mutate()}>
-              {save.isPending ? '…' : 'Save'}
+              {save.isPending ? '…' : t('common.save')}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         </TableCell>
@@ -191,12 +193,14 @@ function VehicleRow({ vehicle, labelOf }: { vehicle: Vehicle; labelOf: (id: stri
         {[vehicle.make, vehicle.color].filter(Boolean).join(' · ') || '—'}
       </TableCell>
       <TableCell>
-        <Badge variant={vehicle.isActive ? 'default' : 'secondary'}>{vehicle.isActive ? 'Active' : 'Inactive'}</Badge>
+        <Badge variant={vehicle.isActive ? 'default' : 'secondary'}>
+          {vehicle.isActive ? t('common.active') : t('common.inactive')}
+        </Badge>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end gap-2">
           <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-            Edit
+            {t('common.edit')}
           </Button>
           <Button
             size="sm"
@@ -204,7 +208,7 @@ function VehicleRow({ vehicle, labelOf }: { vehicle: Vehicle; labelOf: (id: stri
             onClick={() => toggleActive.mutate()}
             disabled={toggleActive.isPending}
           >
-            {toggleActive.isPending ? '…' : vehicle.isActive ? 'Deactivate' : 'Activate'}
+            {toggleActive.isPending ? '…' : vehicle.isActive ? t('common.deactivate') : t('common.activate')}
           </Button>
         </div>
       </TableCell>
@@ -213,25 +217,26 @@ function VehicleRow({ vehicle, labelOf }: { vehicle: Vehicle; labelOf: (id: stri
 }
 
 function GateLog() {
+  const { t } = useT()
   const log = useQuery({ queryKey: ['vehicle-gate-log'], queryFn: apiClient.listVehicleGateLog })
   const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '—')
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gate log</CardTitle>
+        <CardTitle>{t('page.vehicles.gateLog')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <QueryState q={log} empty={log.isSuccess && log.data?.length === 0} emptyText="No vehicles logged at the gate yet.">
+        <QueryState q={log} empty={log.isSuccess && log.data?.length === 0} emptyText={t('page.vehicles.gateEmpty')}>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Plate</TableHead>
-                <TableHead>Visitor</TableHead>
-                <TableHead>Flat</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Check-in</TableHead>
-                <TableHead>Known</TableHead>
+                <TableHead>{t('page.vehicles.plate')}</TableHead>
+                <TableHead>{t('common.visitor')}</TableHead>
+                <TableHead>{t('common.flat')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
+                <TableHead>{t('common.checkIn')}</TableHead>
+                <TableHead>{t('page.vehicles.known')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -246,9 +251,9 @@ function GateLog() {
                   <TableCell className="text-muted-foreground">{fmt(r.checkInAt)}</TableCell>
                   <TableCell>
                     {r.registered ? (
-                      <Badge variant="default">Registered</Badge>
+                      <Badge variant="default">{t('page.vehicles.registeredBadge')}</Badge>
                     ) : (
-                      <Badge variant="outline">Visitor</Badge>
+                      <Badge variant="outline">{t('common.visitor')}</Badge>
                     )}
                   </TableCell>
                 </TableRow>
@@ -270,12 +275,14 @@ function VehiclesPage() {
     <div className="space-y-6">
       <PageHeader
         title={t('nav.vehicles')}
-        description={`${vehicles.data?.length ?? 0} vehicle${vehicles.data?.length === 1 ? '' : 's'} registered`}
+        description={`${vehicles.data?.length ?? 0} ${
+          vehicles.data?.length === 1 ? t('page.vehicles.vehicleOne') : t('page.vehicles.vehicleMany')
+        } ${t('common.registered')}`}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Register vehicle</CardTitle>
+          <CardTitle>{t('page.vehicles.registerTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <AddVehicle apartments={apartments} />
@@ -284,23 +291,23 @@ function VehiclesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All vehicles</CardTitle>
+          <CardTitle>{t('page.vehicles.allTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <QueryState
             q={vehicles}
             empty={vehicles.isSuccess && vehicles.data?.length === 0}
-            emptyText="No vehicles yet. Register one above."
+            emptyText={t('page.vehicles.empty')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Reg. number</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Flat</TableHead>
-                  <TableHead>Make / color</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('page.vehicles.regNumber')}</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
+                  <TableHead>{t('common.flat')}</TableHead>
+                  <TableHead>{t('page.vehicles.makeColor')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-right">{t('common.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -34,6 +34,7 @@ import { Modal } from '@/components/ui/modal'
 export const Route = createFileRoute('/admin/house-help')({ component: HouseHelpPage })
 
 function AddHouseHelp() {
+  const { t } = useT()
   const qc = useQueryClient()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -74,7 +75,7 @@ function AddHouseHelp() {
       }}
     >
       <div className="space-y-1.5">
-        <Label htmlFor="hh-name">Name</Label>
+        <Label htmlFor="hh-name">{t('common.name')}</Label>
         <Input
           id="hh-name"
           className="w-44"
@@ -84,7 +85,7 @@ function AddHouseHelp() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="hh-phone">Phone</Label>
+        <Label htmlFor="hh-phone">{t('common.phone')}</Label>
         <Input
           id="hh-phone"
           className="w-36"
@@ -94,7 +95,7 @@ function AddHouseHelp() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Type</Label>
+        <Label>{t('common.type')}</Label>
         <Select value={type} onValueChange={(v) => setType(v as HouseHelpType)}>
           <SelectTrigger className="w-36">
             <SelectValue />
@@ -109,7 +110,7 @@ function AddHouseHelp() {
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label>ID proof</Label>
+        <Label>{t('page.houseHelp.idProof')}</Label>
         <Select value={idProofType} onValueChange={(v) => setIdProofType(v as IdProofType)}>
           <SelectTrigger className="w-40">
             <SelectValue />
@@ -124,7 +125,7 @@ function AddHouseHelp() {
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="hh-idnum">ID number</Label>
+        <Label htmlFor="hh-idnum">{t('page.houseHelp.idNumber')}</Label>
         <Input
           id="hh-idnum"
           className="w-44"
@@ -134,7 +135,7 @@ function AddHouseHelp() {
         />
       </div>
       <Button type="submit" disabled={mutation.isPending || !name.trim()}>
-        {mutation.isPending ? 'Adding…' : 'Add help'}
+        {mutation.isPending ? t('common.adding') : t('page.houseHelp.addButton')}
       </Button>
       {mutation.isError && (
         <p className="text-destructive w-full text-sm">{(mutation.error as Error).message}</p>
@@ -144,16 +145,18 @@ function AddHouseHelp() {
 }
 
 function TrustBadge({ help }: { help: HouseHelpRow }) {
+  const { t } = useT()
   const verified = help.verificationLevel === 'VERIFIED'
   return (
     <div className="flex flex-col items-start gap-1">
-      <Badge variant={verified ? 'default' : 'secondary'}>{verified ? '✓ Verified' : 'Unverified'}</Badge>
-      <span className="text-muted-foreground text-xs">Trust {help.trustScore}/100</span>
+      <Badge variant={verified ? 'default' : 'secondary'}>{verified ? t('page.houseHelp.verified') : t('page.houseHelp.unverified')}</Badge>
+      <span className="text-muted-foreground text-xs">{t('page.houseHelp.trust')} {help.trustScore}/100</span>
     </div>
   )
 }
 
 function VerificationButton({ help }: { help: HouseHelpRow }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const [idVerified, setIdVerified] = useState(help.idVerified)
@@ -176,16 +179,16 @@ function VerificationButton({ help }: { help: HouseHelpRow }) {
   return (
     <>
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-        Verify
+        {t('page.houseHelp.verify')}
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} className="w-full max-w-sm space-y-4">
-        <p className="text-lg font-semibold">{help.name} — verification</p>
+        <p className="text-lg font-semibold">{help.name}{t('page.houseHelp.verificationSuffix')}</p>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={idVerified} onChange={(e) => setIdVerified(e.target.checked)} />
-          ID proof verified
+          {t('page.houseHelp.idVerified')}
         </label>
         <div className="space-y-1.5">
-          <Label>Background check</Label>
+          <Label>{t('page.houseHelp.backgroundCheck')}</Label>
           <Select value={backgroundCheck} onValueChange={(v) => setBackgroundCheck(v as BackgroundCheckStatus)}>
             <SelectTrigger>
               <SelectValue />
@@ -200,15 +203,15 @@ function VerificationButton({ help }: { help: HouseHelpRow }) {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="incidents">Incident reports</Label>
+          <Label htmlFor="incidents">{t('page.houseHelp.incidentReports')}</Label>
           <Input id="incidents" type="number" min={0} value={incidents} onChange={(e) => setIncidents(e.target.value)} />
         </div>
         <div className="flex gap-2 pt-1">
           <Button className="flex-1" disabled={save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? 'Saving…' : 'Save'}
+            {save.isPending ? t('common.saving') : t('common.save')}
           </Button>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
         </div>
       </Modal>
@@ -217,7 +220,8 @@ function VerificationButton({ help }: { help: HouseHelpRow }) {
 }
 
 function Rating({ avg, count }: { avg: number | null; count: number }) {
-  if (count === 0) return <span className="text-muted-foreground text-sm">No ratings</span>
+  const { t } = useT()
+  if (count === 0) return <span className="text-muted-foreground text-sm">{t('page.houseHelp.noRatings')}</span>
   return (
     <span className="text-sm">
       <span className="text-amber-500">★</span> {avg}{' '}
@@ -227,6 +231,7 @@ function Rating({ avg, count }: { avg: number | null; count: number }) {
 }
 
 function ReviewsButton({ helpId, name }: { helpId: string; name: string }) {
+  const { t } = useT()
   const [open, setOpen] = useState(false)
   const reviews = useQuery({
     queryKey: ['house-help-reviews', helpId],
@@ -236,19 +241,19 @@ function ReviewsButton({ helpId, name }: { helpId: string; name: string }) {
   return (
     <>
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-        Reviews
+        {t('page.houseHelp.reviews')}
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} className="max-h-[80vh] w-full max-w-md overflow-auto">
         <p className="mb-1 text-lg font-semibold">{name}</p>
         {reviews.data && (
           <p className="text-muted-foreground mb-4 text-sm">
-            <span className="text-amber-500">★</span> {reviews.data.summary.average ?? '—'} · Trust{' '}
-            {reviews.data.summary.trustScore}/100 · {reviews.data.summary.count} review
-            {reviews.data.summary.count === 1 ? '' : 's'}
+            <span className="text-amber-500">★</span> {reviews.data.summary.average ?? '—'} · {t('page.houseHelp.trust')}{' '}
+            {reviews.data.summary.trustScore}/100 · {reviews.data.summary.count}{' '}
+            {reviews.data.summary.count === 1 ? t('page.houseHelp.reviewOne') : t('page.houseHelp.reviewMany')}
           </p>
         )}
         <div className="space-y-3">
-          {reviews.data?.reviews.length === 0 && <p className="text-muted-foreground text-sm">No reviews yet.</p>}
+          {reviews.data?.reviews.length === 0 && <p className="text-muted-foreground text-sm">{t('page.houseHelp.noReviews')}</p>}
           {reviews.data?.reviews.map((r) => (
             <div key={r.id} className="border-border border-b pb-2 last:border-0">
               <p className="text-sm">
@@ -260,7 +265,7 @@ function ReviewsButton({ helpId, name }: { helpId: string; name: string }) {
           ))}
         </div>
         <Button className="mt-4 w-full" variant="outline" onClick={() => setOpen(false)}>
-          Close
+          {t('common.close')}
         </Button>
       </Modal>
     </>
@@ -268,6 +273,7 @@ function ReviewsButton({ helpId, name }: { helpId: string; name: string }) {
 }
 
 function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Apartment[] }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [editing, setEditing] = useState(false)
   const [showFlats, setShowFlats] = useState(false)
@@ -320,10 +326,10 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Ap
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <Button size="sm" disabled={save.isPending || !name.trim()} onClick={() => save.mutate()}>
-              {save.isPending ? '…' : 'Save'}
+              {save.isPending ? '…' : t('common.save')}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         </TableCell>
@@ -349,17 +355,17 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Ap
           <TrustBadge help={help} />
         </TableCell>
         <TableCell>
-          <Badge variant={help.isActive ? 'default' : 'secondary'}>{help.isActive ? 'Active' : 'Inactive'}</Badge>
+          <Badge variant={help.isActive ? 'default' : 'secondary'}>{help.isActive ? t('common.active') : t('common.inactive')}</Badge>
         </TableCell>
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
             <VerificationButton help={help} />
             <ReviewsButton helpId={help.id} name={help.name} />
             <Button size="sm" variant="ghost" onClick={() => setShowFlats((s) => !s)}>
-              {showFlats ? 'Hide flats' : 'Flats'}
+              {showFlats ? t('page.houseHelp.hideFlats') : t('page.houseHelp.flats')}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-              Edit
+              {t('common.edit')}
             </Button>
             <Button
               size="sm"
@@ -367,7 +373,7 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Ap
               onClick={() => toggleActive.mutate()}
               disabled={toggleActive.isPending}
             >
-              {toggleActive.isPending ? '…' : help.isActive ? 'Deactivate' : 'Activate'}
+              {toggleActive.isPending ? '…' : help.isActive ? t('common.deactivate') : t('common.activate')}
             </Button>
           </div>
         </TableCell>
@@ -384,6 +390,7 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Ap
 }
 
 function AssignmentsPanel({ helpId, apartments }: { helpId: string; apartments: Apartment[] }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [apartmentId, setApartmentId] = useState('')
   const assignments = useQuery({
@@ -413,10 +420,10 @@ function AssignmentsPanel({ helpId, apartments }: { helpId: string; apartments: 
 
   return (
     <div className="space-y-3 py-1">
-      <p className="text-sm font-medium">Assigned flats</p>
+      <p className="text-sm font-medium">{t('page.houseHelp.assignedFlats')}</p>
       <div className="flex flex-wrap gap-2">
         {(assignments.data ?? []).length === 0 && (
-          <span className="text-muted-foreground text-sm">Not assigned to any flat yet.</span>
+          <span className="text-muted-foreground text-sm">{t('page.houseHelp.notAssigned')}</span>
         )}
         {(assignments.data ?? []).map((a) => (
           <Badge key={a.id} variant="secondary" className="gap-1.5">
@@ -435,7 +442,7 @@ function AssignmentsPanel({ helpId, apartments }: { helpId: string; apartments: 
       <div className="flex items-end gap-2">
         <Select value={apartmentId} onValueChange={setApartmentId}>
           <SelectTrigger className="h-8 w-40">
-            <SelectValue placeholder="Add a flat" />
+            <SelectValue placeholder={t('page.houseHelp.addFlat')} />
           </SelectTrigger>
           <SelectContent>
             {available.map((a) => (
@@ -446,7 +453,7 @@ function AssignmentsPanel({ helpId, apartments }: { helpId: string; apartments: 
           </SelectContent>
         </Select>
         <Button size="sm" disabled={!apartmentId || add.isPending} onClick={() => add.mutate()}>
-          {add.isPending ? '…' : 'Assign'}
+          {add.isPending ? '…' : t('common.assign')}
         </Button>
       </div>
       {add.isError && <p className="text-destructive text-sm">{(add.error as Error).message}</p>}
@@ -463,12 +470,12 @@ function HouseHelpPage() {
     <div className="space-y-6">
       <PageHeader
         title={t('nav.houseHelp')}
-        description={`${help.data?.length ?? 0} domestic worker${help.data?.length === 1 ? '' : 's'} registered`}
+        description={`${help.data?.length ?? 0} ${help.data?.length === 1 ? t('page.houseHelp.workerOne') : t('page.houseHelp.workerMany')} ${t('common.registered')}`}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Register house help</CardTitle>
+          <CardTitle>{t('page.houseHelp.registerTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <AddHouseHelp />
@@ -477,25 +484,25 @@ function HouseHelpPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All house help</CardTitle>
+          <CardTitle>{t('page.houseHelp.allTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <QueryState
             q={help}
             empty={help.isSuccess && help.data?.length === 0}
-            emptyText="No house help yet. Register one above."
+            emptyText={t('page.houseHelp.empty')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>ID proof</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead>Trust</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('common.name')}</TableHead>
+                  <TableHead>{t('common.phone')}</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
+                  <TableHead>{t('page.houseHelp.idProof')}</TableHead>
+                  <TableHead>{t('page.houseHelp.rating')}</TableHead>
+                  <TableHead>{t('page.houseHelp.trust')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-right">{t('common.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -514,6 +521,7 @@ function HouseHelpPage() {
 }
 
 function AttendanceReports() {
+  const { t } = useT()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const entries = useQuery({
@@ -532,16 +540,16 @@ function AttendanceReports() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Attendance &amp; reports</CardTitle>
+        <CardTitle>{t('page.houseHelp.attendanceTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="att-from">From</Label>
+            <Label htmlFor="att-from">{t('common.from')}</Label>
             <Input id="att-from" type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="att-to">To</Label>
+            <Label htmlFor="att-to">{t('common.to')}</Label>
             <Input id="att-to" type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           {(from || to) && (
@@ -553,7 +561,7 @@ function AttendanceReports() {
                 setTo('')
               }}
             >
-              Clear
+              {t('common.clear')}
             </Button>
           )}
           <a
@@ -562,21 +570,21 @@ function AttendanceReports() {
             className="border-input hover:bg-accent hover:text-accent-foreground ml-auto inline-flex h-9 items-center rounded-md border px-4 text-sm font-medium transition-colors aria-disabled:pointer-events-none aria-disabled:opacity-50"
             aria-disabled={rows.length === 0}
           >
-            Download CSV
+            {t('common.downloadCsv')}
           </a>
         </div>
 
-        <QueryState q={entries} empty={entries.isSuccess && rows.length === 0} emptyText="No attendance in this range.">
+        <QueryState q={entries} empty={entries.isSuccess && rows.length === 0} emptyText={t('page.houseHelp.noAttendance')}>
           <div className="space-y-2">
-            <p className="text-sm font-medium">Hours per help</p>
+            <p className="text-sm font-medium">{t('page.houseHelp.hoursPerHelp')}</p>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Visits</TableHead>
-                  <TableHead className="text-right">Hours</TableHead>
-                  <TableHead className="text-right">Inside</TableHead>
+                  <TableHead>{t('common.name')}</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
+                  <TableHead className="text-right">{t('page.houseHelp.visits')}</TableHead>
+                  <TableHead className="text-right">{t('common.hours')}</TableHead>
+                  <TableHead className="text-right">{t('page.houseHelp.inside')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -596,15 +604,15 @@ function AttendanceReports() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium">Entry log</p>
+            <p className="text-sm font-medium">{t('page.houseHelp.entryLog')}</p>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Flat</TableHead>
-                  <TableHead>Check-in</TableHead>
-                  <TableHead>Check-out</TableHead>
-                  <TableHead className="text-right">Duration</TableHead>
+                  <TableHead>{t('common.name')}</TableHead>
+                  <TableHead>{t('common.flat')}</TableHead>
+                  <TableHead>{t('common.checkIn')}</TableHead>
+                  <TableHead>{t('common.checkOut')}</TableHead>
+                  <TableHead className="text-right">{t('common.duration')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
