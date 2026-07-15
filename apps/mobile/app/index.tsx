@@ -10,6 +10,7 @@ import { Text } from '../components/ui/text'
 
 const RESIDENT = [
   { href: '/visitors', key: 'nav.visitors' },
+  { href: '/visitor-history', key: 'nav.visitorHistory' },
   { href: '/pre-approve', key: 'nav.preApprove' },
   { href: '/notices', key: 'nav.notices' },
   { href: '/tickets', key: 'nav.maintenance' },

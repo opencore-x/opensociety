@@ -132,3 +132,28 @@ export function preApprovalRedeemError(
   if (effectiveMax != null && pa.useCount >= effectiveMax) return 'code exhausted'
   return null
 }
+
+// Quote a CSV cell only when it contains a comma, quote, or newline.
+function csvCell(value: string): string {
+  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+}
+
+// CSV export of a resident's visitor log (one row per entry).
+export function visitorEntriesToCsv(rows: VisitorEntry[]): string {
+  const header = ['Name', 'Phone', 'Type', 'Status', 'Vehicle', 'Checked in', 'Checked out', 'Created']
+  const lines = rows.map((r) =>
+    [
+      r.visitorName,
+      r.visitorPhone ?? '',
+      r.type,
+      r.status,
+      r.vehicleNumber ?? '',
+      r.checkInAt ?? '',
+      r.checkOutAt ?? '',
+      r.createdAt,
+    ]
+      .map((cell) => csvCell(String(cell)))
+      .join(','),
+  )
+  return [header.join(','), ...lines].join('\n')
+}
