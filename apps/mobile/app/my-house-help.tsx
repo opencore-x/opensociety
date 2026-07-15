@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
 import type { Apartment } from '@opensociety/shared'
 import { apiClient, type HouseHelpWithRating } from '../api/client'
+import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Text } from '../components/ui/text'
 import { cn } from '../lib/utils'
 
 // Resident view: manage which registered house help serves each of their flats.
 export default function MyHouseHelp() {
+  const { t } = useT()
   const apts = useQuery({ queryKey: ['my-apartments'], queryFn: () => apiClient.listMyApartments() })
   const registry = useQuery({ queryKey: ['house-help'], queryFn: () => apiClient.listHouseHelp() })
 
@@ -20,7 +22,7 @@ export default function MyHouseHelp() {
   if (apts.isError)
     return (
       <Centered>
-        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-base font-semibold text-destructive">{t('gate.apiUnreachable')}</Text>
         <Text className="text-sm text-muted-foreground">
           {String((apts.error as Error)?.message ?? 'error')}
         </Text>
@@ -31,7 +33,7 @@ export default function MyHouseHelp() {
   if (myApts.length === 0)
     return (
       <Centered>
-        <Text className="text-sm text-muted-foreground">You have no flats assigned yet.</Text>
+        <Text className="text-sm text-muted-foreground">{t('common.noFlats')}</Text>
       </Centered>
     )
 
@@ -45,6 +47,7 @@ export default function MyHouseHelp() {
 }
 
 function StarRating({ help, apartmentKey }: { help: HouseHelpWithRating; apartmentKey: string }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const rate = useMutation({
     mutationFn: (rating: number) => apiClient.rateHouseHelp(help.id, { rating }),
@@ -53,7 +56,7 @@ function StarRating({ help, apartmentKey }: { help: HouseHelpWithRating; apartme
   return (
     <View className="gap-0.5">
       <Text className="text-sm text-muted-foreground">
-        {help.ratingAvg === null ? 'Not rated yet' : `★ ${help.ratingAvg} (${help.reviewCount})`}
+        {help.ratingAvg === null ? t('myHouseHelp.notRated') : `★ ${help.ratingAvg} (${help.reviewCount})`}
       </Text>
       <View className="flex-row gap-0.5">
         {[1, 2, 3, 4, 5].map((n) => (
@@ -74,6 +77,7 @@ function StarRating({ help, apartmentKey }: { help: HouseHelpWithRating; apartme
 }
 
 function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; registry: HouseHelpWithRating[] }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const assigned = useQuery({
     queryKey: ['house-help-for-apartment', apartment.id],
@@ -99,9 +103,9 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
         {apartment.tower}-{apartment.apartmentNo}
       </Text>
 
-      <Text className="mt-1 text-sm font-semibold text-foreground">Assigned help</Text>
+      <Text className="mt-1 text-sm font-semibold text-foreground">{t('myHouseHelp.assignedHelp')}</Text>
       {(assigned.data ?? []).length === 0 && (
-        <Text className="text-sm text-muted-foreground">None yet.</Text>
+        <Text className="text-sm text-muted-foreground">{t('myHouseHelp.noneYet')}</Text>
       )}
       {(assigned.data ?? []).map((h) => (
         <View key={h.id} className="flex-row items-center gap-3 rounded-xl bg-muted p-3">
@@ -120,24 +124,24 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
                     h.verificationLevel === 'VERIFIED' && 'text-green-700'
                   )}
                 >
-                  {h.verificationLevel === 'VERIFIED' ? '✓ Verified' : 'Unverified'}
+                  {h.verificationLevel === 'VERIFIED' ? t('myHouseHelp.verified') : t('myHouseHelp.unverified')}
                 </Text>
               </View>
             </View>
             <Text className="text-sm text-muted-foreground">
-              {h.type} · Trust {h.trustScore}/100
+              {h.type} · {t('myHouseHelp.trust')} {h.trustScore}/100
             </Text>
             <StarRating help={h} apartmentKey={apartment.id} />
           </View>
           <Button variant="outline" onPress={() => remove.mutate(h.id)} disabled={busy}>
-            <Text>Remove</Text>
+            <Text>{t('common.remove')}</Text>
           </Button>
         </View>
       ))}
 
       {unassigned.length > 0 && (
         <>
-          <Text className="mt-1 text-sm font-semibold text-foreground">Add help</Text>
+          <Text className="mt-1 text-sm font-semibold text-foreground">{t('myHouseHelp.addHelp')}</Text>
           {unassigned.map((h) => (
             <View key={h.id} className="flex-row items-center gap-3 rounded-xl bg-muted p-3">
               <View className="flex-1">
@@ -145,7 +149,7 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
                 <Text className="text-sm text-muted-foreground">{h.type}</Text>
               </View>
               <Button onPress={() => assign.mutate(h.id)} disabled={busy}>
-                <Text>Assign</Text>
+                <Text>{t('common.assign')}</Text>
               </Button>
             </View>
           ))}

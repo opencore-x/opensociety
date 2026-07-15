@@ -135,6 +135,34 @@ const en: Dict = {
   'tickets.submit': 'Submit ticket',
   'tickets.yourTickets': 'Your tickets',
   'tickets.empty': 'No tickets yet.',
+
+  'common.activate': 'Activate',
+  'common.deactivate': 'Deactivate',
+  'common.remove': 'Remove',
+  'common.assign': 'Assign',
+  'common.noFlats': 'You have no flats assigned yet.',
+
+  // House help (guard check-in)
+  'houseHelp.searchPlaceholder': 'Search house help by name',
+  'houseHelp.empty': 'No house help found.',
+  'houseHelp.inside': 'INSIDE',
+  'houseHelp.out': 'OUT',
+
+  // My vehicles
+  'myVehicles.registerTitle': 'Register a vehicle',
+  'myVehicles.regPlaceholder': 'Reg. number (KA 01 AB 1234)',
+  'myVehicles.adding': 'Adding…',
+  'myVehicles.add': 'Add vehicle',
+  'myVehicles.empty': 'No vehicles registered yet.',
+
+  // My house help (resident assignments)
+  'myHouseHelp.notRated': 'Not rated yet',
+  'myHouseHelp.verified': '✓ Verified',
+  'myHouseHelp.unverified': 'Unverified',
+  'myHouseHelp.trust': 'Trust',
+  'myHouseHelp.assignedHelp': 'Assigned help',
+  'myHouseHelp.noneYet': 'None yet.',
+  'myHouseHelp.addHelp': 'Add help',
 }
 
 const hi: Dict = {
@@ -264,6 +292,34 @@ const hi: Dict = {
   'tickets.submit': 'टिकट सबमिट करें',
   'tickets.yourTickets': 'आपके टिकट',
   'tickets.empty': 'अभी कोई टिकट नहीं।',
+
+  'common.activate': 'सक्रिय करें',
+  'common.deactivate': 'निष्क्रिय करें',
+  'common.remove': 'हटाएँ',
+  'common.assign': 'असाइन करें',
+  'common.noFlats': 'आपको अभी कोई फ्लैट आवंटित नहीं है।',
+
+  // House help (guard check-in)
+  'houseHelp.searchPlaceholder': 'नाम से घरेलू सहायक खोजें',
+  'houseHelp.empty': 'कोई घरेलू सहायक नहीं मिला।',
+  'houseHelp.inside': 'अंदर',
+  'houseHelp.out': 'बाहर',
+
+  // My vehicles
+  'myVehicles.registerTitle': 'वाहन पंजीकृत करें',
+  'myVehicles.regPlaceholder': 'रजि. नंबर (KA 01 AB 1234)',
+  'myVehicles.adding': 'जोड़ा जा रहा…',
+  'myVehicles.add': 'वाहन जोड़ें',
+  'myVehicles.empty': 'अभी कोई वाहन पंजीकृत नहीं।',
+
+  // My house help (resident assignments)
+  'myHouseHelp.notRated': 'अभी रेटिंग नहीं',
+  'myHouseHelp.verified': '✓ सत्यापित',
+  'myHouseHelp.unverified': 'असत्यापित',
+  'myHouseHelp.trust': 'ट्रस्ट',
+  'myHouseHelp.assignedHelp': 'नियुक्त सहायक',
+  'myHouseHelp.noneYet': 'अभी कोई नहीं।',
+  'myHouseHelp.addHelp': 'सहायक जोड़ें',
 }
 
 const resources: Record<Language, Dict> = { en, hi }
