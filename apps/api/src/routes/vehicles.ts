@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { and, desc, eq, inArray, isNull, isNotNull } from 'drizzle-orm'
-import { vehicles, visitorEntries, apartments, residencies } from '@opensociety/db'
+import { and, asc, desc, eq, inArray, isNull, isNotNull } from 'drizzle-orm'
+import { vehicles, visitorEntries, apartments, residencies, parkingSlots } from '@opensociety/db'
 import { createVehicleSchema, updateVehicleSchema, normalizePlate, canManageVehicle } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
@@ -82,6 +82,51 @@ vehicleRoutes.get('/gate-log', requireRole('ADMIN', 'GUARD'), async (c) => {
       registered: vehicleNumber ? registered.has(normalizePlate(vehicleNumber)) : false,
     })),
   )
+})
+
+// Gate check: match an arriving plate against registered vehicles. Returns the
+// owner's flat + that flat's active parking slots, or registered:false so the
+// guard can flag an unknown vehicle.
+vehicleRoutes.get('/verify', requireRole('GUARD', 'ADMIN'), async (c) => {
+  const db = c.get('db')
+  const plate = normalizePlate(c.req.query('plate') ?? '')
+  if (!plate) return c.json({ error: 'plate required' }, 400)
+  const [match] = await db
+    .select({
+      id: vehicles.id,
+      registrationNumber: vehicles.registrationNumber,
+      type: vehicles.type,
+      make: vehicles.make,
+      color: vehicles.color,
+      isActive: vehicles.isActive,
+      apartmentId: vehicles.apartmentId,
+      tower: apartments.tower,
+      apartmentNo: apartments.apartmentNo,
+    })
+    .from(vehicles)
+    .innerJoin(apartments, eq(apartments.id, vehicles.apartmentId))
+    .where(eq(vehicles.registrationNumber, plate))
+    .limit(1)
+  if (!match) return c.json({ plate, registered: false, vehicle: null, parkingSlots: [] })
+  const slots = await db
+    .select({ slotNumber: parkingSlots.slotNumber, type: parkingSlots.type })
+    .from(parkingSlots)
+    .where(and(eq(parkingSlots.apartmentId, match.apartmentId), eq(parkingSlots.isActive, true)))
+    .orderBy(asc(parkingSlots.slotNumber))
+  return c.json({
+    plate,
+    registered: true,
+    vehicle: {
+      id: match.id,
+      registrationNumber: match.registrationNumber,
+      type: match.type,
+      make: match.make,
+      color: match.color,
+      isActive: match.isActive,
+      apartment: `${match.tower}-${match.apartmentNo}`,
+    },
+    parkingSlots: slots,
+  })
 })
 
 // Register a vehicle for a flat. Admins may register for any flat; a resident
