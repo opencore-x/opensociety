@@ -17,6 +17,11 @@ const RANGES = [
 
 const DAY_MS = 86_400_000
 
+// Kept at module scope so the Date.now() read isn't in the component render path.
+function cutoffMs(days: number | null): number | null {
+  return days == null ? null : Date.now() - days * DAY_MS
+}
+
 function formatTime(iso: string): string {
   const d = new Date(iso)
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
@@ -30,8 +35,7 @@ export default function VisitorHistory() {
   // Compute the cutoff timestamp when a range is picked (an event), not during
   // render — Date.now() in render is impure/non-idempotent.
   const [range, setRange] = useState<{ days: number | null; cutoff: number | null }>({ days: null, cutoff: null })
-  const pickRange = (days: number | null) =>
-    setRange({ days, cutoff: days == null ? null : Date.now() - days * DAY_MS })
+  const pickRange = (days: number | null) => setRange({ days, cutoff: cutoffMs(days) })
 
   const visitors = useQuery({ queryKey: ['visitors'], queryFn: () => apiClient.listVisitors() })
   const myApts = useQuery({ queryKey: ['my-apartments'], queryFn: () => apiClient.listMyApartments() })
