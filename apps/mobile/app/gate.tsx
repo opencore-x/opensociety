@@ -133,14 +133,18 @@ export default function Gate() {
         )
       }}
     />
-    <QrScannerModal
-      visible={scanning}
-      onClose={() => setScanning(false)}
-      onScan={(c) => {
-        setScanning(false)
-        redeem.mutate(c)
-      }}
-    />
+    {/* Mount the camera scanner only while open, so expo-camera isn't loaded /
+        the camera isn't held on the gate list until the guard taps Scan. */}
+    {scanning && (
+      <QrScannerModal
+        visible={scanning}
+        onClose={() => setScanning(false)}
+        onScan={(c) => {
+          setScanning(false)
+          redeem.mutate(c)
+        }}
+      />
+    )}
     </>
   )
 }
