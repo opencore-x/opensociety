@@ -44,6 +44,7 @@ function Nav() {
       <Stack.Screen name="notices" options={{ title: t('nav.notices') }} />
       <Stack.Screen name="tickets" options={{ title: t('nav.maintenance') }} />
       <Stack.Screen name="gate" options={{ title: t('nav.gate') }} />
+      <Stack.Screen name="vehicle-gate" options={{ title: t('nav.vehicleGate') }} />
       <Stack.Screen name="duty" options={{ title: t('nav.guardDuty') }} />
       <Stack.Screen name="register" options={{ title: t('nav.registerVisitor') }} />
       <Stack.Screen name="house-help" options={{ title: t('nav.houseHelp') }} />

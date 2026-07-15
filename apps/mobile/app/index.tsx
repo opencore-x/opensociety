@@ -22,6 +22,7 @@ const RESIDENT = [
 
 const GUARD = [
   { href: '/gate', key: 'nav.gate' },
+  { href: '/vehicle-gate', key: 'nav.vehicleGate' },
   { href: '/duty', key: 'nav.duty' },
   { href: '/house-help', key: 'nav.houseHelp' },
 ] as const
