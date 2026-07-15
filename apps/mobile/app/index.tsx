@@ -9,7 +9,9 @@ import { Chip } from '../components/ui/chip'
 import { Text } from '../components/ui/text'
 
 const RESIDENT = [
+  { href: '/profile', key: 'nav.profile' },
   { href: '/visitors', key: 'nav.visitors' },
+  { href: '/visitor-history', key: 'nav.visitorHistory' },
   { href: '/pre-approve', key: 'nav.preApprove' },
   { href: '/notices', key: 'nav.notices' },
   { href: '/tickets', key: 'nav.maintenance' },

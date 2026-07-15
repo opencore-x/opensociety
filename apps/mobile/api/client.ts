@@ -132,6 +132,8 @@ export const apiClient = {
   checkOutHouseHelpEntry: (entryId: string, userId?: string) =>
     api<HouseHelpEntry>(`/house-help/entries/${entryId}/checkout`, { method: 'POST', body: JSON.stringify({}) }, userId),
   listMyApartments: () => api<Apartment[]>('/apartments/mine'),
+  listMyResidents: () =>
+    api<{ apartmentId: string; userId: string; name: string; relation: string }[]>('/apartments/mine/residents'),
   listVehicles: (apartmentId?: string) =>
     api<Vehicle[]>(`/vehicles${apartmentId ? `?apartmentId=${apartmentId}` : ''}`),
   createVehicle: (body: CreateVehicle, userId?: string) =>

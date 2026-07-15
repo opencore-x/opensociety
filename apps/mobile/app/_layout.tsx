@@ -37,7 +37,9 @@ function Nav() {
     <Stack>
       <Stack.Screen name="index" options={{ title: t('nav.appName') }} />
       <Stack.Screen name="sign-in" options={{ title: t('nav.signIn') }} />
+      <Stack.Screen name="profile" options={{ title: t('nav.profile') }} />
       <Stack.Screen name="visitors" options={{ title: t('nav.visitors') }} />
+      <Stack.Screen name="visitor-history" options={{ title: t('nav.visitorHistory') }} />
       <Stack.Screen name="pre-approve" options={{ title: t('nav.preApproveVisitor') }} />
       <Stack.Screen name="notices" options={{ title: t('nav.notices') }} />
       <Stack.Screen name="tickets" options={{ title: t('nav.maintenance') }} />

@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
-import { apartments, residencies } from '@opensociety/db'
+import { apartments, residencies, users } from '@opensociety/db'
 import { createApartmentSchema, createApartmentsBulkSchema, updateApartmentSchema } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
@@ -34,6 +34,27 @@ apartmentRoutes.get('/mine', async (c) => {
     .from(apartments)
     .where(inArray(apartments.id, mine))
     .orderBy(asc(apartments.tower), asc(apartments.apartmentNo))
+  return c.json(rows)
+})
+
+// Co-residents of the acting user's flats — for the resident profile screen.
+apartmentRoutes.get('/mine/residents', async (c) => {
+  const db = c.get('db')
+  const mine = db
+    .select({ id: residencies.apartmentId })
+    .from(residencies)
+    .where(and(eq(residencies.userId, actingUserId(c)!), isNull(residencies.endDate)))
+  const rows = await db
+    .select({
+      apartmentId: residencies.apartmentId,
+      userId: users.id,
+      name: users.name,
+      relation: residencies.relation,
+    })
+    .from(residencies)
+    .innerJoin(users, eq(users.id, residencies.userId))
+    .where(and(inArray(residencies.apartmentId, mine), isNull(residencies.endDate)))
+    .orderBy(asc(users.name))
   return c.json(rows)
 })
 
