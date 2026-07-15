@@ -5,6 +5,7 @@ import QRCode from 'react-native-qrcode-svg'
 import type { VisitorPreApproval } from '@opensociety/shared'
 import { preApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
+import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
@@ -12,6 +13,7 @@ import { Text } from '../components/ui/text'
 
 export default function PreApprove() {
   const qc = useQueryClient()
+  const { t } = useT()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [apartmentId, setApartmentId] = useState<string | null>(null)
@@ -36,16 +38,14 @@ export default function PreApprove() {
   if (created) {
     return (
       <View className="flex-1 items-center justify-center gap-3 p-6">
-        <Text className="text-center text-base">Show this to {created.visitorName}</Text>
+        <Text className="text-center text-base">{t('preApprove.showTo')} {created.visitorName}</Text>
         <View className="rounded-xl bg-card p-4">
           <QRCode value={preApprovalQrValue(created.code)} size={200} />
         </View>
         <Text className="text-[44px] font-extrabold tracking-[6px] text-primary" selectable>
           {created.code}
         </Text>
-        <Text className="mb-2 text-center text-sm text-muted-foreground">
-          The guard scans the QR, or enters this code at the gate.
-        </Text>
+        <Text className="mb-2 text-center text-sm text-muted-foreground">{t('preApprove.hint')}</Text>
         <Button
           variant="outline"
           onPress={() => {
@@ -55,7 +55,7 @@ export default function PreApprove() {
             setApartmentId(null)
           }}
         >
-          <Text>Pre-approve another</Text>
+          <Text>{t('preApprove.another')}</Text>
         </Button>
       </View>
     )
@@ -65,22 +65,22 @@ export default function PreApprove() {
 
   return (
     <ScrollView contentContainerClassName="gap-4 p-4">
-      <Field label="Visitor name">
+      <Field label={t('register.visitorName')}>
         <Input placeholder="e.g. Priya" value={name} onChangeText={setName} autoFocus />
       </Field>
-      <Field label="Phone (optional)">
+      <Field label={t('register.phoneOptional')}>
         <Input
-          placeholder="10-digit number"
+          placeholder={t('register.phonePlaceholder')}
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
         />
       </Field>
-      <Field label="Apartment">
+      <Field label={t('common.apartment')}>
         {apartments.isLoading ? (
           <ActivityIndicator />
         ) : apartments.isError ? (
-          <Text className="text-sm text-destructive">Could not load apartments</Text>
+          <Text className="text-sm text-destructive">{t('register.loadError')}</Text>
         ) : (
           <View className="flex-row flex-wrap gap-2">
             {(apartments.data ?? []).map((a) => (
@@ -96,11 +96,11 @@ export default function PreApprove() {
       </Field>
       <View className="mt-1 gap-2">
         <Button onPress={() => create.mutate()} disabled={!canSubmit}>
-          <Text>{create.isPending ? 'Generating…' : 'Generate code'}</Text>
+          <Text>{create.isPending ? t('preApprove.generating') : t('preApprove.generate')}</Text>
         </Button>
         {create.isError && (
           <Text className="text-sm text-destructive">
-            {String((create.error as Error)?.message ?? 'Failed')}
+            {String((create.error as Error)?.message ?? t('common.failed'))}
           </Text>
         )}
       </View>

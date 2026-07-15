@@ -115,6 +115,26 @@ const en: Dict = {
   'notices.empty': 'No notices yet.',
   'notices.new': 'NEW',
   'notices.attachmentFallback': 'Attachment',
+
+  'common.title': 'Title',
+  'common.description': 'Description',
+  'common.category': 'Category',
+  'common.priority': 'Priority',
+
+  // Pre-approve visitor
+  'preApprove.showTo': 'Show this to',
+  'preApprove.hint': 'The guard scans the QR, or enters this code at the gate.',
+  'preApprove.another': 'Pre-approve another',
+  'preApprove.generating': 'Generating…',
+  'preApprove.generate': 'Generate code',
+
+  // Tickets
+  'tickets.raiseTitle': 'Raise a ticket',
+  'tickets.descPlaceholder': 'What needs fixing?',
+  'tickets.submitting': 'Submitting…',
+  'tickets.submit': 'Submit ticket',
+  'tickets.yourTickets': 'Your tickets',
+  'tickets.empty': 'No tickets yet.',
 }
 
 const hi: Dict = {
@@ -224,6 +244,26 @@ const hi: Dict = {
   'notices.empty': 'अभी कोई सूचना नहीं।',
   'notices.new': 'नया',
   'notices.attachmentFallback': 'अनुलग्नक',
+
+  'common.title': 'शीर्षक',
+  'common.description': 'विवरण',
+  'common.category': 'श्रेणी',
+  'common.priority': 'प्राथमिकता',
+
+  // Pre-approve visitor
+  'preApprove.showTo': 'यह इन्हें दिखाएँ',
+  'preApprove.hint': 'गार्ड QR स्कैन करता है, या गेट पर यह कोड दर्ज करता है।',
+  'preApprove.another': 'एक और पूर्व-अनुमति',
+  'preApprove.generating': 'बन रहा है…',
+  'preApprove.generate': 'कोड बनाएँ',
+
+  // Tickets
+  'tickets.raiseTitle': 'टिकट दर्ज करें',
+  'tickets.descPlaceholder': 'क्या ठीक करना है?',
+  'tickets.submitting': 'सबमिट हो रहा…',
+  'tickets.submit': 'टिकट सबमिट करें',
+  'tickets.yourTickets': 'आपके टिकट',
+  'tickets.empty': 'अभी कोई टिकट नहीं।',
 }
 
 const resources: Record<Language, Dict> = { en, hi }
