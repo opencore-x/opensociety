@@ -32,6 +32,7 @@ function formatDate(iso: string | null): string {
 }
 
 function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; label: string }[] }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [visitorName, setVisitorName] = useState('')
   const [visitorPhone, setVisitorPhone] = useState('')
@@ -67,7 +68,7 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
     <Card className="mb-4">
       <CardContent className="flex flex-wrap items-end gap-3 pt-6">
         <div className="space-y-1.5">
-          <Label>Visitor name</Label>
+          <Label>{t('page.preApprovals.visitorName')}</Label>
           <Input
             className="w-44"
             placeholder="e.g. Priya"
@@ -76,19 +77,19 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Phone (optional)</Label>
+          <Label>{t('page.preApprovals.phoneOptional')}</Label>
           <Input
             className="w-40"
-            placeholder="10-digit"
+            placeholder={t('page.preApprovals.phonePlaceholder')}
             value={visitorPhone}
             onChange={(e) => setVisitorPhone(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Apartment</Label>
+          <Label>{t('common.apartment')}</Label>
           <Select value={apartmentId} onValueChange={setApartmentId}>
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select unit" />
+              <SelectValue placeholder={t('common.selectUnit')} />
             </SelectTrigger>
             <SelectContent>
               {apartmentOptions.map((a) => (
@@ -100,22 +101,22 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Type</Label>
+          <Label>{t('common.type')}</Label>
           <Select value={approvalType} onValueChange={(v) => setApprovalType(v as PreApprovalType)}>
             <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {preApprovalTypeSchema.options.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+              {preApprovalTypeSchema.options.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Max uses</Label>
+          <Label>{t('page.preApprovals.maxUses')}</Label>
           <Input
             className="w-24"
             type="number"
@@ -126,7 +127,7 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Valid until</Label>
+          <Label>{t('page.preApprovals.validUntil')}</Label>
           <Input
             className="w-40"
             type="date"
@@ -135,7 +136,7 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
           />
         </div>
         <Button onClick={() => create.mutate()} disabled={!canSubmit}>
-          {create.isPending ? 'Generating…' : 'Generate code'}
+          {create.isPending ? t('page.preApprovals.generating') : t('page.preApprovals.generate')}
         </Button>
         {create.isError && (
           <p className="text-destructive w-full text-xs">{(create.error as Error).message}</p>
@@ -146,6 +147,7 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
 }
 
 function QrButton({ code, visitorName }: { code: string; visitorName: string }) {
+  const { t } = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -154,13 +156,13 @@ function QrButton({ code, visitorName }: { code: string; visitorName: string }) 
       </Button>
       <Modal open={open} onClose={() => setOpen(false)} className="w-full max-w-xs text-center">
         <p className="font-medium">{visitorName}</p>
-        <p className="text-muted-foreground mb-4 text-sm">Show this QR at the gate</p>
+        <p className="text-muted-foreground mb-4 text-sm">{t('page.preApprovals.showQr')}</p>
         <div className="mx-auto inline-block rounded bg-white p-3">
           <QRCode value={preApprovalQrValue(code)} size={196} />
         </div>
         <p className="mt-4 font-mono text-lg tracking-widest">{code}</p>
         <Button className="mt-4 w-full" variant="outline" onClick={() => setOpen(false)}>
-          Close
+          {t('common.close')}
         </Button>
       </Modal>
     </>
@@ -168,6 +170,7 @@ function QrButton({ code, visitorName }: { code: string; visitorName: string }) 
 }
 
 function RevokeButton({ id }: { id: string }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const mutation = useMutation({
     mutationFn: () => apiClient.revokePreApproval(id),
@@ -175,7 +178,7 @@ function RevokeButton({ id }: { id: string }) {
   })
   return (
     <Button size="sm" variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
-      {mutation.isPending ? '…' : 'Revoke'}
+      {mutation.isPending ? '…' : t('common.revoke')}
     </Button>
   )
 }
@@ -212,19 +215,19 @@ function PreApprovalsPage() {
           <QueryState
             q={preApprovals}
             empty={preApprovals.isSuccess && rows.length === 0}
-            emptyText="No pre-approvals yet."
+            emptyText={t('page.preApprovals.empty')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Visitor</TableHead>
-                  <TableHead>Apartment</TableHead>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Uses</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('common.visitor')}</TableHead>
+                  <TableHead>{t('common.apartment')}</TableHead>
+                  <TableHead>{t('page.preApprovals.code')}</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
+                  <TableHead>{t('page.preApprovals.uses')}</TableHead>
+                  <TableHead>{t('page.preApprovals.expires')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-right">{t('common.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,7 +249,7 @@ function PreApprovalsPage() {
                     <TableCell className="text-muted-foreground text-xs">{formatDate(p.validUntil)}</TableCell>
                     <TableCell>
                       <Badge variant={p.isActive ? 'default' : 'secondary'}>
-                        {p.isActive ? 'Active' : 'Inactive'}
+                        {p.isActive ? t('common.active') : t('common.inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
