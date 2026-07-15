@@ -35,6 +35,7 @@ function RateBar({ pct }: { pct: number }) {
 }
 
 function AnalyticsSection() {
+  const { t } = useT()
   const q = useQuery({ queryKey: ['collection-analytics'], queryFn: apiClient.getCollectionAnalytics })
   const data = q.data
   if (!data) return null
@@ -44,13 +45,13 @@ function AnalyticsSection() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Collection efficiency</CardTitle>
+          <CardTitle>{t('page.reports.collectionEfficiency')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-10">
-          <Stat label="Overall collection rate" value={`${data.overallRatePct}%`} />
-          <Stat label="Bills paid in full" value={`${data.fullyPaidPct}%`} />
+          <Stat label={t('page.reports.overallRate')} value={`${data.overallRatePct}%`} />
+          <Stat label={t('page.reports.paidInFull')} value={`${data.fullyPaidPct}%`} />
           <Stat
-            label="Avg days to pay"
+            label={t('page.reports.avgDaysToPay')}
             value={payers.avgDaysToPay === null ? '—' : `${payers.avgDaysToPay > 0 ? '+' : ''}${payers.avgDaysToPay}d`}
           />
         </CardContent>
@@ -58,37 +59,37 @@ function AnalyticsSection() {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>Collection by tower</CardTitle>
+          <CardTitle>{t('page.reports.collectionByTower')}</CardTitle>
           <a
             href={csvDataHref(towerCollectionToCsv(data.byTower))}
             download="collection-by-tower.csv"
             className="border-input hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center rounded-md border px-4 text-sm font-medium transition-colors aria-disabled:pointer-events-none aria-disabled:opacity-50"
             aria-disabled={data.byTower.length === 0}
           >
-            Download CSV
+            {t('common.downloadCsv')}
           </a>
         </CardHeader>
         <CardContent>
           {data.byTower.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No bills yet.</p>
+            <p className="text-muted-foreground text-sm">{t('common.noBillsYet')}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tower</TableHead>
-                  <TableHead className="text-right">Billed</TableHead>
-                  <TableHead className="text-right">Collected</TableHead>
-                  <TableHead className="w-48">Collection %</TableHead>
+                  <TableHead>{t('common.tower')}</TableHead>
+                  <TableHead className="text-right">{t('page.billing.billed')}</TableHead>
+                  <TableHead className="text-right">{t('page.reports.collected')}</TableHead>
+                  <TableHead className="w-48">{t('page.reports.collectionPct')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.byTower.map((t) => (
-                  <TableRow key={t.tower}>
-                    <TableCell className="font-medium">{t.tower}</TableCell>
-                    <TableCell className="text-right">{formatPaise(t.billed)}</TableCell>
-                    <TableCell className="text-right">{formatPaise(t.collected)}</TableCell>
+                {data.byTower.map((row) => (
+                  <TableRow key={row.tower}>
+                    <TableCell className="font-medium">{row.tower}</TableCell>
+                    <TableCell className="text-right">{formatPaise(row.billed)}</TableCell>
+                    <TableCell className="text-right">{formatPaise(row.collected)}</TableCell>
                     <TableCell>
-                      <RateBar pct={collectionRatePct(t.billed, t.collected)} />
+                      <RateBar pct={collectionRatePct(row.billed, row.collected)} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -100,13 +101,13 @@ function AnalyticsSection() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Payer patterns</CardTitle>
+          <CardTitle>{t('page.reports.payerPatterns')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-10">
-          <Stat label="Early" value={String(payers.early)} />
-          <Stat label="On time" value={String(payers.onTime)} />
-          <Stat label="Late" value={String(payers.late)} />
-          <Stat label="Outstanding" value={String(payers.outstanding)} />
+          <Stat label={t('page.reports.early')} value={String(payers.early)} />
+          <Stat label={t('page.reports.onTime')} value={String(payers.onTime)} />
+          <Stat label={t('page.reports.late')} value={String(payers.late)} />
+          <Stat label={t('page.billing.outstanding')} value={String(payers.outstanding)} />
         </CardContent>
       </Card>
     </>
@@ -128,13 +129,13 @@ function ReportsPage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>Collection summary</CardTitle>
+                <CardTitle>{t('page.reports.collectionSummary')}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-10">
-                <Stat label="Total billed" value={formatPaise(report.data.totalBilled)} />
-                <Stat label="Total collected" value={formatPaise(report.data.totalCollected)} />
+                <Stat label={t('page.reports.totalBilled')} value={formatPaise(report.data.totalBilled)} />
+                <Stat label={t('page.reports.totalCollected')} value={formatPaise(report.data.totalCollected)} />
                 <Stat
-                  label="Collection rate"
+                  label={t('page.reports.collectionRate')}
                   value={`${collectionRatePct(report.data.totalBilled, report.data.totalCollected)}%`}
                 />
               </CardContent>
@@ -142,27 +143,27 @@ function ReportsPage() {
 
             <Card>
               <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Collection by month</CardTitle>
+                <CardTitle>{t('page.reports.collectionByMonth')}</CardTitle>
                 <a
                   href={csvHref}
                   download="collection-report.csv"
                   className="border-input hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center rounded-md border px-4 text-sm font-medium transition-colors aria-disabled:pointer-events-none aria-disabled:opacity-50"
                   aria-disabled={report.data.byMonth.length === 0}
                 >
-                  Download CSV
+                  {t('common.downloadCsv')}
                 </a>
               </CardHeader>
               <CardContent>
                 {report.data.byMonth.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No bills yet.</p>
+                  <p className="text-muted-foreground text-sm">{t('common.noBillsYet')}</p>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Period</TableHead>
-                        <TableHead className="text-right">Billed</TableHead>
-                        <TableHead className="text-right">Collected</TableHead>
-                        <TableHead className="w-48">Collection %</TableHead>
+                        <TableHead>{t('common.period')}</TableHead>
+                        <TableHead className="text-right">{t('page.billing.billed')}</TableHead>
+                        <TableHead className="text-right">{t('page.reports.collected')}</TableHead>
+                        <TableHead className="w-48">{t('page.reports.collectionPct')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -187,17 +188,17 @@ function ReportsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Payment method breakdown</CardTitle>
+                <CardTitle>{t('page.reports.methodBreakdown')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {report.data.byMethod.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No payments recorded yet.</p>
+                  <p className="text-muted-foreground text-sm">{t('page.reports.noPayments')}</p>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Method</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>{t('common.method')}</TableHead>
+                        <TableHead className="text-right">{t('page.reports.amount')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
