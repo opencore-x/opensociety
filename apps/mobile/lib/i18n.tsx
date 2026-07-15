@@ -57,6 +57,24 @@ const en: Dict = {
   'register.registering': 'Registering…',
   'register.loadError': 'Could not load apartments',
   'register.offlineNote': "You're offline — this visitor will be saved and synced when you reconnect.",
+
+  'common.checkIn': 'Check in',
+  'common.checkOut': 'Check out',
+  'common.cancel': 'Cancel',
+
+  // Gate
+  'gate.codePlaceholder': 'Pre-approval code',
+  'gate.redeeming': 'Redeeming…',
+  'gate.redeem': 'Redeem',
+  'gate.scanQr': 'Scan QR code',
+  'gate.invalidCode': 'Invalid code',
+  'gate.offlineNote': "Code redemption and check-in/out need a connection. You can still register visitors — they'll sync when you reconnect.",
+  'gate.empty': 'No visitors at the gate.',
+  'gate.apiUnreachable': 'API unreachable',
+  'gate.qrWebHint': 'QR scanning uses the device camera. Open the app on a phone, or enter the code manually.',
+  'gate.cameraNeeded': 'Camera access is needed to scan pre-approval QR codes.',
+  'gate.grantCamera': 'Grant camera access',
+  'gate.pointCamera': 'Point the camera at the pre-approval QR code',
 }
 
 const hi: Dict = {
@@ -108,6 +126,24 @@ const hi: Dict = {
   'register.registering': 'पंजीकरण हो रहा है…',
   'register.loadError': 'अपार्टमेंट लोड नहीं हो सके',
   'register.offlineNote': 'आप ऑफ़लाइन हैं — यह आगंतुक सहेजा जाएगा और पुनः कनेक्ट होने पर सिंक होगा।',
+
+  'common.checkIn': 'चेक इन',
+  'common.checkOut': 'चेक आउट',
+  'common.cancel': 'रद्द करें',
+
+  // Gate
+  'gate.codePlaceholder': 'पूर्व-अनुमति कोड',
+  'gate.redeeming': 'रिडीम हो रहा…',
+  'gate.redeem': 'रिडीम करें',
+  'gate.scanQr': 'QR कोड स्कैन करें',
+  'gate.invalidCode': 'अमान्य कोड',
+  'gate.offlineNote': 'कोड रिडेम्पशन और चेक-इन/आउट के लिए कनेक्शन चाहिए। आप फिर भी आगंतुक पंजीकृत कर सकते हैं — पुनः कनेक्ट होने पर वे सिंक होंगे।',
+  'gate.empty': 'गेट पर कोई आगंतुक नहीं।',
+  'gate.apiUnreachable': 'API अनुपलब्ध',
+  'gate.qrWebHint': 'QR स्कैनिंग डिवाइस कैमरा का उपयोग करती है। फ़ोन पर ऐप खोलें, या कोड मैन्युअल रूप से दर्ज करें।',
+  'gate.cameraNeeded': 'पूर्व-अनुमति QR कोड स्कैन करने के लिए कैमरा एक्सेस आवश्यक है।',
+  'gate.grantCamera': 'कैमरा एक्सेस दें',
+  'gate.pointCamera': 'कैमरा को पूर्व-अनुमति QR कोड पर इंगित करें',
 }
 
 const resources: Record<Language, Dict> = { en, hi }
