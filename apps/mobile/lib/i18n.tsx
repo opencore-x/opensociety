@@ -35,6 +35,28 @@ const en: Dict = {
   // Shared
   'common.language': 'Language',
   'common.loading': 'Loading…',
+  'common.type': 'Type',
+  'common.apartment': 'Apartment',
+  'common.failed': 'Failed',
+  'common.retry': 'Retry',
+  'common.dismiss': 'Dismiss',
+
+  // Offline / sync
+  'offline.offline': 'Offline',
+  'offline.queued': 'waiting to sync',
+  'offline.offlineIdle': 'changes will sync when reconnected',
+  'offline.syncing': 'Syncing',
+  'offline.entryOne': 'entry',
+  'offline.entryMany': 'entries',
+  'offline.failedToSync': 'failed to sync',
+
+  // Register visitor
+  'register.visitorName': 'Visitor name',
+  'register.phoneOptional': 'Phone (optional)',
+  'register.phonePlaceholder': '10-digit number',
+  'register.registering': 'Registering…',
+  'register.loadError': 'Could not load apartments',
+  'register.offlineNote': "You're offline — this visitor will be saved and synced when you reconnect.",
 }
 
 const hi: Dict = {
@@ -64,6 +86,28 @@ const hi: Dict = {
   // Shared
   'common.language': 'भाषा',
   'common.loading': 'लोड हो रहा है…',
+  'common.type': 'प्रकार',
+  'common.apartment': 'अपार्टमेंट',
+  'common.failed': 'विफल',
+  'common.retry': 'पुनः प्रयास',
+  'common.dismiss': 'खारिज करें',
+
+  // Offline / sync
+  'offline.offline': 'ऑफ़लाइन',
+  'offline.queued': 'सिंक होने की प्रतीक्षा में',
+  'offline.offlineIdle': 'पुनः कनेक्ट होने पर परिवर्तन सिंक होंगे',
+  'offline.syncing': 'सिंक हो रहा',
+  'offline.entryOne': 'प्रविष्टि',
+  'offline.entryMany': 'प्रविष्टियाँ',
+  'offline.failedToSync': 'सिंक विफल',
+
+  // Register visitor
+  'register.visitorName': 'आगंतुक का नाम',
+  'register.phoneOptional': 'फ़ोन (वैकल्पिक)',
+  'register.phonePlaceholder': '10-अंकों का नंबर',
+  'register.registering': 'पंजीकरण हो रहा है…',
+  'register.loadError': 'अपार्टमेंट लोड नहीं हो सके',
+  'register.offlineNote': 'आप ऑफ़लाइन हैं — यह आगंतुक सहेजा जाएगा और पुनः कनेक्ट होने पर सिंक होगा।',
 }
 
 const resources: Record<Language, Dict> = { en, hi }
