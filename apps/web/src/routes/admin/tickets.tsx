@@ -42,15 +42,16 @@ const STATUS_VARIANT: Record<TicketStatus, 'default' | 'secondary' | 'outline'> 
   CANCELLED: 'outline',
 }
 
-const ACTION_LABEL: Record<TicketAction, string> = {
-  start: 'Start',
-  resolve: 'Resolve',
-  close: 'Close',
-  reopen: 'Reopen',
-  cancel: 'Cancel',
+const ACTION_KEY: Record<TicketAction, string> = {
+  start: 'page.tickets.actionStart',
+  resolve: 'page.tickets.actionResolve',
+  close: 'common.close',
+  reopen: 'page.tickets.actionReopen',
+  cancel: 'common.cancel',
 }
 
 function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; label: string }[] }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [apartmentId, setApartmentId] = useState('')
   const [title, setTitle] = useState('')
@@ -75,10 +76,10 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
     <Card className="mb-4">
       <CardContent className="flex flex-wrap items-end gap-3 pt-6">
         <div className="space-y-1.5">
-          <Label>Apartment</Label>
+          <Label>{t('common.apartment')}</Label>
           <Select value={apartmentId} onValueChange={setApartmentId}>
             <SelectTrigger className="w-36">
-              <SelectValue placeholder="Select unit" />
+              <SelectValue placeholder={t('common.selectUnit')} />
             </SelectTrigger>
             <SelectContent>
               {apartmentOptions.map((a) => (
@@ -90,25 +91,25 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Title</Label>
+          <Label>{t('common.title')}</Label>
           <Input
             className="w-44"
-            placeholder="e.g. Leaking tap"
+            placeholder={t('page.tickets.titlePlaceholder')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Description</Label>
+          <Label>{t('common.description')}</Label>
           <Input
             className="w-56"
-            placeholder="What needs fixing?"
+            placeholder={t('page.tickets.descPlaceholder')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Category</Label>
+          <Label>{t('common.category')}</Label>
           <Select value={category} onValueChange={(v) => setCategory(v as TicketCategory)}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -123,7 +124,7 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Priority</Label>
+          <Label>{t('common.priority')}</Label>
           <Select value={priority} onValueChange={(v) => setPriority(v as TicketPriority)}>
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -138,7 +139,7 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
           </Select>
         </div>
         <Button onClick={() => create.mutate()} disabled={!canSubmit}>
-          {create.isPending ? 'Creating…' : 'Raise ticket'}
+          {create.isPending ? t('page.tickets.creating') : t('page.tickets.raiseTicket')}
         </Button>
         {create.isError && (
           <p className="text-destructive w-full text-xs">{(create.error as Error).message}</p>
@@ -149,6 +150,7 @@ function CreateForm({ apartmentOptions }: { apartmentOptions: { id: string; labe
 }
 
 function ActionButtons({ id, status }: { id: string; status: TicketStatus }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const mutation = useMutation({
     mutationFn: (action: TicketAction) => apiClient.transitionTicket(id, action),
@@ -166,7 +168,7 @@ function ActionButtons({ id, status }: { id: string; status: TicketStatus }) {
           disabled={mutation.isPending}
           onClick={() => mutation.mutate(a)}
         >
-          {ACTION_LABEL[a]}
+          {t(ACTION_KEY[a])}
         </Button>
       ))}
     </div>
@@ -186,6 +188,7 @@ function AssignCell({
   userLabel: Map<string, string>
   editable: boolean
 }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const mutation = useMutation({
     mutationFn: (userId: string) => apiClient.assignTicket(id, userId),
@@ -201,7 +204,7 @@ function AssignCell({
   return (
     <Select value={assignedTo ?? undefined} onValueChange={(v) => mutation.mutate(v)} disabled={mutation.isPending}>
       <SelectTrigger className="w-36">
-        <SelectValue placeholder="Unassigned" />
+        <SelectValue placeholder={t('page.tickets.unassigned')} />
       </SelectTrigger>
       <SelectContent>
         {assignees.map((u) => (
@@ -258,13 +261,13 @@ function TicketsPage() {
       <CreateForm apartmentOptions={apartmentOptions} />
 
       <div className="mb-4 flex items-center gap-2">
-        <Label className="text-muted-foreground text-xs">Filter</Label>
+        <Label className="text-muted-foreground text-xs">{t('page.tickets.filter')}</Label>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All statuses</SelectItem>
+            <SelectItem value="ALL">{t('common.allStatuses')}</SelectItem>
             {ticketStatusSchema.options.map((s) => (
               <SelectItem key={s} value={s}>
                 {s}
@@ -276,51 +279,53 @@ function TicketsPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <QueryState q={tickets} empty={tickets.isSuccess && rows.length === 0} emptyText="No tickets.">
+          <QueryState q={tickets} empty={tickets.isSuccess && rows.length === 0} emptyText={t('page.tickets.empty')}>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Apartment</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Assignee</TableHead>
-                  <TableHead>Raised</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('common.title')}</TableHead>
+                  <TableHead>{t('common.apartment')}</TableHead>
+                  <TableHead>{t('common.category')}</TableHead>
+                  <TableHead>{t('common.priority')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead>{t('common.assignee')}</TableHead>
+                  <TableHead>{t('common.raised')}</TableHead>
+                  <TableHead className="text-right">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((t) => (
-                  <TableRow key={t.id}>
+                {rows.map((ticket) => (
+                  <TableRow key={ticket.id}>
                     <TableCell className="font-medium">
-                      {t.title}
+                      {ticket.title}
                       <span className="text-muted-foreground block max-w-xs truncate text-xs">
-                        {t.description}
+                        {ticket.description}
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{aptLabel.get(t.apartmentId) ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{t.category}</TableCell>
+                    <TableCell className="text-muted-foreground">{aptLabel.get(ticket.apartmentId) ?? '—'}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{ticket.category}</TableCell>
                     <TableCell>
-                      <Badge variant={t.priority === 'URGENT' || t.priority === 'HIGH' ? 'destructive' : 'secondary'}>
-                        {t.priority}
+                      <Badge
+                        variant={ticket.priority === 'URGENT' || ticket.priority === 'HIGH' ? 'destructive' : 'secondary'}
+                      >
+                        {ticket.priority}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={STATUS_VARIANT[t.status]}>{t.status}</Badge>
+                      <Badge variant={STATUS_VARIANT[ticket.status]}>{ticket.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <AssignCell
-                        id={t.id}
-                        assignedTo={t.assignedTo}
+                        id={ticket.id}
+                        assignedTo={ticket.assignedTo}
                         assignees={assignees}
                         userLabel={userLabel}
-                        editable={t.status !== 'CLOSED' && t.status !== 'CANCELLED'}
+                        editable={ticket.status !== 'CLOSED' && ticket.status !== 'CANCELLED'}
                       />
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{formatDate(t.createdAt)}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{formatDate(ticket.createdAt)}</TableCell>
                     <TableCell className="text-right">
-                      <ActionButtons id={t.id} status={t.status} />
+                      <ActionButtons id={ticket.id} status={ticket.status} />
                     </TableCell>
                   </TableRow>
                 ))}
