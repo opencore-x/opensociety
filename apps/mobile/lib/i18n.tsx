@@ -98,6 +98,23 @@ const en: Dict = {
   'bills.paid': 'Paid',
   'bills.paymentHistory': 'Payment history',
   'bills.noPayments': 'No payments yet.',
+
+  'common.approve': 'Approve',
+  'common.deny': 'Deny',
+  'common.confirm': 'Confirm',
+
+  // Visitors (resident approval queue)
+  'visitors.empty': 'No visitors yet.',
+  'visitors.denyReason': 'Reason for denial',
+  'visitors.denying': 'Denying…',
+
+  // Notices
+  'notices.loadError': 'Couldn’t load notices',
+  'notices.searchPlaceholder': 'Search notices',
+  'notices.noMatch': 'No matching notices.',
+  'notices.empty': 'No notices yet.',
+  'notices.new': 'NEW',
+  'notices.attachmentFallback': 'Attachment',
 }
 
 const hi: Dict = {
@@ -190,6 +207,23 @@ const hi: Dict = {
   'bills.paid': 'भुगतान किया',
   'bills.paymentHistory': 'भुगतान इतिहास',
   'bills.noPayments': 'अभी कोई भुगतान नहीं।',
+
+  'common.approve': 'स्वीकृत करें',
+  'common.deny': 'अस्वीकृत करें',
+  'common.confirm': 'पुष्टि करें',
+
+  // Visitors (resident approval queue)
+  'visitors.empty': 'अभी कोई आगंतुक नहीं।',
+  'visitors.denyReason': 'अस्वीकृति का कारण',
+  'visitors.denying': 'अस्वीकृत हो रहा…',
+
+  // Notices
+  'notices.loadError': 'सूचनाएँ लोड नहीं हो सकीं',
+  'notices.searchPlaceholder': 'सूचनाएँ खोजें',
+  'notices.noMatch': 'कोई मिलती-जुलती सूचना नहीं।',
+  'notices.empty': 'अभी कोई सूचना नहीं।',
+  'notices.new': 'नया',
+  'notices.attachmentFallback': 'अनुलग्नक',
 }
 
 const resources: Record<Language, Dict> = { en, hi }
