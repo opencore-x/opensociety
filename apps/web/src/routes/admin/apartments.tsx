@@ -78,7 +78,7 @@ function AddSingle() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label>BHK</Label>
+        <Label>{t('page.apartments.bhk')}</Label>
         <Select value={bhk} onValueChange={(v) => setBhk(v as BhkType)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="—" />
@@ -312,7 +312,7 @@ function ApartmentsPage() {
                   <TableHead>{t('common.tower')}</TableHead>
                   <TableHead>{t('page.apartments.number')}</TableHead>
                   <TableHead>{t('page.apartments.floor')}</TableHead>
-                  <TableHead>BHK</TableHead>
+                  <TableHead>{t('page.apartments.bhk')}</TableHead>
                   <TableHead>{t('common.status')}</TableHead>
                   <TableHead className="text-right">{t('common.actions')}</TableHead>
                 </TableRow>
