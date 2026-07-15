@@ -75,6 +75,29 @@ const en: Dict = {
   'gate.cameraNeeded': 'Camera access is needed to scan pre-approval QR codes.',
   'gate.grantCamera': 'Grant camera access',
   'gate.pointCamera': 'Point the camera at the pre-approval QR code',
+
+  // Sign in
+  'signIn.email': 'Email',
+  'signIn.password': 'Password',
+  'signIn.signingIn': 'Signing in…',
+  'signIn.mfaRequired': 'Additional verification (two-factor) is required for this account.',
+  'signIn.failed': 'Sign in failed',
+
+  // Guard duty
+  'duty.empty': 'No active guards.',
+  'duty.onDuty': 'ON DUTY',
+  'duty.off': 'OFF',
+  'duty.clockIn': 'Clock in',
+  'duty.clockOut': 'Clock out',
+
+  // Bills
+  'bills.loadError': 'Couldn’t load bills',
+  'bills.empty': 'No bills yet.',
+  'bills.oneTime': 'One-time',
+  'bills.due': 'due',
+  'bills.paid': 'Paid',
+  'bills.paymentHistory': 'Payment history',
+  'bills.noPayments': 'No payments yet.',
 }
 
 const hi: Dict = {
@@ -144,6 +167,29 @@ const hi: Dict = {
   'gate.cameraNeeded': 'पूर्व-अनुमति QR कोड स्कैन करने के लिए कैमरा एक्सेस आवश्यक है।',
   'gate.grantCamera': 'कैमरा एक्सेस दें',
   'gate.pointCamera': 'कैमरा को पूर्व-अनुमति QR कोड पर इंगित करें',
+
+  // Sign in
+  'signIn.email': 'ईमेल',
+  'signIn.password': 'पासवर्ड',
+  'signIn.signingIn': 'साइन इन हो रहा है…',
+  'signIn.mfaRequired': 'इस खाते के लिए अतिरिक्त सत्यापन (टू-फैक्टर) आवश्यक है।',
+  'signIn.failed': 'साइन इन विफल',
+
+  // Guard duty
+  'duty.empty': 'कोई सक्रिय गार्ड नहीं।',
+  'duty.onDuty': 'ड्यूटी पर',
+  'duty.off': 'बंद',
+  'duty.clockIn': 'क्लॉक इन',
+  'duty.clockOut': 'क्लॉक आउट',
+
+  // Bills
+  'bills.loadError': 'बिल लोड नहीं हो सके',
+  'bills.empty': 'अभी कोई बिल नहीं।',
+  'bills.oneTime': 'एकमुश्त',
+  'bills.due': 'देय',
+  'bills.paid': 'भुगतान किया',
+  'bills.paymentHistory': 'भुगतान इतिहास',
+  'bills.noPayments': 'अभी कोई भुगतान नहीं।',
 }
 
 const resources: Record<Language, Dict> = { en, hi }
