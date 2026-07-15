@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Notice } from '@opensociety/shared'
 import { noticeMatchesQuery } from '@opensociety/shared'
 import { apiClient } from '../api/client'
+import { useT } from '../lib/i18n'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
 import { cn } from '../lib/utils'
@@ -29,6 +30,7 @@ async function openAttachment(path: string) {
 }
 
 export default function Notices() {
+  const { t } = useT()
   const [search, setSearch] = useState('')
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['notices'], queryFn: () => apiClient.listNotices() })
 
@@ -49,7 +51,7 @@ export default function Notices() {
   if (isError)
     return (
       <View className="flex-1 items-center justify-center gap-1 bg-background">
-        <Text className="text-base font-semibold text-destructive">Couldn’t load notices</Text>
+        <Text className="text-base font-semibold text-destructive">{t('notices.loadError')}</Text>
         <Text className="text-sm text-muted-foreground">{String((error as Error)?.message ?? 'error')}</Text>
       </View>
     )
@@ -63,7 +65,7 @@ export default function Notices() {
       ListHeaderComponent={
         <Input
           className="mb-1"
-          placeholder="Search notices"
+          placeholder={t('notices.searchPlaceholder')}
           autoCorrect={false}
           value={search}
           onChangeText={setSearch}
@@ -71,7 +73,7 @@ export default function Notices() {
       }
       ListEmptyComponent={
         <Text className="text-sm text-muted-foreground">
-          {search ? 'No matching notices.' : 'No notices yet.'}
+          {search ? t('notices.noMatch') : t('notices.empty')}
         </Text>
       }
       renderItem={({ item }) => (
@@ -83,7 +85,7 @@ export default function Notices() {
             <Text className="flex-1 text-base font-semibold">{item.title}</Text>
             {item.read === false && (
               <Text className="overflow-hidden rounded-md bg-primary px-1.5 py-0.5 text-xs font-bold text-primary-foreground">
-                NEW
+                {t('notices.new')}
               </Text>
             )}
             <Text
@@ -104,7 +106,7 @@ export default function Notices() {
           <Text className="text-sm leading-5 text-foreground">{item.body}</Text>
           {item.attachmentUrl && (
             <Pressable className="self-start py-1" onPress={() => openAttachment(item.attachmentUrl!)}>
-              <Text className="text-sm font-semibold text-primary">📎 {item.attachmentName ?? 'Attachment'}</Text>
+              <Text className="text-sm font-semibold text-primary">📎 {item.attachmentName ?? t('notices.attachmentFallback')}</Text>
             </Pressable>
           )}
         </Pressable>

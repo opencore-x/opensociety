@@ -6,6 +6,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
+import { useT } from '../lib/i18n'
 import { OfflineBanner } from '../components/offline-banner'
 import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
@@ -16,6 +17,7 @@ import { Text } from '../components/ui/text'
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
 export default function Gate() {
   const qc = useQueryClient()
+  const { t } = useT()
   const { isOnline } = useSyncStatus()
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['visitors'],
@@ -54,7 +56,7 @@ export default function Gate() {
   if (isError && !data)
     return (
       <Centered>
-        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-base font-semibold text-destructive">{t('gate.apiUnreachable')}</Text>
         <Text className="text-sm text-muted-foreground">{String((error as Error)?.message ?? 'error')}</Text>
       </Centered>
     )
@@ -75,7 +77,7 @@ export default function Gate() {
           <View className="flex-row items-center gap-2">
             <Input
               className="flex-1 tracking-widest"
-              placeholder="Pre-approval code"
+              placeholder={t('gate.codePlaceholder')}
               autoCapitalize="characters"
               autoCorrect={false}
               value={code}
@@ -85,28 +87,23 @@ export default function Gate() {
               onPress={() => redeem.mutate(code.trim().toUpperCase())}
               disabled={redeem.isPending || code.trim().length === 0 || !isOnline}
             >
-              <Text>{redeem.isPending ? 'Redeeming…' : 'Redeem'}</Text>
+              <Text>{redeem.isPending ? t('gate.redeeming') : t('gate.redeem')}</Text>
             </Button>
           </View>
           <Button variant="outline" onPress={() => setScanning(true)} disabled={!isOnline}>
-            <Text>Scan QR code</Text>
+            <Text>{t('gate.scanQr')}</Text>
           </Button>
           {redeem.isError && (
-            <Text className="text-sm text-destructive">{String((redeem.error as Error)?.message ?? 'Invalid code')}</Text>
+            <Text className="text-sm text-destructive">{String((redeem.error as Error)?.message ?? t('gate.invalidCode'))}</Text>
           )}
-          {!isOnline && (
-            <Text className="text-sm text-muted-foreground">
-              Code redemption and check-in/out need a connection. You can still register visitors — they&apos;ll sync
-              when you reconnect.
-            </Text>
-          )}
+          {!isOnline && <Text className="text-sm text-muted-foreground">{t('gate.offlineNote')}</Text>}
           <Link href="/register" className="py-1 text-base font-semibold text-primary">
-            + Register visitor
+            + {t('nav.registerVisitor')}
           </Link>
         </View>
         </>
       }
-      ListEmptyComponent={<Text className="text-sm text-muted-foreground">No visitors at the gate.</Text>}
+      ListEmptyComponent={<Text className="text-sm text-muted-foreground">{t('gate.empty')}</Text>}
       renderItem={({ item }) => {
         const actions = availableVisitorActions(item.status)
         return (
@@ -123,12 +120,12 @@ export default function Gate() {
             <View className="flex-row gap-2">
               {actions.includes('checkin') && (
                 <Button onPress={() => checkIn.mutate(item.id)} disabled={busy || !isOnline}>
-                  <Text>Check in</Text>
+                  <Text>{t('common.checkIn')}</Text>
                 </Button>
               )}
               {actions.includes('checkout') && (
                 <Button variant="outline" onPress={() => checkOut.mutate(item.id)} disabled={busy || !isOnline}>
-                  <Text>Check out</Text>
+                  <Text>{t('common.checkOut')}</Text>
                 </Button>
               )}
             </View>
@@ -160,6 +157,7 @@ function QrScannerModal({
   onClose: () => void
   onScan: (code: string) => void
 }) {
+  const { t } = useT()
   const [permission, requestPermission] = useCameraPermissions()
   const handledRef = useRef(false)
 
@@ -172,17 +170,15 @@ function QrScannerModal({
       <View className="flex-1 items-center justify-center bg-black">
         {Platform.OS === 'web' ? (
           <View className="items-center gap-4 p-6">
-            <Text className="text-center text-base leading-6 text-white">
-              QR scanning uses the device camera. Open the app on a phone, or enter the code manually.
-            </Text>
+            <Text className="text-center text-base leading-6 text-white">{t('gate.qrWebHint')}</Text>
           </View>
         ) : !permission ? (
           <ActivityIndicator />
         ) : !permission.granted ? (
           <View className="items-center gap-4 p-6">
-            <Text className="text-center text-base leading-6 text-white">Camera access is needed to scan pre-approval QR codes.</Text>
+            <Text className="text-center text-base leading-6 text-white">{t('gate.cameraNeeded')}</Text>
             <Button onPress={requestPermission}>
-              <Text>Grant camera access</Text>
+              <Text>{t('gate.grantCamera')}</Text>
             </Button>
           </View>
         ) : (
@@ -199,13 +195,13 @@ function QrScannerModal({
               }}
             />
             <View className="absolute inset-x-0 bottom-[120px] items-center" pointerEvents="none">
-              <Text className="overflow-hidden rounded-md bg-black/50 px-3 py-2 text-sm text-white">Point the camera at the pre-approval QR code</Text>
+              <Text className="overflow-hidden rounded-md bg-black/50 px-3 py-2 text-sm text-white">{t('gate.pointCamera')}</Text>
             </View>
           </>
         )}
         <View className="absolute inset-x-6 bottom-10">
           <Button variant="outline" onPress={onClose}>
-            <Text>Cancel</Text>
+            <Text>{t('common.cancel')}</Text>
           </Button>
         </View>
       </View>

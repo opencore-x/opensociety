@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { availableVisitorActions } from '@opensociety/shared'
 import { apiClient } from '../api/client'
+import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
@@ -10,6 +11,7 @@ import { Text } from '../components/ui/text'
 
 export default function Visitors() {
   const qc = useQueryClient()
+  const { t } = useT()
   const [denyingId, setDenyingId] = useState<string | null>(null)
   const [reason, setReason] = useState('')
 
@@ -42,7 +44,7 @@ export default function Visitors() {
   if (isError)
     return (
       <Centered>
-        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-base font-semibold text-destructive">{t('gate.apiUnreachable')}</Text>
         <Text className="text-sm text-muted-foreground">
           {String((error as Error)?.message ?? 'error')}
         </Text>
@@ -54,7 +56,7 @@ export default function Visitors() {
       contentContainerClassName="gap-2 p-4"
       data={data ?? []}
       keyExtractor={(v) => v.id}
-      ListEmptyComponent={<Text className="text-sm text-muted-foreground">No visitors yet.</Text>}
+      ListEmptyComponent={<Text className="text-sm text-muted-foreground">{t('visitors.empty')}</Text>}
       renderItem={({ item }) => {
         const actions = availableVisitorActions(item.status)
         const denying = denyingId === item.id
@@ -74,12 +76,12 @@ export default function Visitors() {
               <View className="flex-row gap-2">
                 {actions.includes('approve') && (
                   <Button onPress={() => approve.mutate(item.id)} disabled={busy}>
-                    <Text>Approve</Text>
+                    <Text>{t('common.approve')}</Text>
                   </Button>
                 )}
                 {actions.includes('deny') && (
                   <Button variant="outline" onPress={() => setDenyingId(item.id)} disabled={busy}>
-                    <Text>Deny</Text>
+                    <Text>{t('common.deny')}</Text>
                   </Button>
                 )}
               </View>
@@ -88,7 +90,7 @@ export default function Visitors() {
             {denying && (
               <View className="gap-2">
                 <Input
-                  placeholder="Reason for denial"
+                  placeholder={t('visitors.denyReason')}
                   value={reason}
                   onChangeText={setReason}
                   autoFocus
@@ -99,7 +101,7 @@ export default function Visitors() {
                     onPress={() => deny.mutate({ id: item.id, reason })}
                     disabled={busy || !reason.trim()}
                   >
-                    <Text>{deny.isPending ? 'Denying…' : 'Confirm'}</Text>
+                    <Text>{deny.isPending ? t('visitors.denying') : t('common.confirm')}</Text>
                   </Button>
                   <Button
                     variant="outline"
@@ -109,7 +111,7 @@ export default function Visitors() {
                     }}
                     disabled={busy}
                   >
-                    <Text>Cancel</Text>
+                    <Text>{t('common.cancel')}</Text>
                   </Button>
                 </View>
               </View>

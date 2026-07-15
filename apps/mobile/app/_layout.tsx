@@ -10,6 +10,7 @@ import { setAuthTokenGetter } from '../api/client'
 import { queryClient, persistOptions } from '../lib/offline/query-client'
 import { setupOnlineManager } from '../lib/offline/network'
 import { registerOfflineMutationDefaults } from '../lib/offline/mutation-defaults'
+import { I18nProvider, useT } from '../lib/i18n'
 
 // Drive offline state from the device network and teach the client how to
 // replay queued writes after a restart. Module scope: runs once per app load,
@@ -31,21 +32,22 @@ function AuthBridge() {
 }
 
 function Nav() {
+  const { t } = useT()
   return (
     <Stack>
-      <Stack.Screen name="index" options={{ title: 'OpenSociety' }} />
-      <Stack.Screen name="sign-in" options={{ title: 'Sign in' }} />
-      <Stack.Screen name="visitors" options={{ title: 'Visitors' }} />
-      <Stack.Screen name="pre-approve" options={{ title: 'Pre-approve visitor' }} />
-      <Stack.Screen name="notices" options={{ title: 'Notices' }} />
-      <Stack.Screen name="tickets" options={{ title: 'Maintenance' }} />
-      <Stack.Screen name="gate" options={{ title: 'Gate' }} />
-      <Stack.Screen name="duty" options={{ title: 'Guard duty' }} />
-      <Stack.Screen name="register" options={{ title: 'Register visitor' }} />
-      <Stack.Screen name="house-help" options={{ title: 'House help' }} />
-      <Stack.Screen name="my-house-help" options={{ title: 'My house help' }} />
-      <Stack.Screen name="my-vehicles" options={{ title: 'My vehicles' }} />
-      <Stack.Screen name="bills" options={{ title: 'Bills' }} />
+      <Stack.Screen name="index" options={{ title: t('nav.appName') }} />
+      <Stack.Screen name="sign-in" options={{ title: t('nav.signIn') }} />
+      <Stack.Screen name="visitors" options={{ title: t('nav.visitors') }} />
+      <Stack.Screen name="pre-approve" options={{ title: t('nav.preApproveVisitor') }} />
+      <Stack.Screen name="notices" options={{ title: t('nav.notices') }} />
+      <Stack.Screen name="tickets" options={{ title: t('nav.maintenance') }} />
+      <Stack.Screen name="gate" options={{ title: t('nav.gate') }} />
+      <Stack.Screen name="duty" options={{ title: t('nav.guardDuty') }} />
+      <Stack.Screen name="register" options={{ title: t('nav.registerVisitor') }} />
+      <Stack.Screen name="house-help" options={{ title: t('nav.houseHelp') }} />
+      <Stack.Screen name="my-house-help" options={{ title: t('nav.myHouseHelp') }} />
+      <Stack.Screen name="my-vehicles" options={{ title: t('nav.myVehicles') }} />
+      <Stack.Screen name="bills" options={{ title: t('nav.bills') }} />
     </Stack>
   )
 }
@@ -61,7 +63,9 @@ export default function RootLayout() {
         queryClient.resumePausedMutations()
       }}
     >
-      <Nav />
+      <I18nProvider>
+        <Nav />
+      </I18nProvider>
     </PersistQueryClientProvider>
   )
   // Clerk is optional: without a publishable key the app runs on the dev

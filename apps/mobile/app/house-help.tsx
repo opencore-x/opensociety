@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { apiClient } from '../api/client'
+import { useT } from '../lib/i18n'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -12,6 +13,7 @@ import { Text } from '../components/ui/text'
 // matching action; an open attendance entry means "currently inside".
 export default function HouseHelp() {
   const qc = useQueryClient()
+  const { t } = useT()
   const help = useQuery({ queryKey: ['house-help'], queryFn: () => apiClient.listHouseHelp() })
   const openEntries = useQuery({
     queryKey: ['house-help-entries', 'active'],
@@ -55,7 +57,7 @@ export default function HouseHelp() {
   if (help.isError)
     return (
       <Centered>
-        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-base font-semibold text-destructive">{t('gate.apiUnreachable')}</Text>
         <Text className="text-sm text-muted-foreground">{String((help.error as Error)?.message ?? 'error')}</Text>
       </Centered>
     )
@@ -68,13 +70,13 @@ export default function HouseHelp() {
       ListHeaderComponent={
         <Input
           className="mb-1"
-          placeholder="Search house help by name"
+          placeholder={t('houseHelp.searchPlaceholder')}
           autoCorrect={false}
           value={search}
           onChangeText={setSearch}
         />
       }
-      ListEmptyComponent={<Text className="text-sm text-muted-foreground">No house help found.</Text>}
+      ListEmptyComponent={<Text className="text-sm text-muted-foreground">{t('houseHelp.empty')}</Text>}
       renderItem={({ item }) => {
         const openEntryId = openByHelp.get(item.id)
         const inside = openEntryId != null
@@ -91,17 +93,17 @@ export default function HouseHelp() {
                   inside ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'
                 )}
               >
-                {inside ? 'INSIDE' : 'OUT'}
+                {inside ? t('houseHelp.inside') : t('houseHelp.out')}
               </Text>
             </View>
             <View className="flex-row gap-2">
               {inside ? (
                 <Button variant="outline" onPress={() => checkOut.mutate(openEntryId)} disabled={busy}>
-                  <Text>Check out</Text>
+                  <Text>{t('common.checkOut')}</Text>
                 </Button>
               ) : (
                 <Button onPress={() => checkIn.mutate(item.id)} disabled={busy}>
-                  <Text>Check in</Text>
+                  <Text>{t('common.checkIn')}</Text>
                 </Button>
               )}
             </View>

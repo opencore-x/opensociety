@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { apiClient } from '../api/client'
+import { useT } from '../lib/i18n'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Text } from '../components/ui/text'
@@ -11,6 +12,7 @@ import { Text } from '../components/ui/text'
 // expo-location — added as a follow-up; the API accepts optional coords.)
 export default function Duty() {
   const qc = useQueryClient()
+  const { t } = useT()
   const guards = useQuery({ queryKey: ['guards'], queryFn: () => apiClient.listGuards() })
   const active = useQuery({ queryKey: ['duty-active'], queryFn: () => apiClient.listActiveDuty() })
 
@@ -39,7 +41,7 @@ export default function Duty() {
   if (guards.isError)
     return (
       <Centered>
-        <Text className="text-base font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-base font-semibold text-destructive">{t('gate.apiUnreachable')}</Text>
         <Text className="text-sm text-muted-foreground">{String((guards.error as Error)?.message ?? 'error')}</Text>
       </Centered>
     )
@@ -49,7 +51,7 @@ export default function Duty() {
       contentContainerClassName="gap-2 p-4"
       data={rows}
       keyExtractor={(g) => g.id}
-      ListEmptyComponent={<Text className="text-sm text-muted-foreground">No active guards.</Text>}
+      ListEmptyComponent={<Text className="text-sm text-muted-foreground">{t('duty.empty')}</Text>}
       renderItem={({ item }) => {
         const sessionId = sessionByGuard.get(item.id)
         const onDuty = sessionId != null
@@ -66,17 +68,17 @@ export default function Duty() {
                   onDuty ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'
                 )}
               >
-                {onDuty ? 'ON DUTY' : 'OFF'}
+                {onDuty ? t('duty.onDuty') : t('duty.off')}
               </Text>
             </View>
             <View className="flex-row gap-2">
               {onDuty ? (
                 <Button variant="outline" onPress={() => clockOut.mutate(sessionId!)} disabled={busy}>
-                  <Text>Clock out</Text>
+                  <Text>{t('duty.clockOut')}</Text>
                 </Button>
               ) : (
                 <Button onPress={() => clockIn.mutate(item.id)} disabled={busy}>
-                  <Text>Clock in</Text>
+                  <Text>{t('duty.clockIn')}</Text>
                 </Button>
               )}
             </View>

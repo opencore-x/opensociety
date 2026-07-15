@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native'
 import type { TicketCategory, TicketPriority, TicketStatus } from '@opensociety/shared'
 import { ticketCategorySchema, ticketPrioritySchema } from '@opensociety/shared'
 import { apiClient } from '../api/client'
+import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
@@ -20,6 +21,7 @@ const STATUS_COLOR: Record<TicketStatus, string> = {
 
 export default function Tickets() {
   const qc = useQueryClient()
+  const { t } = useT()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [apartmentId, setApartmentId] = useState<string | null>(null)
@@ -55,25 +57,25 @@ export default function Tickets() {
 
   return (
     <ScrollView className="bg-background" contentContainerClassName="gap-3.5 p-4">
-      <Text className="text-lg font-bold">Raise a ticket</Text>
+      <Text className="text-lg font-bold">{t('tickets.raiseTitle')}</Text>
 
-      <Field label="Title">
+      <Field label={t('common.title')}>
         <Input placeholder="e.g. Leaking tap" value={title} onChangeText={setTitle} />
       </Field>
-      <Field label="Description">
+      <Field label={t('common.description')}>
         <Input
           className="h-auto min-h-16 py-2"
-          placeholder="What needs fixing?"
+          placeholder={t('tickets.descPlaceholder')}
           value={description}
           onChangeText={setDescription}
           multiline
         />
       </Field>
-      <Field label="Apartment">
+      <Field label={t('common.apartment')}>
         {apartments.isLoading ? (
           <ActivityIndicator />
         ) : apartments.isError ? (
-          <Text className="text-sm text-destructive">Could not load apartments</Text>
+          <Text className="text-sm text-destructive">{t('register.loadError')}</Text>
         ) : (
           <View className="flex-row flex-wrap gap-2">
             {(apartments.data ?? []).map((a) => (
@@ -87,14 +89,14 @@ export default function Tickets() {
           </View>
         )}
       </Field>
-      <Field label="Category">
+      <Field label={t('common.category')}>
         <View className="flex-row flex-wrap gap-2">
           {ticketCategorySchema.options.map((c) => (
             <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />
           ))}
         </View>
       </Field>
-      <Field label="Priority">
+      <Field label={t('common.priority')}>
         <View className="flex-row flex-wrap gap-2">
           {ticketPrioritySchema.options.map((p) => (
             <Chip key={p} label={p} selected={priority === p} onPress={() => setPriority(p)} />
@@ -103,30 +105,30 @@ export default function Tickets() {
       </Field>
       <View className="mt-1 gap-2">
         <Button onPress={() => create.mutate()} disabled={!canSubmit}>
-          <Text>{create.isPending ? 'Submitting…' : 'Submit ticket'}</Text>
+          <Text>{create.isPending ? t('tickets.submitting') : t('tickets.submit')}</Text>
         </Button>
         {create.isError && (
           <Text className="text-sm text-destructive">
-            {String((create.error as Error)?.message ?? 'Failed')}
+            {String((create.error as Error)?.message ?? t('common.failed'))}
           </Text>
         )}
       </View>
 
-      <Text className="mt-3 text-lg font-bold">Your tickets</Text>
+      <Text className="mt-3 text-lg font-bold">{t('tickets.yourTickets')}</Text>
       {tickets.isLoading ? (
         <ActivityIndicator />
       ) : rows.length === 0 ? (
-        <Text className="text-sm text-muted-foreground">No tickets yet.</Text>
+        <Text className="text-sm text-muted-foreground">{t('tickets.empty')}</Text>
       ) : (
-        rows.map((t) => (
-          <View key={t.id} className="gap-1 rounded-xl border border-border bg-card p-3">
+        rows.map((ticket) => (
+          <View key={ticket.id} className="gap-1 rounded-xl border border-border bg-card p-3">
             <View className="flex-row items-center justify-between">
-              <Text className="shrink text-base font-semibold">{t.title}</Text>
-              <Text className={cn('text-xs font-bold', STATUS_COLOR[t.status])}>{t.status}</Text>
+              <Text className="shrink text-base font-semibold">{ticket.title}</Text>
+              <Text className={cn('text-xs font-bold', STATUS_COLOR[ticket.status])}>{ticket.status}</Text>
             </View>
-            <Text className="text-sm text-muted-foreground">{t.description}</Text>
+            <Text className="text-sm text-muted-foreground">{ticket.description}</Text>
             <Text className="mt-0.5 text-xs text-muted-foreground">
-              {t.category} · {t.priority}
+              {ticket.category} · {ticket.priority}
             </Text>
           </View>
         ))

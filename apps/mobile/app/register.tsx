@@ -8,6 +8,7 @@ import { apiClient } from '../api/client'
 import { CREATE_VISITOR_KEY } from '../lib/offline/mutation-defaults'
 import { newClientId } from '../lib/offline/optimistic'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
+import { useT } from '../lib/i18n'
 import { OfflineBanner } from '../components/offline-banner'
 import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
@@ -19,6 +20,7 @@ const TYPES = visitorTypeSchema.options
 
 export default function Register() {
   const router = useRouter()
+  const { t } = useT()
   const { isOnline } = useSyncStatus()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -56,32 +58,32 @@ export default function Register() {
     <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
       <OfflineBanner className="-mx-4 -mt-4 mb-0 rounded-none" />
       <SyncErrorTray />
-      <Field label="Visitor name">
+      <Field label={t('register.visitorName')}>
         <Input placeholder="e.g. Rahul" value={name} onChangeText={setName} autoFocus />
       </Field>
 
-      <Field label="Phone (optional)">
+      <Field label={t('register.phoneOptional')}>
         <Input
-          placeholder="10-digit number"
+          placeholder={t('register.phonePlaceholder')}
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
         />
       </Field>
 
-      <Field label="Type">
+      <Field label={t('common.type')}>
         <View className="flex-row flex-wrap gap-2">
-          {TYPES.map((t) => (
-            <Chip key={t} label={t} selected={type === t} onPress={() => setType(t)} />
+          {TYPES.map((opt) => (
+            <Chip key={opt} label={opt} selected={type === opt} onPress={() => setType(opt)} />
           ))}
         </View>
       </Field>
 
-      <Field label="Apartment">
+      <Field label={t('common.apartment')}>
         {apartments.isLoading ? (
           <ActivityIndicator />
         ) : apartments.isError ? (
-          <Text className="text-sm text-destructive">Could not load apartments</Text>
+          <Text className="text-sm text-destructive">{t('register.loadError')}</Text>
         ) : (
           <View className="flex-row flex-wrap gap-2">
             {(apartments.data ?? []).map((a) => (
@@ -98,16 +100,12 @@ export default function Register() {
 
       <View className="mt-1 gap-2">
         <Button onPress={submit} disabled={!canSubmit}>
-          <Text>{create.isPending ? 'Registering…' : 'Register visitor'}</Text>
+          <Text>{create.isPending ? t('register.registering') : t('nav.registerVisitor')}</Text>
         </Button>
-        {!isOnline && (
-          <Text className="text-sm text-muted-foreground">
-            You&apos;re offline — this visitor will be saved and synced when you reconnect.
-          </Text>
-        )}
+        {!isOnline && <Text className="text-sm text-muted-foreground">{t('register.offlineNote')}</Text>}
         {create.isError && (
           <Text className="text-sm text-destructive">
-            {String((create.error as Error)?.message ?? 'Failed')}
+            {String((create.error as Error)?.message ?? t('common.failed'))}
           </Text>
         )}
       </View>

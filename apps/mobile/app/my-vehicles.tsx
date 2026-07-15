@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native'
 import type { Apartment, CreateVehicle, VehicleType } from '@opensociety/shared'
 import { vehicleTypeSchema } from '@opensociety/shared'
 import { apiClient } from '../api/client'
+import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
@@ -13,6 +14,7 @@ import { cn } from '../lib/utils'
 // Resident view: register and manage the vehicles for their own flat(s).
 export default function MyVehicles() {
   const qc = useQueryClient()
+  const { t } = useT()
   const apts = useQuery({ queryKey: ['my-apartments'], queryFn: () => apiClient.listMyApartments() })
   const vehicles = useQuery({ queryKey: ['vehicles'], queryFn: () => apiClient.listVehicles() })
 
@@ -54,7 +56,7 @@ export default function MyVehicles() {
   if (apts.isError)
     return (
       <Centered>
-        <Text className="text-sm font-semibold text-destructive">API unreachable</Text>
+        <Text className="text-sm font-semibold text-destructive">{t('gate.apiUnreachable')}</Text>
         <Text className="text-sm text-muted-foreground">
           {String((apts.error as Error)?.message ?? 'error')}
         </Text>
@@ -63,7 +65,7 @@ export default function MyVehicles() {
   if (myApts.length === 0)
     return (
       <Centered>
-        <Text className="text-sm text-muted-foreground">You have no flats assigned yet.</Text>
+        <Text className="text-sm text-muted-foreground">{t('common.noFlats')}</Text>
       </Centered>
     )
 
@@ -72,7 +74,7 @@ export default function MyVehicles() {
   return (
     <ScrollView className="bg-background" contentContainerClassName="gap-5 p-4">
       <View className="gap-2.5">
-        <Text className="text-base font-bold">Register a vehicle</Text>
+        <Text className="text-base font-bold">{t('myVehicles.registerTitle')}</Text>
         {myApts.length > 1 && (
           <Chips
             options={myApts.map((a: Apartment) => ({ value: a.id, label: `${a.tower}-${a.apartmentNo}` }))}
@@ -81,31 +83,31 @@ export default function MyVehicles() {
           />
         )}
         <Input
-          placeholder="Reg. number (KA 01 AB 1234)"
+          placeholder={t('myVehicles.regPlaceholder')}
           autoCapitalize="characters"
           autoCorrect={false}
           value={registrationNumber}
           onChangeText={setRegistrationNumber}
         />
         <Chips
-          options={vehicleTypeSchema.options.map((t) => ({ value: t, label: t }))}
+          options={vehicleTypeSchema.options.map((opt) => ({ value: opt, label: opt }))}
           selected={type}
           onSelect={(v) => setType(v as VehicleType)}
         />
         <Button onPress={() => add.mutate()} disabled={!canAdd}>
-          <Text>{add.isPending ? 'Adding…' : 'Add vehicle'}</Text>
+          <Text>{add.isPending ? t('myVehicles.adding') : t('myVehicles.add')}</Text>
         </Button>
         {add.isError && (
           <Text className="text-sm text-destructive">
-            {String((add.error as Error)?.message ?? 'Failed')}
+            {String((add.error as Error)?.message ?? t('common.failed'))}
           </Text>
         )}
       </View>
 
       <View className="gap-2.5">
-        <Text className="text-base font-bold">My vehicles</Text>
+        <Text className="text-base font-bold">{t('nav.myVehicles')}</Text>
         {(vehicles.data ?? []).length === 0 && (
-          <Text className="text-sm text-muted-foreground">No vehicles registered yet.</Text>
+          <Text className="text-sm text-muted-foreground">{t('myVehicles.empty')}</Text>
         )}
         {(vehicles.data ?? []).map((v) => (
           <View
@@ -123,7 +125,7 @@ export default function MyVehicles() {
               onPress={() => toggle.mutate({ id: v.id, isActive: v.isActive })}
               disabled={toggle.isPending}
             >
-              <Text>{v.isActive ? 'Deactivate' : 'Activate'}</Text>
+              <Text>{v.isActive ? t('common.deactivate') : t('common.activate')}</Text>
             </Button>
           </View>
         ))}
