@@ -45,17 +45,18 @@ function HourChart({ byHour }: { byHour: HourCount[] }) {
 }
 
 function TypeBars({ byType }: { byType: TypeCount[] }) {
-  const max = Math.max(1, ...byType.map((t) => t.count))
-  if (byType.length === 0) return <p className="text-muted-foreground text-sm">No visitors in this range.</p>
+  const { t } = useT()
+  const max = Math.max(1, ...byType.map((b) => b.count))
+  if (byType.length === 0) return <p className="text-muted-foreground text-sm">{t('page.analytics.noVisitorsRange')}</p>
   return (
     <div className="space-y-3">
-      {byType.map((t) => (
-        <div key={t.type} className="flex items-center gap-3">
-          <span className="w-24 text-sm font-medium">{t.type}</span>
+      {byType.map((b) => (
+        <div key={b.type} className="flex items-center gap-3">
+          <span className="w-24 text-sm font-medium">{b.type}</span>
           <div className="bg-muted h-3 flex-1 overflow-hidden rounded">
-            <div className="bg-primary h-3 rounded" style={{ width: `${(t.count / max) * 100}%` }} />
+            <div className="bg-primary h-3 rounded" style={{ width: `${(b.count / max) * 100}%` }} />
           </div>
-          <span className="text-muted-foreground w-10 text-right text-sm">{t.count}</span>
+          <span className="text-muted-foreground w-10 text-right text-sm">{b.count}</span>
         </div>
       ))}
     </div>
@@ -102,6 +103,7 @@ function DowChart({ rows }: { rows: DowCount[] }) {
 }
 
 function OpsSection() {
+  const { t } = useT()
   const help = useQuery({ queryKey: ['house-help-analytics'], queryFn: apiClient.getHouseHelpAnalytics })
   const maint = useQuery({ queryKey: ['maintenance-analytics'], queryFn: apiClient.getMaintenanceAnalytics })
 
@@ -110,19 +112,23 @@ function OpsSection() {
       {help.data && (
         <Card>
           <CardHeader>
-            <CardTitle>House help</CardTitle>
+            <CardTitle>{t('nav.houseHelp')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-wrap gap-10">
-              <Stat label="Active help" value={String(help.data.totalActive)} />
-              <Stat label="Total visits logged" value={String(help.data.totalAttendance)} />
+              <Stat label={t('page.analytics.activeHelp')} value={String(help.data.totalActive)} />
+              <Stat label={t('page.analytics.totalVisitsLogged')} value={String(help.data.totalAttendance)} />
             </div>
             <div>
-              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">Most employed types</p>
-              <LabelBars rows={help.data.byType} empty="No house help registered." />
+              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">
+                {t('page.analytics.mostEmployedTypes')}
+              </p>
+              <LabelBars rows={help.data.byType} empty={t('page.analytics.noHelpRegistered')} />
             </div>
             <div>
-              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">Attendance by day (IST)</p>
+              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">
+                {t('page.analytics.attendanceByDay')}
+              </p>
               <DowChart rows={help.data.attendanceByDow} />
             </div>
           </CardContent>
@@ -132,24 +138,26 @@ function OpsSection() {
       {maint.data && (
         <Card>
           <CardHeader>
-            <CardTitle>Maintenance tickets</CardTitle>
+            <CardTitle>{t('page.tickets.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-wrap gap-10">
-              <Stat label="Total tickets" value={String(maint.data.total)} />
-              <Stat label="Pending" value={String(maint.data.pending)} />
+              <Stat label={t('page.analytics.totalTickets')} value={String(maint.data.total)} />
+              <Stat label={t('page.analytics.pending')} value={String(maint.data.pending)} />
               <Stat
-                label="Avg resolution"
+                label={t('page.analytics.avgResolution')}
                 value={maint.data.avgResolutionHours === null ? '—' : `${maint.data.avgResolutionHours}h`}
               />
             </div>
             <div>
-              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">By category</p>
-              <LabelBars rows={maint.data.byCategory} empty="No tickets yet." />
+              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">
+                {t('page.analytics.byCategory')}
+              </p>
+              <LabelBars rows={maint.data.byCategory} empty={t('page.analytics.noTicketsYet')} />
             </div>
             <div>
-              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">By status</p>
-              <LabelBars rows={maint.data.byStatus} empty="No tickets yet." />
+              <p className="text-muted-foreground mb-3 text-xs font-medium uppercase">{t('page.analytics.byStatus')}</p>
+              <LabelBars rows={maint.data.byStatus} empty={t('page.analytics.noTicketsYet')} />
             </div>
           </CardContent>
         </Card>
@@ -186,11 +194,11 @@ function AnalyticsPage() {
       <Card>
         <CardContent className="flex flex-wrap items-end gap-4 pt-6">
           <div className="space-y-1.5">
-            <Label htmlFor="from">From</Label>
+            <Label htmlFor="from">{t('common.from')}</Label>
             <Input id="from" type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="to">To</Label>
+            <Label htmlFor="to">{t('common.to')}</Label>
             <Input id="to" type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           {(from || to) && (
@@ -201,7 +209,7 @@ function AnalyticsPage() {
                 setTo('')
               }}
             >
-              Reset
+              {t('common.reset')}
             </Button>
           )}
           <div className="ml-auto flex gap-2">
@@ -229,19 +237,19 @@ function AnalyticsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-10">
-                <Stat label="Total visitors" value={String(trends.data.total)} />
-                <Stat label="Avg / active day" value={String(trends.data.avgPerDay)} />
+                <Stat label={t('page.analytics.totalVisitors')} value={String(trends.data.total)} />
+                <Stat label={t('page.analytics.avgPerActiveDay')} value={String(trends.data.avgPerDay)} />
                 <Stat
-                  label="Peak hour"
+                  label={t('page.analytics.peakHour')}
                   value={trends.data.peakHour === null ? '—' : hourLabel(trends.data.peakHour)}
                 />
-                <Stat label="Active days" value={String(trends.data.distinctDays)} />
+                <Stat label={t('page.analytics.activeDays')} value={String(trends.data.distinctDays)} />
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Entries by hour (IST)</CardTitle>
+                <CardTitle>{t('page.analytics.entriesByHour')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <HourChart byHour={trends.data.byHour} />
@@ -250,7 +258,7 @@ function AnalyticsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Visitor type breakdown</CardTitle>
+                <CardTitle>{t('page.analytics.visitorTypeBreakdown')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <TypeBars byType={trends.data.byType} />
