@@ -45,6 +45,7 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'outline'> = {
 }
 
 function AddSlot() {
+  const { t } = useT()
   const qc = useQueryClient()
   const [slotNumber, setSlotNumber] = useState('')
   const [type, setType] = useState<ParkingSlotType>('OPEN')
@@ -72,7 +73,7 @@ function AddSlot() {
       }}
     >
       <div className="space-y-1.5">
-        <Label htmlFor="slot-no">Slot number</Label>
+        <Label htmlFor="slot-no">{t('page.parking.slotNumber')}</Label>
         <Input
           id="slot-no"
           className="w-40"
@@ -82,15 +83,15 @@ function AddSlot() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label>Type</Label>
+        <Label>{t('common.type')}</Label>
         <Select value={type} onValueChange={(v) => setType(v as ParkingSlotType)}>
           <SelectTrigger className="w-32">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {parkingSlotTypeSchema.options.map((t) => (
-              <SelectItem key={t} value={t}>
-                {t}
+            {parkingSlotTypeSchema.options.map((opt) => (
+              <SelectItem key={opt} value={opt}>
+                {opt}
               </SelectItem>
             ))}
           </SelectContent>
@@ -98,10 +99,10 @@ function AddSlot() {
       </div>
       <label className="text-muted-foreground flex items-center gap-1.5 pb-2 text-sm">
         <input type="checkbox" checked={isVisitor} onChange={(e) => setIsVisitor(e.target.checked)} />
-        Visitor slot
+        {t('page.parking.visitorSlot')}
       </label>
       <Button type="submit" disabled={!canSubmit}>
-        {create.isPending ? 'Adding…' : 'Add slot'}
+        {create.isPending ? t('common.adding') : t('page.parking.addSlot')}
       </Button>
       {create.isError && <p className="text-destructive w-full text-sm">{(create.error as Error).message}</p>}
     </form>
@@ -109,6 +110,7 @@ function AddSlot() {
 }
 
 function VisitorParkingCard() {
+  const { t } = useT()
   const q = useQuery({ queryKey: ['visitor-parking'], queryFn: apiClient.listVisitorParking })
   const summary = q.data?.summary
   const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString(undefined, { timeStyle: 'short' }) : '—')
@@ -117,9 +119,11 @@ function VisitorParkingCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
-          Visitor parking
+          {t('page.parking.visitorParking')}
           {summary?.isFull && (
-            <Badge variant="destructive">Full — {summary.occupied}/{summary.total}</Badge>
+            <Badge variant="destructive">
+              {t('page.parking.full')} — {summary.occupied}/{summary.total}
+            </Badge>
           )}
         </CardTitle>
       </CardHeader>
@@ -127,21 +131,22 @@ function VisitorParkingCard() {
         <QueryState
           q={q}
           empty={q.isSuccess && (q.data?.slots.length ?? 0) === 0}
-          emptyText="No visitor slots yet. Add one above with 'Visitor slot' ticked."
+          emptyText={t('page.parking.visitorEmpty')}
         >
           {summary && (
             <p className="text-muted-foreground mb-4 text-sm">
-              {summary.available} of {summary.total} free · {summary.occupied} occupied
+              {summary.available} / {summary.total} {t('page.parking.free')} · {summary.occupied}{' '}
+              {t('page.parking.occupied')}
             </p>
           )}
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Slot</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Visitor</TableHead>
-                <TableHead>Vehicle</TableHead>
-                <TableHead>Since</TableHead>
+                <TableHead>{t('page.parking.slot')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
+                <TableHead>{t('common.visitor')}</TableHead>
+                <TableHead>{t('page.parking.vehicle')}</TableHead>
+                <TableHead>{t('common.since')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -150,7 +155,7 @@ function VisitorParkingCard() {
                   <TableCell className="font-mono font-medium">{s.slotNumber}</TableCell>
                   <TableCell>
                     <Badge variant={s.occupiedByEntryId ? 'default' : 'outline'}>
-                      {s.occupiedByEntryId ? 'Occupied' : 'Free'}
+                      {s.occupiedByEntryId ? t('page.parking.occupiedBadge') : t('page.parking.freeBadge')}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{s.visitorName ?? '—'}</TableCell>
@@ -167,6 +172,7 @@ function VisitorParkingCard() {
 }
 
 function AssignControls({ slot, apartments }: { slot: ParkingSlotRow; apartments: Apartment[] }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [apartmentId, setApartmentId] = useState('')
   const [temporary, setTemporary] = useState(false)
@@ -197,7 +203,7 @@ function AssignControls({ slot, apartments }: { slot: ParkingSlotRow; apartments
   if (slot.apartmentId) {
     return (
       <Button size="sm" variant="ghost" disabled={release.isPending} onClick={() => release.mutate()}>
-        {release.isPending ? '…' : 'Release'}
+        {release.isPending ? '…' : t('common.release')}
       </Button>
     )
   }
@@ -206,7 +212,7 @@ function AssignControls({ slot, apartments }: { slot: ParkingSlotRow; apartments
     <div className="flex flex-wrap items-center justify-end gap-2">
       <Select value={apartmentId} onValueChange={setApartmentId}>
         <SelectTrigger className="h-8 w-28">
-          <SelectValue placeholder="Flat" />
+          <SelectValue placeholder={t('common.flat')} />
         </SelectTrigger>
         <SelectContent>
           {apartments.map((a) => (
@@ -218,21 +224,28 @@ function AssignControls({ slot, apartments }: { slot: ParkingSlotRow; apartments
       </Select>
       <label className="text-muted-foreground flex items-center gap-1 text-xs">
         <input type="checkbox" checked={temporary} onChange={(e) => setTemporary(e.target.checked)} />
-        Temp
+        {t('page.parking.temp')}
       </label>
       {temporary && (
         <Input type="date" className="h-8 w-36" value={until} onChange={(e) => setUntil(e.target.value)} />
       )}
       <Button size="sm" disabled={!canAssign} onClick={() => assign.mutate()}>
-        {assign.isPending ? '…' : 'Assign'}
+        {assign.isPending ? '…' : t('common.assign')}
       </Button>
     </div>
   )
 }
 
 function SlotRow({ slot, apartments }: { slot: ParkingSlotRow; apartments: Apartment[] }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const status = statusOf(slot)
+  const statusLabel: Record<string, string> = {
+    AVAILABLE: t('page.parking.available'),
+    ASSIGNED: t('page.parking.assigned'),
+    TEMPORARY: t('page.parking.temporary'),
+    INACTIVE: t('common.inactive'),
+  }
   const toggleActive = useMutation({
     mutationFn: () => apiClient.updateParkingSlot(slot.id, { isActive: !slot.isActive }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['parking-slots'] }),
@@ -248,9 +261,11 @@ function SlotRow({ slot, apartments }: { slot: ParkingSlotRow; apartments: Apart
       </TableCell>
       <TableCell className="text-muted-foreground">{slot.apartment ?? '—'}</TableCell>
       <TableCell>
-        <Badge variant={STATUS_VARIANT[status]}>{status}</Badge>
+        <Badge variant={STATUS_VARIANT[status]}>{statusLabel[status] ?? status}</Badge>
         {slot.isTemporary && slot.assignedUntil && (
-          <span className="text-muted-foreground ml-1 text-xs">till {fmtDate(slot.assignedUntil)}</span>
+          <span className="text-muted-foreground ml-1 text-xs">
+            {t('page.parking.till')} {fmtDate(slot.assignedUntil)}
+          </span>
         )}
       </TableCell>
       <TableCell className="text-right">
@@ -262,7 +277,7 @@ function SlotRow({ slot, apartments }: { slot: ParkingSlotRow; apartments: Apart
             disabled={toggleActive.isPending}
             onClick={() => toggleActive.mutate()}
           >
-            {toggleActive.isPending ? '…' : slot.isActive ? 'Deactivate' : 'Activate'}
+            {toggleActive.isPending ? '…' : slot.isActive ? t('common.deactivate') : t('common.activate')}
           </Button>
         </div>
       </TableCell>
@@ -271,6 +286,7 @@ function SlotRow({ slot, apartments }: { slot: ParkingSlotRow; apartments: Apart
 }
 
 function SummaryCard({ summary }: { summary: ParkingSummary }) {
+  const { t } = useT()
   const stat = (label: string, value: number) => (
     <div className="flex flex-col">
       <span className="text-2xl font-semibold">{value}</span>
@@ -280,12 +296,12 @@ function SummaryCard({ summary }: { summary: ParkingSummary }) {
   return (
     <Card>
       <CardContent className="flex flex-wrap gap-8 pt-6">
-        {stat('Total', summary.total)}
-        {stat('Available', summary.available)}
-        {stat('Assigned', summary.assigned)}
-        {stat('Temporary', summary.temporary)}
-        {stat('Covered', summary.covered)}
-        {stat('Open', summary.open)}
+        {stat(t('common.total'), summary.total)}
+        {stat(t('page.parking.available'), summary.available)}
+        {stat(t('page.parking.assigned'), summary.assigned)}
+        {stat(t('page.parking.temporary'), summary.temporary)}
+        {stat(t('page.parking.covered'), summary.covered)}
+        {stat(t('page.parking.open'), summary.open)}
       </CardContent>
     </Card>
   )
@@ -320,7 +336,7 @@ function ParkingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Add slot</CardTitle>
+          <CardTitle>{t('page.parking.addSlot')}</CardTitle>
         </CardHeader>
         <CardContent>
           <AddSlot />
@@ -331,22 +347,22 @@ function ParkingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Resident slots</CardTitle>
+          <CardTitle>{t('page.parking.residentSlots')}</CardTitle>
         </CardHeader>
         <CardContent>
           <QueryState
             q={slots}
             empty={slots.isSuccess && slots.data?.length === 0}
-            emptyText="No resident parking slots yet. Add one above."
+            emptyText={t('page.parking.empty')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Slot</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Flat</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('page.parking.slot')}</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
+                  <TableHead>{t('common.flat')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-right">{t('common.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
