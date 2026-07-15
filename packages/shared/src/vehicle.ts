@@ -31,6 +31,26 @@ export const updateVehicleSchema = z.object({
   isActive: z.boolean().optional(),
 })
 
+// Gate vehicle verification result (GET /vehicles/verify?plate=): whether an
+// arriving plate matches a registered vehicle, plus the owner flat + its slots.
+export const vehicleVerificationSchema = z.object({
+  plate: z.string(),
+  registered: z.boolean(),
+  vehicle: z
+    .object({
+      id: z.string().uuid(),
+      registrationNumber: z.string(),
+      type: vehicleTypeSchema,
+      make: z.string().nullable(),
+      color: z.string().nullable(),
+      isActive: z.boolean(),
+      apartment: z.string(),
+    })
+    .nullable(),
+  parkingSlots: z.array(z.object({ slotNumber: z.string(), type: z.string() })),
+})
+export type VehicleVerification = z.infer<typeof vehicleVerificationSchema>
+
 // Canonical plate form for storage/matching: upper-case, no spaces or hyphens.
 export function normalizePlate(input: string): string {
   return input.toUpperCase().replace(/[\s-]/g, '')

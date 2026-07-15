@@ -18,6 +18,7 @@ import type {
   Vehicle,
   CreateVehicle,
   UpdateVehicle,
+  VehicleVerification,
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
@@ -140,6 +141,8 @@ export const apiClient = {
     api<Vehicle>('/vehicles', { method: 'POST', body: JSON.stringify(body) }, userId),
   updateVehicle: (id: string, body: UpdateVehicle, userId?: string) =>
     api<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(body) }, userId),
+  verifyVehicle: (plate: string) =>
+    api<VehicleVerification>(`/vehicles/verify?plate=${encodeURIComponent(plate)}`),
   listGuards: () => api<Guard[]>('/guards'),
   listActiveDuty: () => api<GuardDutySession[]>('/guards/duty/active'),
   clockInGuard: (guardId: string, coords?: { lat?: number; lng?: number }, userId?: string) =>
