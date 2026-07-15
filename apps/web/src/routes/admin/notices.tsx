@@ -31,6 +31,7 @@ function formatDate(iso: string | null): string {
 }
 
 function AttachmentLink({ url, name }: { url: string; name: string }) {
+  const { t } = useT()
   const [busy, setBusy] = useState(false)
   const open = async () => {
     setBusy(true)
@@ -43,13 +44,14 @@ function AttachmentLink({ url, name }: { url: string; name: string }) {
   }
   return (
     <Button variant="outline" size="sm" onClick={open} disabled={busy}>
-      📎 {busy ? 'Opening…' : name}
+      📎 {busy ? t('page.notices.opening') : name}
     </Button>
   )
 }
 
 // Engagement: a read count that expands to show who has read the notice.
 function ReadReceipts({ noticeId, readCount }: { noticeId: string; readCount: number }) {
+  const { t } = useT()
   const [open, setOpen] = useState(false)
   const reads = useQuery({
     queryKey: ['notice-reads', noticeId],
@@ -59,12 +61,12 @@ function ReadReceipts({ noticeId, readCount }: { noticeId: string; readCount: nu
   return (
     <div className="mt-2">
       <Button variant="ghost" size="sm" onClick={() => setOpen((s) => !s)}>
-        👁 {readCount} read{readCount === 1 ? '' : 's'}
+        👁 {readCount} {readCount === 1 ? t('page.notices.readOne') : t('page.notices.readMany')}
       </Button>
       {open && (
         <div className="text-muted-foreground mt-1 space-y-0.5 text-xs">
-          {reads.isLoading && <p>Loading…</p>}
-          {reads.isSuccess && reads.data.length === 0 && <p>No one has read this yet.</p>}
+          {reads.isLoading && <p>{t('common.loading')}</p>}
+          {reads.isSuccess && reads.data.length === 0 && <p>{t('page.notices.noOneRead')}</p>}
           {reads.data?.map((r) => (
             <div key={r.userId}>
               {r.name ?? r.userId} · {formatDate(r.readAt)}
@@ -77,6 +79,7 @@ function ReadReceipts({ noticeId, readCount }: { noticeId: string; readCount: nu
 }
 
 function CreateNoticeForm() {
+  const { t } = useT()
   const qc = useQueryClient()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -137,22 +140,27 @@ function CreateNoticeForm() {
       }}
     >
       <div className="space-y-1.5">
-        <Label htmlFor="n-title">Title</Label>
-        <Input id="n-title" placeholder="Water supply interruption" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Label htmlFor="n-title">{t('common.title')}</Label>
+        <Input
+          id="n-title"
+          placeholder={t('page.notices.titlePlaceholder')}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="n-body">Message</Label>
+        <Label htmlFor="n-body">{t('page.notices.message')}</Label>
         <Textarea
           id="n-body"
           rows={4}
-          placeholder="Details of the announcement…"
+          placeholder={t('page.notices.bodyPlaceholder')}
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
       </div>
       <div className="flex flex-wrap items-end gap-4">
         <div className="space-y-1.5">
-          <Label>Category</Label>
+          <Label>{t('common.category')}</Label>
           <Select value={category} onValueChange={(v) => setCategory(v as NoticeCategory)}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -167,7 +175,7 @@ function CreateNoticeForm() {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label>Priority</Label>
+          <Label>{t('common.priority')}</Label>
           <Select value={priority} onValueChange={(v) => setPriority(v as NoticePriority)}>
             <SelectTrigger className="w-36">
               <SelectValue />
@@ -182,7 +190,7 @@ function CreateNoticeForm() {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="n-exp">Expires (optional)</Label>
+          <Label htmlFor="n-exp">{t('page.notices.expires')}</Label>
           <Input
             id="n-exp"
             type="datetime-local"
@@ -193,10 +201,10 @@ function CreateNoticeForm() {
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="n-file">Attachment (PDF/image, optional)</Label>
+        <Label htmlFor="n-file">{t('page.notices.attachment')}</Label>
         <div className="flex items-center gap-3">
           <Input id="n-file" type="file" accept="image/*,application/pdf" onChange={onFile} className="w-72" disabled={uploading} />
-          {uploading && <span className="text-muted-foreground text-sm">Uploading…</span>}
+          {uploading && <span className="text-muted-foreground text-sm">{t('page.notices.uploading')}</span>}
           {attachment && (
             <span className="flex items-center gap-2 text-sm">
               📎 {attachment.name}
@@ -209,9 +217,9 @@ function CreateNoticeForm() {
         {uploadError && <p className="text-destructive text-sm">{uploadError}</p>}
       </div>
       <Button type="submit" disabled={mutation.isPending || uploading || !title.trim() || !body.trim()}>
-        {mutation.isPending ? 'Publishing…' : 'Publish notice'}
+        {mutation.isPending ? t('page.notices.publishing') : t('page.notices.publish')}
       </Button>
-      {mutation.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Published ✓</p>}
+      {mutation.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">{t('page.notices.published')}</p>}
       {mutation.isError && <p className="text-destructive text-sm">{(mutation.error as Error).message}</p>}
     </form>
   )
@@ -234,7 +242,7 @@ function NoticesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>New notice</CardTitle>
+          <CardTitle>{t('page.notices.newTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <CreateNoticeForm />
@@ -243,28 +251,28 @@ function NoticesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Archive</CardTitle>
+          <CardTitle>{t('page.notices.archive')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="n-search">Search</Label>
+              <Label htmlFor="n-search">{t('page.notices.search')}</Label>
               <Input
                 id="n-search"
                 className="w-64"
-                placeholder="Keyword in title or message"
+                placeholder={t('page.notices.searchPlaceholder')}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label>{t('common.category')}</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ALL}>All categories</SelectItem>
+                  <SelectItem value={ALL}>{t('page.notices.allCategories')}</SelectItem>
                   {noticeCategorySchema.options.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
@@ -275,7 +283,7 @@ function NoticesPage() {
             </div>
           </div>
 
-          <QueryState q={notices} empty={notices.isSuccess && notices.data?.length === 0} emptyText="No notices match.">
+          <QueryState q={notices} empty={notices.isSuccess && notices.data?.length === 0} emptyText={t('page.notices.noMatch')}>
             <div className="space-y-3">
               {notices.data?.map((n) => (
                 <Card key={n.id}>
@@ -292,12 +300,12 @@ function NoticesPage() {
                     <p className="text-muted-foreground text-sm whitespace-pre-wrap">{n.body}</p>
                     {n.attachmentUrl && (
                       <div className="mt-3">
-                        <AttachmentLink url={n.attachmentUrl} name={n.attachmentName ?? 'Attachment'} />
+                        <AttachmentLink url={n.attachmentUrl} name={n.attachmentName ?? t('page.notices.attachmentFallback')} />
                       </div>
                     )}
                     <p className="text-muted-foreground mt-3 text-xs">
-                      Published {formatDate(n.publishedAt)}
-                      {n.expiresAt ? ` · expires ${formatDate(n.expiresAt)}` : ''}
+                      {t('page.notices.publishedAt')} {formatDate(n.publishedAt)}
+                      {n.expiresAt ? ` · ${t('page.notices.expiresAt')} ${formatDate(n.expiresAt)}` : ''}
                     </p>
                     <ReadReceipts noticeId={n.id} readCount={n.readCount ?? 0} />
                   </CardContent>

@@ -42,6 +42,7 @@ function formatTime(iso: string | null): string {
 }
 
 function DenyPanel({ entry, onDone }: { entry: VisitorEntry; onDone: () => void }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [reason, setReason] = useState('')
   const mutation = useMutation({
@@ -54,16 +55,16 @@ function DenyPanel({ entry, onDone }: { entry: VisitorEntry; onDone: () => void 
   return (
     <div className="bg-muted/40 flex flex-wrap items-center gap-3 rounded-md p-3">
       <Input
-        placeholder="Reason for denial"
+        placeholder={t('page.visitors.denyReason')}
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         className="max-w-xs"
       />
       <Button variant="destructive" disabled={!reason.trim() || mutation.isPending} onClick={() => mutation.mutate()}>
-        {mutation.isPending ? 'Denying…' : 'Confirm deny'}
+        {mutation.isPending ? t('page.visitors.denying') : t('page.visitors.confirmDeny')}
       </Button>
       <Button variant="ghost" onClick={onDone}>
-        Cancel
+        {t('common.cancel')}
       </Button>
       {mutation.isError && <p className="text-destructive w-full text-xs">{(mutation.error as Error).message}</p>}
     </div>
@@ -119,12 +120,12 @@ function VisitorsPage() {
     <div>
       <PageHeader
         title={t('page.visitors.title')}
-        description={`${visitors.data?.length ?? 0} total entries`}
+        description={`${visitors.data?.length ?? 0} ${t('page.visitors.totalEntries')}`}
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
         <Button size="sm" variant={filter === 'ALL' ? 'default' : 'outline'} onClick={() => setFilter('ALL')}>
-          All ({visitors.data?.length ?? 0})
+          {t('common.all')} ({visitors.data?.length ?? 0})
         </Button>
         {ALL_STATUSES.map((s) => (
           <Button key={s} size="sm" variant={filter === s ? 'default' : 'outline'} onClick={() => setFilter(s)}>
@@ -138,18 +139,18 @@ function VisitorsPage() {
           <QueryState
             q={visitors}
             empty={visitors.isSuccess && rows.length === 0}
-            emptyText="No visitor entries in this view."
+            emptyText={t('page.visitors.empty')}
           >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Visitor</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Apartment</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Checked in</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('common.visitor')}</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
+                  <TableHead>{t('common.apartment')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead>{t('common.created')}</TableHead>
+                  <TableHead>{t('common.checkedIn')}</TableHead>
+                  <TableHead className="text-right">{t('common.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -177,7 +178,7 @@ function VisitorsPage() {
                                 <TransitionButton
                                   key={action}
                                   entry={v}
-                                  label="Approve"
+                                  label={t('common.approve')}
                                   mutationFn={apiClient.approveVisitor}
                                 />
                               )
@@ -186,7 +187,7 @@ function VisitorsPage() {
                                 <TransitionButton
                                   key={action}
                                   entry={v}
-                                  label="Check in"
+                                  label={t('common.checkIn')}
                                   mutationFn={apiClient.checkInVisitor}
                                 />
                               )
@@ -195,7 +196,7 @@ function VisitorsPage() {
                                 <TransitionButton
                                   key={action}
                                   entry={v}
-                                  label="Check out"
+                                  label={t('common.checkOut')}
                                   variant="outline"
                                   mutationFn={apiClient.checkOutVisitor}
                                 />
@@ -208,7 +209,7 @@ function VisitorsPage() {
                                   variant="outline"
                                   onClick={() => setDenying(denying === v.id ? null : v.id)}
                                 >
-                                  {denying === v.id ? 'Close' : 'Deny'}
+                                  {denying === v.id ? t('common.close') : t('page.visitors.deny')}
                                 </Button>
                               )
                             return null

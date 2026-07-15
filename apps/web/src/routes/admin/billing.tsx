@@ -28,6 +28,7 @@ const rupeesToPaise = (r: string) => Math.round((parseFloat(r) || 0) * 100)
 type LineDraft = { description: string; amount: string; taxRatePct: string }
 
 function GenerateBillsForm() {
+  const { t } = useT()
   const qc = useQueryClient()
   const [period, setPeriod] = useState('')
   const [title, setTitle] = useState('')
@@ -65,21 +66,21 @@ function GenerateBillsForm() {
     >
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="b-period">Period (YYYY-MM)</Label>
+          <Label htmlFor="b-period">{t('page.billing.period')}</Label>
           <Input id="b-period" className="w-36" placeholder="2026-07" value={period} onChange={(e) => setPeriod(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="b-title">Title</Label>
+          <Label htmlFor="b-title">{t('common.title')}</Label>
           <Input id="b-title" className="w-64" placeholder="Maintenance — Jul 2026" value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label>Line items</Label>
+        <Label>{t('page.billing.lineItems')}</Label>
         {lines.map((l, i) => (
           <div key={i} className="flex flex-wrap items-center gap-2">
-            <Input className="w-56" placeholder="Description" value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
-            <Input className="w-32" placeholder="Amount ₹" inputMode="decimal" value={l.amount} onChange={(e) => setLine(i, { amount: e.target.value })} />
+            <Input className="w-56" placeholder={t('common.description')} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
+            <Input className="w-32" placeholder={t('page.billing.amount')} inputMode="decimal" value={l.amount} onChange={(e) => setLine(i, { amount: e.target.value })} />
             <Input className="w-24" placeholder="GST %" inputMode="numeric" value={l.taxRatePct} onChange={(e) => setLine(i, { taxRatePct: e.target.value })} />
             {lines.length > 1 && (
               <Button type="button" size="sm" variant="ghost" onClick={() => setLines((ls) => ls.filter((_, idx) => idx !== i))}>
@@ -89,16 +90,18 @@ function GenerateBillsForm() {
           </div>
         ))}
         <Button type="button" size="sm" variant="outline" onClick={() => setLines((ls) => [...ls, { description: '', amount: '', taxRatePct: '0' }])}>
-          + Add line
+          {t('page.billing.addLine')}
         </Button>
       </div>
 
       <Button type="submit" disabled={mutation.isPending || !canSubmit}>
-        {mutation.isPending ? 'Generating…' : 'Generate bills for all flats'}
+        {mutation.isPending ? t('page.billing.generating') : t('page.billing.generateButton')}
       </Button>
       {mutation.isSuccess && (
         <p className="text-sm text-emerald-600 dark:text-emerald-400">
-          Created {mutation.data.created} bill{mutation.data.created === 1 ? '' : 's'} ({mutation.data.skipped} already existed).
+          {t('page.billing.created')} {mutation.data.created}{' '}
+          {mutation.data.created === 1 ? t('page.billing.billOne') : t('page.billing.billMany')} ({mutation.data.skipped}{' '}
+          {t('page.billing.alreadyExisted')}).
         </p>
       )}
       {mutation.isError && <p className="text-destructive text-sm">{(mutation.error as Error).message}</p>}
@@ -107,6 +110,7 @@ function GenerateBillsForm() {
 }
 
 function RecordPayment({ bill }: { bill: MaintenanceBill }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<PaymentMethod>('CASH')
@@ -134,13 +138,14 @@ function RecordPayment({ bill }: { bill: MaintenanceBill }) {
         </SelectContent>
       </Select>
       <Button size="sm" disabled={pay.isPending || !amount} onClick={() => pay.mutate()}>
-        {pay.isPending ? '…' : 'Record'}
+        {pay.isPending ? '…' : t('page.billing.record')}
       </Button>
     </div>
   )
 }
 
 function InvoiceButton({ billId }: { billId: string }) {
+  const { t } = useT()
   const [busy, setBusy] = useState(false)
   const open = async () => {
     setBusy(true)
@@ -153,27 +158,28 @@ function InvoiceButton({ billId }: { billId: string }) {
   }
   return (
     <Button variant="ghost" size="sm" onClick={open} disabled={busy}>
-      {busy ? '…' : '📄 Invoice'}
+      {busy ? '…' : `📄 ${t('page.billing.invoice')}`}
     </Button>
   )
 }
 
 function DuesCard() {
+  const { t } = useT()
   const dues = useQuery({ queryKey: ['dues'], queryFn: apiClient.listDues })
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Outstanding dues</CardTitle>
+        <CardTitle>{t('page.billing.outstandingDues')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <QueryState q={dues} empty={dues.isSuccess && dues.data?.length === 0} emptyText="No outstanding dues 🎉">
+        <QueryState q={dues} empty={dues.isSuccess && dues.data?.length === 0} emptyText={t('page.billing.noDues')}>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Flat</TableHead>
-                <TableHead className="text-right">Billed</TableHead>
-                <TableHead className="text-right">Paid</TableHead>
-                <TableHead className="text-right">Outstanding</TableHead>
+                <TableHead>{t('common.flat')}</TableHead>
+                <TableHead className="text-right">{t('page.billing.billed')}</TableHead>
+                <TableHead className="text-right">{t('page.billing.paid')}</TableHead>
+                <TableHead className="text-right">{t('page.billing.outstanding')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -194,6 +200,7 @@ function DuesCard() {
 }
 
 function BillsCard() {
+  const { t } = useT()
   const [period, setPeriod] = useState('')
   const [status, setStatus] = useState('ALL')
   const bills = useQuery({
@@ -203,22 +210,22 @@ function BillsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bills</CardTitle>
+        <CardTitle>{t('page.billing.billsTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="f-period">Period</Label>
+            <Label htmlFor="f-period">{t('common.period')}</Label>
             <Input id="f-period" className="w-32" placeholder="2026-07" value={period} onChange={(e) => setPeriod(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Status</Label>
+            <Label>{t('common.status')}</Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All statuses</SelectItem>
+                <SelectItem value="ALL">{t('common.allStatuses')}</SelectItem>
                 {billStatusSchema.options.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
@@ -229,16 +236,16 @@ function BillsCard() {
           </div>
         </div>
 
-        <QueryState q={bills} empty={bills.isSuccess && bills.data?.length === 0} emptyText="No bills match.">
+        <QueryState q={bills} empty={bills.isSuccess && bills.data?.length === 0} emptyText={t('page.billing.noMatch')}>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Flat</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-right">Paid</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Record payment</TableHead>
+                <TableHead>{t('common.flat')}</TableHead>
+                <TableHead>{t('common.title')}</TableHead>
+                <TableHead className="text-right">{t('common.total')}</TableHead>
+                <TableHead className="text-right">{t('page.billing.paid')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
+                <TableHead className="text-right">{t('page.billing.recordPayment')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -271,6 +278,7 @@ function BillsCard() {
 }
 
 function BillConfigForm({ initial }: { initial: BillConfig }) {
+  const { t } = useT()
   const qc = useQueryClient()
   const [dueDay, setDueDay] = useState(String(initial.dueDayOfMonth))
   const [lines, setLines] = useState<LineDraft[]>(
@@ -295,15 +303,15 @@ function BillConfigForm({ initial }: { initial: BillConfig }) {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="cfg-due">Due day of month</Label>
+        <Label htmlFor="cfg-due">{t('page.billing.dueDay')}</Label>
         <Input id="cfg-due" className="w-24" inputMode="numeric" value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
       </div>
       <div className="space-y-2">
-        <Label>Recurring line items</Label>
+        <Label>{t('page.billing.recurringLines')}</Label>
         {lines.map((l, i) => (
           <div key={i} className="flex flex-wrap items-center gap-2">
-            <Input className="w-56" placeholder="Description" value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
-            <Input className="w-32" placeholder="Amount ₹" inputMode="decimal" value={l.amount} onChange={(e) => setLine(i, { amount: e.target.value })} />
+            <Input className="w-56" placeholder={t('common.description')} value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
+            <Input className="w-32" placeholder={t('page.billing.amount')} inputMode="decimal" value={l.amount} onChange={(e) => setLine(i, { amount: e.target.value })} />
             <Input className="w-24" placeholder="GST %" inputMode="numeric" value={l.taxRatePct} onChange={(e) => setLine(i, { taxRatePct: e.target.value })} />
             {lines.length > 1 && (
               <Button type="button" size="sm" variant="ghost" onClick={() => setLines((ls) => ls.filter((_, idx) => idx !== i))}>
@@ -313,26 +321,25 @@ function BillConfigForm({ initial }: { initial: BillConfig }) {
           </div>
         ))}
         <Button type="button" size="sm" variant="outline" onClick={() => setLines((ls) => [...ls, { description: '', amount: '', taxRatePct: '0' }])}>
-          + Add line
+          {t('page.billing.addLine')}
         </Button>
       </div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>
-        {save.isPending ? 'Saving…' : 'Save configuration'}
+        {save.isPending ? t('common.saving') : t('page.billing.saveConfig')}
       </Button>
-      {save.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Saved ✓ — the monthly cron will use this template.</p>}
-      <p className="text-muted-foreground text-xs">
-        Bills auto-generate on the 1st of each month from this template. You can also generate any month manually above.
-      </p>
+      {save.isSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">{t('page.billing.configSaved')}</p>}
+      <p className="text-muted-foreground text-xs">{t('page.billing.configHint')}</p>
     </div>
   )
 }
 
 function BillConfigCard() {
+  const { t } = useT()
   const cfg = useQuery({ queryKey: ['bill-config'], queryFn: apiClient.getBillConfig })
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bill configuration (recurring template)</CardTitle>
+        <CardTitle>{t('page.billing.configTitle')}</CardTitle>
       </CardHeader>
       <CardContent>
         <QueryState q={cfg} empty={false} emptyText="">
@@ -351,7 +358,7 @@ function BillingPage() {
       <BillConfigCard />
       <Card>
         <CardHeader>
-          <CardTitle>Generate monthly bills</CardTitle>
+          <CardTitle>{t('page.billing.generateTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <GenerateBillsForm />
