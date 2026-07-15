@@ -101,9 +101,9 @@ function AddHouseHelp() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {houseHelpTypeSchema.options.map((t) => (
-              <SelectItem key={t} value={t}>
-                {t}
+            {houseHelpTypeSchema.options.map((opt) => (
+              <SelectItem key={opt} value={opt}>
+                {opt}
               </SelectItem>
             ))}
           </SelectContent>
@@ -116,9 +116,9 @@ function AddHouseHelp() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {idProofTypeSchema.options.map((t) => (
-              <SelectItem key={t} value={t}>
-                {t}
+            {idProofTypeSchema.options.map((opt) => (
+              <SelectItem key={opt} value={opt}>
+                {opt}
               </SelectItem>
             ))}
           </SelectContent>
@@ -311,9 +311,9 @@ function HouseHelpRow({ help, apartments }: { help: HouseHelpRow; apartments: Ap
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {houseHelpTypeSchema.options.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+              {houseHelpTypeSchema.options.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
                 </SelectItem>
               ))}
             </SelectContent>

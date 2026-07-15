@@ -110,7 +110,7 @@ function SetupWizard() {
                     placeholder={placeholder}
                     value={society[key]}
                     onChange={(e) => setSociety((s) => ({ ...s, [key]: e.target.value }))}
-                    onBlur={() => setTouched((t) => ({ ...t, [key]: true }))}
+                    onBlur={() => setTouched((prev) => ({ ...prev, [key]: true }))}
                   />
                   {touched[key] && errors[key] && <p className="text-destructive text-xs">{errors[key]}</p>}
                 </div>
