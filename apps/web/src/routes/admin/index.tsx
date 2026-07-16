@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, Megaphone, UserCheck, Users } from 'lucide-react'
+import { Building2, IndianRupee, Landmark, Megaphone, TrendingUp, UserCheck, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { formatPaise, collectionRatePct } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
 import { PageHeader } from '@/components/admin/ui'
@@ -47,8 +48,12 @@ function Overview() {
   const visitors = useQuery({ queryKey: ['visitors'], queryFn: () => apiClient.listVisitors() })
   const notices = useQuery({ queryKey: ['notices'], queryFn: () => apiClient.listNotices() })
   const pending = useQuery({ queryKey: ['users', 'PENDING'], queryFn: () => apiClient.listUsers('PENDING') })
+  const finance = useQuery({ queryKey: ['finance-report'], queryFn: apiClient.getFinanceReport })
+  const dues = useQuery({ queryKey: ['dues'], queryFn: apiClient.listDues })
 
   const pendingVisitors = visitors.data?.filter((v) => v.status === 'PENDING').length ?? 0
+  const outstanding = dues.data ? dues.data.reduce((s, r) => s + r.outstanding, 0) : null
+  const collectionRate = finance.data ? collectionRatePct(finance.data.totalBilled, finance.data.totalCollected) : null
 
   return (
     <div>
@@ -79,6 +84,27 @@ function Overview() {
           hint={`${pendingVisitors} ${t('overview.pending')}`}
         />
         <StatCard icon={Megaphone} label={t('nav.notices')} value={notices.data?.length ?? '—'} to="/admin/notices" />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          icon={IndianRupee}
+          label={t('overview.outstanding')}
+          value={outstanding === null ? '—' : formatPaise(outstanding)}
+          to="/admin/reports"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label={t('overview.collectionRate')}
+          value={collectionRate === null ? '—' : `${collectionRate}%`}
+          to="/admin/reports"
+        />
+        <StatCard
+          icon={Landmark}
+          label={t('overview.cashBank')}
+          value={finance.data ? formatPaise(finance.data.cashBankBalance) : '—'}
+          to="/admin/reports"
+        />
       </div>
 
       <Card className="mt-6">

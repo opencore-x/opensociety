@@ -46,6 +46,11 @@ import type {
   BillConfig,
   UpdateBillConfig,
   FinanceReport,
+  TrialBalance,
+  IncomeExpenditure,
+  BalanceSheet,
+  ReceiptsPayments,
+  AgingSummary,
   VisitorTrends,
   HouseHelpAnalytics,
   MaintenanceAnalytics,
@@ -86,6 +91,19 @@ export type CollectionAnalytics = {
   totalCollected: number
   overallRatePct: number
   fullyPaidPct: number
+}
+
+// Statutory statements (#98) + aging (#100) — server responses wrap the shared
+// shapes with their date context.
+export type TrialBalanceReport = TrialBalance & { toDate: string | null }
+export type IncomeExpenditureReport = IncomeExpenditure & { fromDate: string | null; toDate: string | null }
+export type BalanceSheetReport = BalanceSheet & { toDate: string | null }
+export type ReceiptsPaymentsReport = ReceiptsPayments & { fromDate: string | null; toDate: string | null }
+export type AgingReport = {
+  asOf: string
+  buckets: AgingSummary
+  total: number
+  byApartment: { apartmentId: string; apartment: string; buckets: AgingSummary; outstanding: number }[]
 }
 
 // A parking slot with its resolved assigned-flat label (admin inventory view).
@@ -334,6 +352,33 @@ export const apiClient = {
   updateBillConfig: (body: UpdateBillConfig) => api<BillConfig>('/bill-config', { method: 'PUT', body: json(body) }),
   getFinanceReport: () => api<FinanceReport>('/reports/finance'),
   getCollectionAnalytics: () => api<CollectionAnalytics>('/reports/collection-analytics'),
+
+  // Statutory statements (#98) + aging (#100)
+  getTrialBalance: (toDate?: string) =>
+    api<TrialBalanceReport>(`/reports/trial-balance${toDate ? `?toDate=${toDate}` : ''}`),
+  getIncomeExpenditure: (fromDate?: string, toDate?: string) => {
+    const q = new URLSearchParams()
+    if (fromDate) q.set('fromDate', fromDate)
+    if (toDate) q.set('toDate', toDate)
+    const qs = q.toString()
+    return api<IncomeExpenditureReport>(`/reports/income-expenditure${qs ? `?${qs}` : ''}`)
+  },
+  getBalanceSheet: (toDate?: string) =>
+    api<BalanceSheetReport>(`/reports/balance-sheet${toDate ? `?toDate=${toDate}` : ''}`),
+  getReceiptsPayments: (fromDate?: string, toDate?: string) => {
+    const q = new URLSearchParams()
+    if (fromDate) q.set('fromDate', fromDate)
+    if (toDate) q.set('toDate', toDate)
+    const qs = q.toString()
+    return api<ReceiptsPaymentsReport>(`/reports/receipts-payments${qs ? `?${qs}` : ''}`)
+  },
+  getAging: (asOf?: string) => api<AgingReport>(`/reports/aging${asOf ? `?asOf=${asOf}` : ''}`),
+  // Auth-fetch a report export (xlsx/csv/pdf/tally) and return a local object URL.
+  reportExportObjectUrl: async (path: string): Promise<string> => {
+    const res = await fetch(`${API_URL}${path}`, { headers: await authHeaders() })
+    if (!res.ok) throw new Error(`export failed (${res.status})`)
+    return URL.createObjectURL(await res.blob())
+  },
   getVisitorTrends: (from?: string, to?: string) => {
     const q = new URLSearchParams()
     if (from) q.set('from', from)
