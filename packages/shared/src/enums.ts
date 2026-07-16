@@ -68,6 +68,8 @@ export const journalSourceSchema = z.enum([
   'OPENING',
   'ADJUSTMENT',
 ])
+export const tdsSectionSchema = z.enum(['SEC_194C', 'SEC_194J', 'SEC_194I'])
+export const expenseStatusSchema = z.enum(['PAID', 'PAYABLE'])
 
 export type UserRole = z.infer<typeof userRoleSchema>
 export type UserStatus = z.infer<typeof userStatusSchema>
@@ -91,3 +93,5 @@ export type BillStatus = z.infer<typeof billStatusSchema>
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>
 export type AccountType = z.infer<typeof accountTypeSchema>
 export type JournalSource = z.infer<typeof journalSourceSchema>
+export type TdsSection = z.infer<typeof tdsSectionSchema>
+export type ExpenseStatus = z.infer<typeof expenseStatusSchema>

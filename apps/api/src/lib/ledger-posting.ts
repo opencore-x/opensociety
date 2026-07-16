@@ -5,10 +5,14 @@ import {
   ACCOUNT_CODES,
   postBillIssued as buildBillEntry,
   postPaymentReceived as buildPaymentEntry,
+  postExpense as buildExpenseEntry,
+  postExpenseSettlement as buildSettlementEntry,
   splitReceivableAdvance,
   validateEntryLines,
   type JournalDraft,
   type BillPostingLine,
+  type PaymentMethod,
+  type ExpenseStatus,
 } from '@opensociety/shared'
 
 // Auto-posting service (#97, design §6). Turns bill/payment writes into balanced
@@ -180,6 +184,86 @@ export async function postPayment(db: Database, paymentId: string, createdBy?: s
     narration: 'Payment received',
   })
   return insertJournalEntry(db, draft, createdBy)
+}
+
+// §6.5/§6.6 — post an expense's booking entry (best-effort, idempotent). `tds`
+// is the withheld amount (0 if none). No-op until the ledger is initialized.
+export async function safePostExpense(
+  db: Database,
+  e: {
+    id: string
+    status: ExpenseStatus
+    method: PaymentMethod | null
+    vendorId: string | null
+    accountId: string
+    amount: number
+    taxAmount: number
+    createdAt: Date | string
+  },
+  tds: number,
+  createdBy?: string,
+): Promise<void> {
+  try {
+    const acc = await resolveAccounts(db, [
+      ACCOUNT_CODES.BANK_PRIMARY,
+      ACCOUNT_CODES.CASH,
+      ACCOUNT_CODES.TDS_PAYABLE,
+      ACCOUNT_CODES.VENDOR_PAYABLES,
+    ])
+    const bank = acc.get(ACCOUNT_CODES.BANK_PRIMARY)
+    const cash = acc.get(ACCOUNT_CODES.CASH)
+    const tdsPayable = acc.get(ACCOUNT_CODES.TDS_PAYABLE)
+    const vendorPayables = acc.get(ACCOUNT_CODES.VENDOR_PAYABLES)
+    if (!bank || !cash || !tdsPayable || !vendorPayables) return // ledger not initialized
+
+    const entryDate = toDateStr(e.createdAt)
+    const draft = buildExpenseEntry({
+      expenseId: e.id,
+      status: e.status,
+      method: e.method,
+      vendorId: e.vendorId,
+      expenseAccountId: e.accountId,
+      amount: e.amount,
+      taxAmount: e.taxAmount,
+      tds,
+      entryDate,
+      period: entryDate.slice(0, 7),
+      accounts: { bank, cash, tdsPayable, vendorPayables },
+    })
+    await insertJournalEntry(db, draft, createdBy)
+  } catch (err) {
+    console.error('ledger: failed to post expense', e.id, err)
+  }
+}
+
+// §6.6 (settle) — post the payment that clears a vendor payable (best-effort).
+export async function safeSettleExpense(
+  db: Database,
+  e: { id: string; vendorId: string | null; method: PaymentMethod; net: number; paidAt: Date | string },
+  createdBy?: string,
+): Promise<void> {
+  try {
+    if (e.net <= 0) return
+    const acc = await resolveAccounts(db, [ACCOUNT_CODES.BANK_PRIMARY, ACCOUNT_CODES.CASH, ACCOUNT_CODES.VENDOR_PAYABLES])
+    const bank = acc.get(ACCOUNT_CODES.BANK_PRIMARY)
+    const cash = acc.get(ACCOUNT_CODES.CASH)
+    const vendorPayables = acc.get(ACCOUNT_CODES.VENDOR_PAYABLES)
+    if (!bank || !cash || !vendorPayables) return
+
+    const entryDate = toDateStr(e.paidAt)
+    const draft = buildSettlementEntry({
+      expenseId: e.id,
+      vendorId: e.vendorId,
+      method: e.method,
+      net: e.net,
+      entryDate,
+      period: entryDate.slice(0, 7),
+      accounts: { bank, cash, vendorPayables },
+    })
+    await insertJournalEntry(db, draft, createdBy)
+  } catch (err) {
+    console.error('ledger: failed to settle expense', e.id, err)
+  }
 }
 
 // Best-effort wrappers: log and swallow so a ledger hiccup never fails the
