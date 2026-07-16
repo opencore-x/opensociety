@@ -176,6 +176,33 @@ export function sumApartmentInterest(
 // can be told apart from ordinary charges in statements/reports.
 export const INTEREST_BILL_TITLE_PREFIX = 'Interest on arrears'
 
+// ----- Aging buckets (#100) -----
+
+export type AgingBucket = '0-30' | '31-60' | '61-90' | '90+'
+export const AGING_BUCKETS: AgingBucket[] = ['0-30', '31-60', '61-90', '90+']
+export type AgingSummary = Record<AgingBucket, number>
+
+// Which aging bucket a number of days overdue falls into. Amounts not yet due
+// (days <= 0) count as current (0-30).
+export function agingBucketFor(daysOverdue: number): AgingBucket {
+  if (daysOverdue <= 30) return '0-30'
+  if (daysOverdue <= 60) return '31-60'
+  if (daysOverdue <= 90) return '61-90'
+  return '90+'
+}
+
+// Bucket a set of outstanding amounts (each with its due date) by age as of
+// `asOfMs`. Non-positive balances are skipped.
+export function bucketAging(items: { outstanding: number; dueDateMs: number }[], asOfMs: number): AgingSummary {
+  const out: AgingSummary = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 }
+  for (const it of items) {
+    if (it.outstanding <= 0) continue
+    const days = Math.max(0, Math.floor((asOfMs - it.dueDateMs) / 86_400_000))
+    out[agingBucketFor(days)] += it.outstanding
+  }
+  return out
+}
+
 // ----- Per-flat statement of account (#96) -----
 
 export type StatementEntryType = 'BILL' | 'INTEREST' | 'PAYMENT' | 'ADJUSTMENT'
@@ -224,6 +251,7 @@ export type FinanceReport = {
   byMethod: MethodRow[]
   totalBilled: number
   totalCollected: number
+  cashBankBalance: number
 }
 
 // Collection rate as a percentage with one decimal (0 when nothing is billed).
