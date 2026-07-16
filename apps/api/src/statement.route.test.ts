@@ -51,7 +51,12 @@ describe('GET /apartments/:id/statement', () => {
     ])
     const res = await get('/apt1/statement', 'a1')
     expect(res.status).toBe(200)
-    const body = await res.json()
+    const body = (await res.json()) as {
+      apartment: string
+      opening: number
+      closing: number
+      entries: { type: string; balance: number }[]
+    }
     expect(body).toMatchObject({ apartment: 'A-101', opening: 0, closing: 40000 })
     expect(body.entries).toHaveLength(2)
     expect(body.entries[1]).toMatchObject({ type: 'PAYMENT', balance: 40000 })
