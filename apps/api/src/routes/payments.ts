@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { maintenanceBills, payments, residencies } from '@opensociety/db'
 import { recordPaymentSchema, billStatusFor } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
+import { safePostPayment } from '../lib/ledger-posting'
 import type { AppEnv } from '../types'
 
 export const paymentRoutes = new Hono<AppEnv>()
@@ -45,6 +46,9 @@ paymentRoutes.post('/', requireRole('ADMIN'), zValidator('json', recordPaymentSc
     .update(maintenanceBills)
     .set({ status: billStatusFor(bill.total, Number(paid)), updatedAt: new Date() })
     .where(eq(maintenanceBills.id, bill.id))
+
+  // Auto-post the payment to the general ledger (best-effort, idempotent).
+  await safePostPayment(db, payment.id, actingUserId(c))
 
   return c.json(payment, 201)
 })

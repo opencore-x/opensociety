@@ -1,6 +1,7 @@
 import { pgTable, uuid, text, integer, timestamp, index } from 'drizzle-orm/pg-core'
 import { apartments } from './apartments'
 import { users } from './users'
+import { accounts } from './ledger'
 import { billType, billStatus, paymentMethod } from './enums'
 
 // All money is stored as an integer number of paise (₹1 = 100 paise) so
@@ -41,6 +42,9 @@ export const billLineItems = pgTable('bill_line_items', {
   amount: integer('amount').notNull(),
   taxRatePct: integer('tax_rate_pct').notNull().default(0),
   taxAmount: integer('tax_amount').notNull().default(0),
+  // The income/fund account this charge credits when posted to the ledger
+  // (#97). Null falls back to the default Maintenance Income head at post time.
+  accountId: uuid('account_id').references(() => accounts.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => [index('bill_line_items_bill_id_idx').on(t.billId)])
 

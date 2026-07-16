@@ -8,7 +8,7 @@ export const billConfig = pgTable('bill_config', {
   id: uuid('id').primaryKey().defaultRandom(),
   dueDayOfMonth: integer('due_day_of_month').notNull().default(10),
   lineItems: jsonb('line_items')
-    .$type<{ description: string; amount: number; taxRatePct: number }[]>()
+    .$type<{ description: string; amount: number; taxRatePct: number; accountId?: string }[]>()
     .notNull()
     .default([]),
   updatedBy: uuid('updated_by').references(() => users.id),

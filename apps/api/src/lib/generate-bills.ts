@@ -9,7 +9,7 @@ import { computeBill, type BillLineInput } from '@opensociety/shared'
 export async function generateMonthlyBills(
   db: Database,
   opts: { periodMonth: string; title: string; dueDate?: Date | null; lineItems: BillLineInput[]; createdBy?: string },
-): Promise<{ created: number; skipped: number }> {
+): Promise<{ created: number; skipped: number; billIds: string[] }> {
   const totals = computeBill(opts.lineItems)
   const flats = await db.select({ id: apartments.id }).from(apartments).where(eq(apartments.isActive, true))
   const existing = await db
@@ -18,7 +18,7 @@ export async function generateMonthlyBills(
     .where(eq(maintenanceBills.periodMonth, opts.periodMonth))
   const already = new Set(existing.map((r) => r.apartmentId))
   const targets = flats.filter((f) => !already.has(f.id))
-  if (targets.length === 0) return { created: 0, skipped: flats.length }
+  if (targets.length === 0) return { created: 0, skipped: flats.length, billIds: [] }
 
   const created = await db
     .insert(maintenanceBills)
@@ -45,8 +45,9 @@ export async function generateMonthlyBills(
         amount: l.amount,
         taxRatePct: l.taxRatePct,
         taxAmount: l.taxAmount,
+        accountId: l.accountId ?? null,
       })),
     ),
   )
-  return { created: created.length, skipped: already.size }
+  return { created: created.length, skipped: already.size, billIds: created.map((b) => b.id) }
 }

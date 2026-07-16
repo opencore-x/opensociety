@@ -141,6 +141,13 @@
       "when": 1784197208648,
       "tag": "0019_complete_black_crow",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1784198570335,
+      "tag": "0020_mute_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

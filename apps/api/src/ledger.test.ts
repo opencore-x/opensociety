@@ -9,6 +9,7 @@ import {
   sumCredits,
   postBillIssued,
   postPaymentReceived,
+  splitReceivableAdvance,
   type JournalLineInput,
 } from '@opensociety/shared'
 
@@ -180,6 +181,24 @@ describe('postPaymentReceived (§6.2)', () => {
     expect(sumCredits(draft.lines)).toBe(6000)
     expect(draft.lines.find((l) => l.accountId === 'recv')).toMatchObject({ credit: 5000 })
     expect(draft.lines.find((l) => l.accountId === 'adv')).toMatchObject({ credit: 1000, apartmentId: 'apt-1' })
+  })
+})
+
+describe('splitReceivableAdvance', () => {
+  it('applies the whole payment to dues when dues exceed it', () => {
+    expect(splitReceivableAdvance(5000, 8000)).toEqual({ applied: 5000, advance: 0 })
+  })
+  it('applies up to dues and makes the rest an advance', () => {
+    expect(splitReceivableAdvance(5000, 3000)).toEqual({ applied: 3000, advance: 2000 })
+  })
+  it('treats the whole payment as advance when there are no dues', () => {
+    expect(splitReceivableAdvance(5000, 0)).toEqual({ applied: 0, advance: 5000 })
+  })
+  it('treats the whole payment as advance when the member is already in credit', () => {
+    expect(splitReceivableAdvance(5000, -2000)).toEqual({ applied: 0, advance: 5000 })
+  })
+  it('exact settlement leaves no advance', () => {
+    expect(splitReceivableAdvance(5000, 5000)).toEqual({ applied: 5000, advance: 0 })
   })
 })
 
