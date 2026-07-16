@@ -48,4 +48,18 @@ describe('statutory statement reports — admin only', () => {
     setQueue([[RESIDENT]])
     expect((await get('/balance-sheet', 'r1')).status).toBe(403)
   })
+
+  it('serves a CSV download for ?format=csv', async () => {
+    setQueue([[ADMIN], []]) // auth, then account balances
+    const res = await get('/trial-balance?format=csv', 'a1')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('text/csv')
+  })
+
+  it('serves a PDF download for ?format=pdf', async () => {
+    setQueue([[ADMIN], [], [{ name: 'Green Valley Heights' }]]) // auth, balances, society
+    const res = await get('/balance-sheet?format=pdf', 'a1')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('application/pdf')
+  })
 })
