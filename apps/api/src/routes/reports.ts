@@ -39,8 +39,31 @@ import {
 import type { VisitorTrends } from '@opensociety/shared'
 import { withDb, withAuth, requireRole } from '../middleware'
 import { renderVisitorTrendsPdf } from '../lib/visitor-trends-pdf'
+import { renderTablePdf } from '../lib/statements-pdf'
 import { tableExport } from '../lib/report-export'
+import type { Table } from '@opensociety/shared'
 import type { AppEnv } from '../types'
+
+// Export a statement Table as pdf/xlsx/csv per ?format, else null (-> JSON).
+async function statementResponse(
+  c: Context<AppEnv>,
+  table: Table,
+  baseName: string,
+  title: string,
+  meta?: string,
+): Promise<Response | null> {
+  const format = c.req.query('format')
+  if (format === 'pdf') {
+    const [society] = await c.get('db').select({ name: societyConfig.name }).from(societyConfig).limit(1)
+    const pdf = await renderTablePdf({ society: society?.name ?? 'Society', title, meta, table })
+    const body = new ArrayBuffer(pdf.byteLength)
+    new Uint8Array(body).set(pdf)
+    return new Response(body, {
+      headers: { 'content-type': 'application/pdf', 'content-disposition': `inline; filename="${baseName}.pdf"` },
+    })
+  }
+  return tableExport(format, table, baseName)
+}
 
 export const reportRoutes = new Hono<AppEnv>()
 reportRoutes.use('*', withDb)
@@ -241,30 +264,30 @@ async function accountBalances(
   return rows.map((r) => ({ ...r, debit: Number(r.debit), credit: Number(r.credit) }))
 }
 
-// Trial Balance as of ?toDate (default: all). Nets to zero. ?format=xlsx|csv.
+// Trial Balance as of ?toDate (default: all). Nets to zero. ?format=pdf|xlsx|csv.
 reportRoutes.get('/trial-balance', async (c) => {
   const toDate = c.req.query('toDate')
   const tb = trialBalance(await accountBalances(c, { toDate }))
-  const exp = tableExport(c.req.query('format'), trialBalanceTable(tb), `trial-balance${toDate ? `-${toDate}` : ''}`)
+  const exp = await statementResponse(c, trialBalanceTable(tb), `trial-balance${toDate ? `-${toDate}` : ''}`, 'Trial Balance', `As of ${toDate ?? 'today'} (amounts in Rs)`)
   return exp ?? c.json({ toDate: toDate ?? null, ...tb })
 })
 
-// Income & Expenditure (accrual) for ?fromDate..?toDate. ?format=xlsx|csv.
+// Income & Expenditure (accrual) for ?fromDate..?toDate. ?format=pdf|xlsx|csv.
 reportRoutes.get('/income-expenditure', async (c) => {
   const fromDate = c.req.query('fromDate')
   const toDate = c.req.query('toDate')
   const ie = incomeExpenditure(await accountBalances(c, { fromDate, toDate }))
-  const exp = tableExport(c.req.query('format'), incomeExpenditureTable(ie), `income-expenditure${toDate ? `-${toDate}` : ''}`)
+  const exp = await statementResponse(c, incomeExpenditureTable(ie), `income-expenditure${toDate ? `-${toDate}` : ''}`, 'Income & Expenditure', `${fromDate ?? 'start'} to ${toDate ?? 'today'} (amounts in Rs)`)
   return exp ?? c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, ...ie })
 })
 
 // Balance Sheet as of ?toDate. Current surplus = I&E surplus up to the same date
-// so the sheet balances. ?format=xlsx|csv.
+// so the sheet balances. ?format=pdf|xlsx|csv.
 reportRoutes.get('/balance-sheet', async (c) => {
   const toDate = c.req.query('toDate')
   const balances = await accountBalances(c, { toDate })
   const bs = balanceSheet(balances, incomeExpenditure(balances).surplus)
-  const exp = tableExport(c.req.query('format'), balanceSheetTable(bs), `balance-sheet${toDate ? `-${toDate}` : ''}`)
+  const exp = await statementResponse(c, balanceSheetTable(bs), `balance-sheet${toDate ? `-${toDate}` : ''}`, 'Balance Sheet', `As of ${toDate ?? 'today'} (amounts in Rs)`)
   return exp ?? c.json({ toDate: toDate ?? null, ...bs })
 })
 
@@ -273,8 +296,8 @@ reportRoutes.get('/receipts-payments', async (c) => {
   const db = c.get('db')
   const fromDate = c.req.query('fromDate')
   const toDate = c.req.query('toDate')
-  const respond = (rp: ReturnType<typeof receiptsAndPayments>) => {
-    const exp = tableExport(c.req.query('format'), receiptsPaymentsTable(rp), `receipts-payments${toDate ? `-${toDate}` : ''}`)
+  const respond = async (rp: ReturnType<typeof receiptsAndPayments>) => {
+    const exp = await statementResponse(c, receiptsPaymentsTable(rp), `receipts-payments${toDate ? `-${toDate}` : ''}`, 'Receipts & Payments', `${fromDate ?? 'start'} to ${toDate ?? 'today'} (amounts in Rs)`)
     return exp ?? c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, ...rp })
   }
 
