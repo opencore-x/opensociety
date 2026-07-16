@@ -288,6 +288,9 @@ function BillConfigForm({ initial }: { initial: BillConfig }) {
   )
   const setLine = (i: number, patch: Partial<LineDraft>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
+  const [interestEnabled, setInterestEnabled] = useState(initial.interestEnabled)
+  const [interestRate, setInterestRate] = useState(String(initial.interestRatePct))
+  const [graceDays, setGraceDays] = useState(String(initial.gracePeriodDays))
 
   const save = useMutation({
     mutationFn: () =>
@@ -296,11 +299,9 @@ function BillConfigForm({ initial }: { initial: BillConfig }) {
         lineItems: lines
           .filter((l) => l.description.trim() && l.amount)
           .map((l) => ({ description: l.description.trim(), amount: rupeesToPaise(l.amount), taxRatePct: parseInt(l.taxRatePct) || 0 })),
-        // Interest-on-arrears settings (#95) are preserved here; the editable
-        // controls land with the M3.5 admin-UI pass.
-        interestEnabled: initial.interestEnabled,
-        interestRatePct: initial.interestRatePct,
-        gracePeriodDays: initial.gracePeriodDays,
+        interestEnabled,
+        interestRatePct: parseInt(interestRate) || 0,
+        gracePeriodDays: parseInt(graceDays) || 0,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bill-config'] }),
   })
@@ -329,6 +330,23 @@ function BillConfigForm({ initial }: { initial: BillConfig }) {
           {t('page.billing.addLine')}
         </Button>
       </div>
+      <div className="space-y-2 border-t pt-4">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" checked={interestEnabled} onChange={(e) => setInterestEnabled(e.target.checked)} />
+          {t('page.billing.interestEnabled')}
+        </label>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <Label>{t('page.billing.interestRate')}</Label>
+            <Input className="w-24" inputMode="numeric" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} disabled={!interestEnabled} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('page.billing.graceDays')}</Label>
+            <Input className="w-24" inputMode="numeric" value={graceDays} onChange={(e) => setGraceDays(e.target.value)} disabled={!interestEnabled} />
+          </div>
+        </div>
+        <p className="text-muted-foreground text-xs">{t('page.billing.interestHint')}</p>
+      </div>
       <Button onClick={() => save.mutate()} disabled={save.isPending}>
         {save.isPending ? t('common.saving') : t('page.billing.saveConfig')}
       </Button>
@@ -355,6 +373,156 @@ function BillConfigCard() {
   )
 }
 
+// Interest on arrears (#95): preview accrued interest per flat, then charge it.
+function InterestCard() {
+  const { t } = useT()
+  const qc = useQueryClient()
+  const preview = useQuery({ queryKey: ['interest-preview'], queryFn: () => apiClient.getInterestPreview() })
+  const apply = useMutation({
+    mutationFn: () => apiClient.applyInterest(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['interest-preview'] })
+      qc.invalidateQueries({ queryKey: ['dues'] })
+      qc.invalidateQueries({ queryKey: ['bills'] })
+    },
+  })
+  const rows = preview.data?.rows ?? []
+  const total = rows.reduce((s, r) => s + r.interest, 0)
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle>{t('page.billing.interestTitle')}</CardTitle>
+        <Button
+          size="sm"
+          onClick={() => apply.mutate()}
+          disabled={apply.isPending || !preview.data?.enabled || rows.length === 0}
+        >
+          {t('page.billing.applyInterest')}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {!preview.data?.enabled ? (
+          <p className="text-muted-foreground text-sm">{t('page.billing.interestDisabled')}</p>
+        ) : rows.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{t('page.billing.noInterest')}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('common.apartment')}</TableHead>
+                <TableHead className="text-right">{t('page.billing.accruedInterest')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.apartmentId}>
+                  <TableCell className="font-medium">{r.apartment}</TableCell>
+                  <TableCell className="text-right">{formatPaise(r.interest)}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow>
+                <TableCell className="font-semibold">{t('page.reports.total')}</TableCell>
+                <TableCell className="text-right font-semibold">{formatPaise(total)}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        )}
+        {apply.isSuccess && (
+          <p className="mt-2 text-sm text-emerald-600 dark:text-emerald-400">
+            {t('page.billing.interestApplied')} ({apply.data?.created ?? 0})
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// Per-flat statement of account (#96): pick a flat + range, see a running balance.
+function StatementCard() {
+  const { t } = useT()
+  const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
+  const [apartmentId, setApartmentId] = useState('')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const statement = useQuery({
+    queryKey: ['statement', apartmentId, from, to],
+    queryFn: () => apiClient.getApartmentStatement(apartmentId, from || undefined, to || undefined),
+    enabled: !!apartmentId,
+  })
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('page.billing.statementTitle')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <Label>{t('common.apartment')}</Label>
+            <Select value={apartmentId} onValueChange={setApartmentId}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder={t('page.billing.selectFlat')} />
+              </SelectTrigger>
+              <SelectContent>
+                {apartments.data?.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.tower}-{a.apartmentNo}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('page.billing.from')}</Label>
+            <Input className="w-36" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('page.billing.to')}</Label>
+            <Input className="w-36" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
+        </div>
+        {statement.data && (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('common.date')}</TableHead>
+                <TableHead>{t('common.description')}</TableHead>
+                <TableHead className="text-right">{t('page.reports.debit')}</TableHead>
+                <TableHead className="text-right">{t('page.reports.credit')}</TableHead>
+                <TableHead className="text-right">{t('page.billing.balance')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell colSpan={4} className="text-muted-foreground text-xs">
+                  {t('page.reports.opening')}
+                </TableCell>
+                <TableCell className="text-right">{formatPaise(statement.data.opening)}</TableCell>
+              </TableRow>
+              {statement.data.entries.map((e, i) => (
+                <TableRow key={`${e.ref ?? ''}-${i}`}>
+                  <TableCell>{e.date.slice(0, 10)}</TableCell>
+                  <TableCell>{e.description}</TableCell>
+                  <TableCell className="text-right">{e.debit ? formatPaise(e.debit) : ''}</TableCell>
+                  <TableCell className="text-right">{e.credit ? formatPaise(e.credit) : ''}</TableCell>
+                  <TableCell className="text-right">{formatPaise(e.balance)}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow>
+                <TableCell colSpan={4} className="font-semibold">
+                  {t('page.reports.closing')}
+                </TableCell>
+                <TableCell className="text-right font-semibold">{formatPaise(statement.data.closing)}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 function BillingPage() {
   const { t } = useT()
   return (
@@ -369,7 +537,9 @@ function BillingPage() {
           <GenerateBillsForm />
         </CardContent>
       </Card>
+      <InterestCard />
       <DuesCard />
+      <StatementCard />
       <BillsCard />
     </div>
   )
