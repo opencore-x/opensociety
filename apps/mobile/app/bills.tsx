@@ -24,6 +24,13 @@ export default function Bills() {
   const { t } = useT()
   const bills = useQuery({ queryKey: ['bills'], queryFn: () => apiClient.listBills() })
   const payments = useQuery({ queryKey: ['payments'], queryFn: () => apiClient.listPayments() })
+  const myApts = useQuery({ queryKey: ['my-apartments'], queryFn: () => apiClient.listMyApartments() })
+  const primaryApt = myApts.data?.[0]?.id
+  const statement = useQuery({
+    queryKey: ['my-statement', primaryApt],
+    queryFn: () => apiClient.getApartmentStatement(primaryApt!),
+    enabled: !!primaryApt,
+  })
 
   if (bills.isLoading)
     return (
@@ -91,6 +98,33 @@ export default function Bills() {
           <Text className="text-base font-bold">{formatPaise(p.amount)}</Text>
         </View>
       ))}
+
+      {statement.data && statement.data.entries.length > 0 && (
+        <>
+          <Text className="mt-4 text-lg font-bold">{t('bills.statement')}</Text>
+          {statement.data.entries.map((e, i) => (
+            <View
+              key={`${e.ref ?? ''}-${i}`}
+              className="flex-row items-center justify-between rounded-xl border border-border bg-secondary p-3"
+            >
+              <View className="flex-1">
+                <Text className="text-sm font-semibold">{e.description}</Text>
+                <Text className="text-xs text-muted-foreground">{e.date.slice(0, 10)}</Text>
+              </View>
+              <View className="items-end">
+                <Text className={cn('text-sm font-semibold', e.debit ? 'text-amber-700' : 'text-green-700')}>
+                  {e.debit ? `+${formatPaise(e.debit)}` : `-${formatPaise(e.credit)}`}
+                </Text>
+                <Text className="text-xs text-muted-foreground">{formatPaise(e.balance)}</Text>
+              </View>
+            </View>
+          ))}
+          <View className="flex-row items-center justify-between px-1 pt-1">
+            <Text className="text-sm font-bold">{t('bills.closingBalance')}</Text>
+            <Text className="text-sm font-bold">{formatPaise(statement.data.closing)}</Text>
+          </View>
+        </>
+      )}
     </ScrollView>
   )
 }
