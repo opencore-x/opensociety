@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
-import { and, eq, gte, isNotNull, lte, sql } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNotNull, lt, lte, sql } from 'drizzle-orm'
 import {
   maintenanceBills,
   payments,
@@ -10,6 +10,9 @@ import {
   houseHelp,
   houseHelpEntries,
   maintenanceTickets,
+  accounts,
+  journalEntries,
+  journalLines,
 } from '@opensociety/db'
 import {
   analyzePayers,
@@ -19,6 +22,12 @@ import {
   averagePerDay,
   fillDaysOfWeek,
   avgResolutionHours,
+  trialBalance,
+  incomeExpenditure,
+  balanceSheet,
+  receiptsAndPayments,
+  type AccountBalance,
+  type CashEntryLine,
 } from '@opensociety/shared'
 import type { VisitorTrends } from '@opensociety/shared'
 import { withDb, withAuth, requireRole } from '../middleware'
@@ -195,6 +204,122 @@ async function computeVisitorTrends(c: Context<AppEnv>): Promise<VisitorTrends> 
 }
 
 reportRoutes.get('/visitor-trends', async (c) => c.json(await computeVisitorTrends(c)))
+
+// ----- Statutory financial statements (#98), derived off the ledger -----
+
+// Per-account debit/credit totals over an optional entry-date window.
+async function accountBalances(
+  c: Context<AppEnv>,
+  opts: { fromDate?: string; toDate?: string },
+): Promise<AccountBalance[]> {
+  const conds = []
+  if (opts.fromDate) conds.push(gte(journalEntries.entryDate, opts.fromDate))
+  if (opts.toDate) conds.push(lte(journalEntries.entryDate, opts.toDate))
+  const rows = await c
+    .get('db')
+    .select({
+      code: accounts.code,
+      name: accounts.name,
+      type: accounts.type,
+      isMutual: accounts.isMutual,
+      debit: sql<number>`coalesce(sum(${journalLines.debit}), 0)`,
+      credit: sql<number>`coalesce(sum(${journalLines.credit}), 0)`,
+    })
+    .from(journalLines)
+    .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
+    .innerJoin(accounts, eq(accounts.id, journalLines.accountId))
+    .where(conds.length ? and(...conds) : undefined)
+    .groupBy(accounts.code, accounts.name, accounts.type, accounts.isMutual)
+  return rows.map((r) => ({ ...r, debit: Number(r.debit), credit: Number(r.credit) }))
+}
+
+// Trial Balance as of ?toDate (default: all). Nets to zero.
+reportRoutes.get('/trial-balance', async (c) => {
+  const toDate = c.req.query('toDate')
+  return c.json({ toDate: toDate ?? null, ...trialBalance(await accountBalances(c, { toDate })) })
+})
+
+// Income & Expenditure (accrual) for ?fromDate..?toDate.
+reportRoutes.get('/income-expenditure', async (c) => {
+  const fromDate = c.req.query('fromDate')
+  const toDate = c.req.query('toDate')
+  return c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, ...incomeExpenditure(await accountBalances(c, { fromDate, toDate })) })
+})
+
+// Balance Sheet as of ?toDate. Current surplus = I&E surplus up to the same date
+// so the sheet balances.
+reportRoutes.get('/balance-sheet', async (c) => {
+  const toDate = c.req.query('toDate')
+  const balances = await accountBalances(c, { toDate })
+  const surplus = incomeExpenditure(balances).surplus
+  return c.json({ toDate: toDate ?? null, ...balanceSheet(balances, surplus) })
+})
+
+// Receipts & Payments (cash basis) for ?fromDate..?toDate.
+reportRoutes.get('/receipts-payments', async (c) => {
+  const db = c.get('db')
+  const fromDate = c.req.query('fromDate')
+  const toDate = c.req.query('toDate')
+
+  // Cash/bank leaf accounts (codes 10xx, e.g. Bank, Cash in Hand).
+  const cashAccts = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(and(sql`${accounts.code} like '10%'`, eq(accounts.isGroup, false)))
+  const cashIds = cashAccts.map((a) => a.id)
+  if (cashIds.length === 0) {
+    return c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, openingBalance: 0, receipts: [], payments: [], totalReceipts: 0, totalPayments: 0, closingBalance: 0 })
+  }
+
+  // Opening cash balance = Σ(debit − credit) on cash accounts before the window.
+  let openingBalance = 0
+  if (fromDate) {
+    const [{ opening }] = await db
+      .select({ opening: sql<number>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
+      .where(and(inArray(journalLines.accountId, cashIds), lt(journalEntries.entryDate, fromDate)))
+    openingBalance = Number(opening)
+  }
+
+  // Entries that touch a cash account within the window.
+  const entryConds = [inArray(journalLines.accountId, cashIds)]
+  if (fromDate) entryConds.push(gte(journalEntries.entryDate, fromDate))
+  if (toDate) entryConds.push(lte(journalEntries.entryDate, toDate))
+  const entryRows = await db
+    .selectDistinct({ entryId: journalLines.entryId })
+    .from(journalLines)
+    .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
+    .where(and(...entryConds))
+  const entryIds = entryRows.map((r) => r.entryId)
+  if (entryIds.length === 0) {
+    return c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, openingBalance, receipts: [], payments: [], totalReceipts: 0, totalPayments: 0, closingBalance: openingBalance })
+  }
+
+  const cashSet = new Set(cashIds)
+  const lineRows = await db
+    .select({
+      entryId: journalLines.entryId,
+      accountId: journalLines.accountId,
+      code: accounts.code,
+      name: accounts.name,
+      debit: journalLines.debit,
+      credit: journalLines.credit,
+    })
+    .from(journalLines)
+    .innerJoin(accounts, eq(accounts.id, journalLines.accountId))
+    .where(inArray(journalLines.entryId, entryIds))
+  const lines: CashEntryLine[] = lineRows.map((l) => ({
+    entryId: l.entryId,
+    accountCode: l.code,
+    accountName: l.name,
+    isCashBank: cashSet.has(l.accountId),
+    debit: l.debit,
+    credit: l.credit,
+  }))
+
+  return c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, ...receiptsAndPayments(lines, openingBalance) })
+})
 
 // House-help insights (#69): active-help count, most-employed types, and
 // attendance patterns by day of week (IST).
