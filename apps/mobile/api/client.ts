@@ -12,6 +12,7 @@ import type {
   CreateHouseHelpReview,
   MaintenanceBill,
   Payment,
+  StatementEntry,
   Notice,
   SocietyConfig,
   Ticket,
@@ -25,6 +26,15 @@ import type {
 } from '@opensociety/shared'
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787'
+
+// Per-flat statement of account (#96) — read-only running balance for residents.
+export type ApartmentStatement = {
+  apartmentId: string
+  apartment: string
+  opening: number
+  closing: number
+  entries: StatementEntry[]
+}
 
 // House help as returned by the directory list — carries its anonymous rating
 // summary plus verification/trust signals.
@@ -133,6 +143,8 @@ export const apiClient = {
   checkOutHouseHelpEntry: (entryId: string, userId?: string) =>
     api<HouseHelpEntry>(`/house-help/entries/${entryId}/checkout`, { method: 'POST', body: JSON.stringify({}) }, userId),
   listMyApartments: () => api<Apartment[]>('/apartments/mine'),
+  getApartmentStatement: (apartmentId: string) =>
+    api<ApartmentStatement>(`/apartments/${apartmentId}/statement`),
   listMyResidents: () =>
     api<{ apartmentId: string; userId: string; name: string; relation: string }[]>('/apartments/mine/residents'),
   listVehicles: (apartmentId?: string) =>
