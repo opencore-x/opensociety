@@ -12,13 +12,12 @@ import {
   sumApartmentInterest,
   periodMonthOf,
   ACCOUNT_CODES,
+  INTEREST_BILL_TITLE_PREFIX as INTEREST_TITLE_PREFIX,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import { generateMonthlyBills } from '../lib/generate-bills'
 import { safePostBill, safeReverseBill, resolveAccounts } from '../lib/ledger-posting'
 import { renderInvoicePdf } from '../lib/invoice-pdf'
-
-const INTEREST_TITLE_PREFIX = 'Interest on arrears'
 import type { AppEnv } from '../types'
 
 // Apartment ids the acting user currently lives in (open residencies).
