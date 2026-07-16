@@ -174,6 +174,19 @@ export function postBillIssued(input: {
   }
 }
 
+// Split a received payment into the portion that relieves outstanding member
+// dues vs. the excess that becomes a member advance. `outstandingBefore` is the
+// apartment's total dues immediately before this payment (may be <= 0 if the
+// member was already in credit — then the whole amount is an advance).
+export function splitReceivableAdvance(
+  amount: number,
+  outstandingBefore: number,
+): { applied: number; advance: number } {
+  const due = Math.max(0, outstandingBefore)
+  const applied = Math.max(0, Math.min(amount, due))
+  return { applied, advance: amount - applied }
+}
+
 // §6.2 Payment received. Debits Bank (or Cash when method = CASH); credits
 // Member Dues Receivable for the allocated portion and Member Advances for any
 // unallocated overpayment. `applied + leftoverCredit` must equal `amount`.

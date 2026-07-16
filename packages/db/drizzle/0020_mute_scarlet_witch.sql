@@ -1,0 +1,2 @@
+ALTER TABLE "bill_line_items" ADD COLUMN "account_id" uuid;--> statement-breakpoint
+ALTER TABLE "bill_line_items" ADD CONSTRAINT "bill_line_items_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;

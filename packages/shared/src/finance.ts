@@ -7,6 +7,9 @@ export const billLineInputSchema = z.object({
   description: z.string().min(1),
   amount: z.number().int().nonnegative(),
   taxRatePct: z.number().int().min(0).max(100).default(0),
+  // Optional income/fund account (chart-of-accounts id) this charge credits when
+  // posted to the ledger; null/absent => default Maintenance Income head (#97).
+  accountId: z.string().uuid().optional(),
 })
 
 export const generateBillsSchema = z.object({
@@ -39,6 +42,7 @@ export const billLineItemSchema = z.object({
   amount: z.number(),
   taxRatePct: z.number(),
   taxAmount: z.number(),
+  accountId: z.string().uuid().nullable().optional(),
   createdAt: z.string(),
 })
 

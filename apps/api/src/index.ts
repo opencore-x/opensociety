@@ -4,6 +4,7 @@ import { createDb, billConfig } from '@opensociety/db'
 import { periodMonthOf, dueDateForPeriod } from '@opensociety/shared'
 import type { AppEnv, Bindings } from './types'
 import { generateMonthlyBills } from './lib/generate-bills'
+import { safePostBill } from './lib/ledger-posting'
 import { societyRoutes } from './routes/society'
 import { apartmentRoutes } from './routes/apartments'
 import { visitorRoutes } from './routes/visitors'
@@ -19,6 +20,7 @@ import { billRoutes } from './routes/bills'
 import { paymentRoutes } from './routes/payments'
 import { billConfigRoutes } from './routes/bill-config'
 import { reportRoutes } from './routes/reports'
+import { ledgerRoutes } from './routes/ledger'
 import { webhookRoutes } from './routes/webhooks'
 
 const app = new Hono<AppEnv>()
@@ -45,6 +47,7 @@ app.route('/bills', billRoutes)
 app.route('/payments', paymentRoutes)
 app.route('/bill-config', billConfigRoutes)
 app.route('/reports', reportRoutes)
+app.route('/ledger', ledgerRoutes)
 app.route('/webhooks', webhookRoutes)
 
 app.notFound((c) => c.json({ error: 'not found' }, 404))
@@ -69,6 +72,7 @@ async function runMonthlyBilling(env: Bindings, scheduledTime: number) {
     dueDate: new Date(dueDateForPeriod(period, cfg.dueDayOfMonth)),
     lineItems: cfg.lineItems,
   })
+  for (const billId of result.billIds) await safePostBill(db, billId)
   console.log(`auto-billing ${period}: created ${result.created}, skipped ${result.skipped}`)
   // TODO: notify residents when bills are generated (blocked on the push service, #15).
 }

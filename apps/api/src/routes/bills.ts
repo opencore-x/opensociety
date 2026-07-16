@@ -7,6 +7,7 @@ import type { BillStatus } from '@opensociety/shared'
 import { generateBillsSchema, createBillSchema, computeBill, billStatusSchema } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import { generateMonthlyBills } from '../lib/generate-bills'
+import { safePostBill } from '../lib/ledger-posting'
 import { renderInvoicePdf } from '../lib/invoice-pdf'
 import type { AppEnv } from '../types'
 
@@ -43,14 +44,17 @@ billRoutes.use('*', requireAuth)
 // doesn't already have one for this period. Idempotent per period.
 billRoutes.post('/generate', requireRole('ADMIN'), zValidator('json', generateBillsSchema), async (c) => {
   const input = c.req.valid('json')
-  const result = await generateMonthlyBills(c.get('db'), {
+  const db = c.get('db')
+  const result = await generateMonthlyBills(db, {
     periodMonth: input.periodMonth,
     title: input.title,
     dueDate: input.dueDate ? new Date(input.dueDate) : null,
     lineItems: input.lineItems,
     createdBy: actingUserId(c),
   })
-  return c.json(result, result.created > 0 ? 201 : 200)
+  // Auto-post each new bill to the ledger (best-effort, idempotent).
+  for (const billId of result.billIds) await safePostBill(db, billId, actingUserId(c))
+  return c.json({ created: result.created, skipped: result.skipped }, result.created > 0 ? 201 : 200)
 })
 
 // Create a one-time bill for a single apartment.
@@ -78,8 +82,11 @@ billRoutes.post('/', requireRole('ADMIN'), zValidator('json', createBillSchema),
       amount: l.amount,
       taxRatePct: l.taxRatePct,
       taxAmount: l.taxAmount,
+      accountId: l.accountId ?? null,
     })),
   )
+  // Auto-post the bill to the ledger (best-effort, idempotent).
+  await safePostBill(db, bill.id, actingUserId(c))
   return c.json(bill, 201)
 })
 
