@@ -51,6 +51,14 @@ import type {
   BalanceSheet,
   ReceiptsPayments,
   AgingSummary,
+  Vendor,
+  Expense,
+  CreateVendor,
+  UpdateVendor,
+  CreateExpense,
+  Account,
+  StatementEntry,
+  TdsSection,
   VisitorTrends,
   HouseHelpAnalytics,
   MaintenanceAnalytics,
@@ -104,6 +112,28 @@ export type AgingReport = {
   buckets: AgingSummary
   total: number
   byApartment: { apartmentId: string; apartment: string; buckets: AgingSummary; outstanding: number }[]
+}
+
+// Expense/vendor + TDS (#94)
+export type TdsSummaryRow = { section: TdsSection; amount: number; count: number }
+export type InterestPreview = {
+  enabled: boolean
+  ratePct?: number
+  graceDays?: number
+  asOf: string | null
+  rows: { apartmentId: string; apartment: string; interest: number }[]
+}
+// Per-flat statement (#96)
+export type ApartmentStatement = {
+  apartmentId: string
+  apartment: string
+  from: string | null
+  to: string | null
+  opening: number
+  closing: number
+  totalDebit: number
+  totalCredit: number
+  entries: StatementEntry[]
 }
 
 // A parking slot with its resolved assigned-flat label (admin inventory view).
@@ -373,6 +403,51 @@ export const apiClient = {
     return api<ReceiptsPaymentsReport>(`/reports/receipts-payments${qs ? `?${qs}` : ''}`)
   },
   getAging: (asOf?: string) => api<AgingReport>(`/reports/aging${asOf ? `?asOf=${asOf}` : ''}`),
+
+  // Ledger / chart of accounts (#97)
+  listAccounts: () => api<Account[]>('/ledger/accounts'),
+  initLedger: () => api<{ inserted: number; total: number }>('/ledger/init', { method: 'POST' }),
+
+  // Expenses + vendors + TDS (#94)
+  listVendors: () => api<Vendor[]>('/expenses/vendors'),
+  createVendor: (body: CreateVendor) => api<Vendor>('/expenses/vendors', { method: 'POST', body: json(body) }),
+  updateVendor: (id: string, body: UpdateVendor) =>
+    api<Vendor>(`/expenses/vendors/${id}`, { method: 'PATCH', body: json(body) }),
+  listExpenses: (params?: { accountId?: string; vendorId?: string; status?: string; from?: string; to?: string }) => {
+    const q = new URLSearchParams()
+    for (const [k, v] of Object.entries(params ?? {})) if (v) q.set(k, v)
+    const qs = q.toString()
+    return api<Expense[]>(`/expenses${qs ? `?${qs}` : ''}`)
+  },
+  createExpense: (body: CreateExpense) => api<Expense>('/expenses', { method: 'POST', body: json(body) }),
+  payExpense: (id: string, method?: string) =>
+    api<Expense>(`/expenses/${id}/pay`, { method: 'POST', body: json(method ? { method } : {}) }),
+  getTdsSummary: (from?: string, to?: string) => {
+    const q = new URLSearchParams()
+    if (from) q.set('from', from)
+    if (to) q.set('to', to)
+    const qs = q.toString()
+    return api<TdsSummaryRow[]>(`/expenses/tds-summary${qs ? `?${qs}` : ''}`)
+  },
+
+  // Interest on arrears (#95)
+  getInterestPreview: (asOf?: string) =>
+    api<InterestPreview>(`/bills/interest-preview${asOf ? `?asOf=${asOf}` : ''}`),
+  applyInterest: (asOf?: string) =>
+    api<{ created: number; skipped: number; period?: string }>(`/bills/apply-interest${asOf ? `?asOf=${asOf}` : ''}`, {
+      method: 'POST',
+    }),
+  cancelBill: (id: string, reason?: string) =>
+    api<MaintenanceBill>(`/bills/${id}/cancel`, { method: 'POST', body: json(reason ? { reason } : {}) }),
+
+  // Per-flat statement of account (#96)
+  getApartmentStatement: (apartmentId: string, from?: string, to?: string) => {
+    const q = new URLSearchParams()
+    if (from) q.set('from', from)
+    if (to) q.set('to', to)
+    const qs = q.toString()
+    return api<ApartmentStatement>(`/apartments/${apartmentId}/statement${qs ? `?${qs}` : ''}`)
+  },
   // Auth-fetch a report export (xlsx/csv/pdf/tally) and return a local object URL.
   reportExportObjectUrl: async (path: string): Promise<string> => {
     const res = await fetch(`${API_URL}${path}`, { headers: await authHeaders() })
