@@ -13,7 +13,9 @@ export const ACCOUNT_CODES = {
   CASH: '1010',
   MEMBER_DUES_RECEIVABLE: '1100',
   MEMBER_ADVANCES: '2000',
+  VENDOR_PAYABLES: '2100',
   GST_OUTPUT_PAYABLE: '2200',
+  TDS_PAYABLE: '2300',
   MAINTENANCE_INCOME: '4000',
   INTEREST_ON_ARREARS_INCOME: '4100',
   REBATES_WAIVERS: '4900',
@@ -227,6 +229,78 @@ export function postPaymentReceived(input: {
     sourceId: input.paymentId,
     period: input.period,
     lines,
+  }
+}
+
+// §6.5/§6.6 Expense. Debits the EXPENSE head for the gross cost (base + input
+// GST — ITC deferred, booked as cost). Credits Bank/Cash when PAID, or Vendor
+// Payables when PAYABLE, for the net after TDS; TDS withheld credits TDS Payable.
+export function postExpense(input: {
+  expenseId: string
+  status: 'PAID' | 'PAYABLE'
+  method?: PaymentMethod | null
+  vendorId?: string | null
+  expenseAccountId: string
+  amount: number // base (excl. GST)
+  taxAmount: number // input GST
+  tds: number // TDS withheld (>= 0)
+  entryDate: string
+  period: string
+  accounts: { bank: string; cash: string; tdsPayable: string; vendorPayables: string }
+  narration?: string
+}): JournalDraft {
+  const gross = input.amount + input.taxAmount
+  const net = gross - input.tds
+  const lines: JournalLineInput[] = [{ accountId: input.expenseAccountId, debit: gross, credit: 0 }]
+  const creditAccount =
+    input.status === 'PAID'
+      ? input.method === 'CASH'
+        ? input.accounts.cash
+        : input.accounts.bank
+      : input.accounts.vendorPayables
+  if (net > 0) {
+    lines.push({
+      accountId: creditAccount,
+      debit: 0,
+      credit: net,
+      vendorId: input.status === 'PAYABLE' ? (input.vendorId ?? null) : null,
+    })
+  }
+  if (input.tds > 0) lines.push({ accountId: input.accounts.tdsPayable, debit: 0, credit: input.tds })
+  return {
+    entryDate: input.entryDate,
+    narration: input.narration ?? (input.status === 'PAID' ? 'Expense paid' : 'Expense booked (payable)'),
+    sourceType: 'EXPENSE',
+    sourceId: input.expenseId,
+    period: input.period,
+    lines,
+  }
+}
+
+// §6.6 (settle) — pay a previously-booked payable: clears Vendor Payables
+// against Bank/Cash for the net owed. Posted as a MANUAL entry (the EXPENSE
+// idempotency slot is taken by the booking entry).
+export function postExpenseSettlement(input: {
+  expenseId: string
+  vendorId?: string | null
+  method: PaymentMethod
+  net: number // amount paid to the vendor (gross − TDS)
+  entryDate: string
+  period: string
+  accounts: { bank: string; cash: string; vendorPayables: string }
+  narration?: string
+}): JournalDraft {
+  const creditAccount = input.method === 'CASH' ? input.accounts.cash : input.accounts.bank
+  return {
+    entryDate: input.entryDate,
+    narration: input.narration ?? 'Vendor payable settled',
+    sourceType: 'MANUAL',
+    sourceId: input.expenseId,
+    period: input.period,
+    lines: [
+      { accountId: input.accounts.vendorPayables, debit: input.net, credit: 0, vendorId: input.vendorId ?? null },
+      { accountId: creditAccount, debit: 0, credit: input.net },
+    ],
   }
 }
 

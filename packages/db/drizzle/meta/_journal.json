@@ -148,6 +148,13 @@
       "when": 1784198570335,
       "tag": "0020_mute_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1784199389317,
+      "tag": "0021_neat_giant_man",
+      "breakpoints": true
     }
   ]
 }

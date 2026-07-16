@@ -77,3 +77,9 @@ export const journalSource = pgEnum('journal_source', [
   'OPENING',
   'ADJUSTMENT',
 ])
+
+// Expense & vendor management (#94). TDS sections per the Income Tax Act;
+// thresholds/rates are set by annual Finance Acts, so rates are parameterized on
+// the entry, never hardcoded.
+export const tdsSection = pgEnum('tds_section', ['SEC_194C', 'SEC_194J', 'SEC_194I'])
+export const expenseStatus = pgEnum('expense_status', ['PAID', 'PAYABLE'])
