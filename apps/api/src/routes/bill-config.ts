@@ -15,7 +15,18 @@ billConfigRoutes.use('*', requireRole('ADMIN'))
 
 billConfigRoutes.get('/', async (c) => {
   const [cfg] = await c.get('db').select().from(billConfig).limit(1)
-  return c.json(cfg ?? { id: null, dueDayOfMonth: 10, lineItems: [], updatedBy: null, updatedAt: null })
+  return c.json(
+    cfg ?? {
+      id: null,
+      dueDayOfMonth: 10,
+      lineItems: [],
+      interestEnabled: false,
+      interestRatePct: 18,
+      gracePeriodDays: 15,
+      updatedBy: null,
+      updatedAt: null,
+    },
+  )
 })
 
 billConfigRoutes.put('/', zValidator('json', updateBillConfigSchema), async (c) => {
@@ -25,14 +36,29 @@ billConfigRoutes.put('/', zValidator('json', updateBillConfigSchema), async (c) 
   if (existing) {
     const [updated] = await db
       .update(billConfig)
-      .set({ dueDayOfMonth: input.dueDayOfMonth, lineItems: input.lineItems, updatedBy: actingUserId(c), updatedAt: new Date() })
+      .set({
+        dueDayOfMonth: input.dueDayOfMonth,
+        lineItems: input.lineItems,
+        interestEnabled: input.interestEnabled,
+        interestRatePct: input.interestRatePct,
+        gracePeriodDays: input.gracePeriodDays,
+        updatedBy: actingUserId(c),
+        updatedAt: new Date(),
+      })
       .where(eq(billConfig.id, existing.id))
       .returning()
     return c.json(updated)
   }
   const [created] = await db
     .insert(billConfig)
-    .values({ dueDayOfMonth: input.dueDayOfMonth, lineItems: input.lineItems, updatedBy: actingUserId(c) })
+    .values({
+      dueDayOfMonth: input.dueDayOfMonth,
+      lineItems: input.lineItems,
+      interestEnabled: input.interestEnabled,
+      interestRatePct: input.interestRatePct,
+      gracePeriodDays: input.gracePeriodDays,
+      updatedBy: actingUserId(c),
+    })
     .returning()
   return c.json(created, 201)
 })

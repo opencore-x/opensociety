@@ -155,6 +155,13 @@
       "when": 1784199389317,
       "tag": "0021_neat_giant_man",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1784200007747,
+      "tag": "0022_lyrical_corsair",
+      "breakpoints": true
     }
   ]
 }

@@ -111,6 +111,9 @@ export const billConfigSchema = z.object({
   id: z.string().uuid(),
   dueDayOfMonth: z.number(),
   lineItems: z.array(billLineInputSchema),
+  interestEnabled: z.boolean(),
+  interestRatePct: z.number(),
+  gracePeriodDays: z.number(),
   updatedBy: z.string().uuid().nullable(),
   updatedAt: z.string(),
 })
@@ -118,6 +121,9 @@ export const billConfigSchema = z.object({
 export const updateBillConfigSchema = z.object({
   dueDayOfMonth: z.number().int().min(1).max(28).default(10),
   lineItems: z.array(billLineInputSchema),
+  interestEnabled: z.boolean().default(false),
+  interestRatePct: z.number().int().min(0).max(50).default(18),
+  gracePeriodDays: z.number().int().min(0).max(90).default(15),
 })
 
 // 'YYYY-MM' for a Date (UTC).
@@ -131,6 +137,39 @@ export function dueDateForPeriod(periodMonth: string, dayOfMonth: number): strin
   const [y, m] = periodMonth.split('-').map(Number)
   const day = Math.min(Math.max(dayOfMonth, 1), 28)
   return new Date(Date.UTC(y, m - 1, day)).toISOString()
+}
+
+// ----- Interest on arrears (#95) -----
+
+// Simple interest (never compound) on an overdue balance, in paise. Accrues from
+// the due date + grace period up to `asOf`, at `ratePct` per annum. Returns 0
+// when nothing is overdue, the rate is off, or we're still inside the grace
+// window. Bye-law 71 caps this (≤21% legacy / ~12% revised MH) — the rate is
+// always supplied by config, never assumed here.
+export function computeInterest(
+  outstanding: number,
+  dueDateMs: number,
+  asOfMs: number,
+  ratePct: number,
+  graceDays: number,
+): number {
+  if (outstanding <= 0 || ratePct <= 0) return 0
+  const start = dueDateMs + Math.max(0, graceDays) * 86_400_000
+  if (asOfMs <= start) return 0
+  const days = Math.floor((asOfMs - start) / 86_400_000)
+  if (days <= 0) return 0
+  return Math.round((outstanding * ratePct * days) / (100 * 365))
+}
+
+// Total simple interest across an apartment's overdue bills (each with its own
+// due date + remaining balance), as of `asOf`.
+export function sumApartmentInterest(
+  bills: { outstanding: number; dueDateMs: number }[],
+  asOfMs: number,
+  ratePct: number,
+  graceDays: number,
+): number {
+  return bills.reduce((s, b) => s + computeInterest(b.outstanding, b.dueDateMs, asOfMs, ratePct, graceDays), 0)
 }
 
 export type CollectionRow = { period: string; billed: number; collected: number }

@@ -7,9 +7,11 @@ import {
   postPaymentReceived as buildPaymentEntry,
   postExpense as buildExpenseEntry,
   postExpenseSettlement as buildSettlementEntry,
+  reverseLines,
   splitReceivableAdvance,
   validateEntryLines,
   type JournalDraft,
+  type JournalLineInput,
   type BillPostingLine,
   type PaymentMethod,
   type ExpenseStatus,
@@ -55,6 +57,8 @@ export async function insertJournalEntry(db: Database, draft: JournalDraft, crea
         sourceType: draft.sourceType,
         sourceId: draft.sourceId ?? null,
         period: draft.period,
+        isReversal: draft.isReversal ?? false,
+        reversesId: draft.reversesId ?? null,
         createdBy: createdBy ?? null,
       })
       .returning({ id: journalEntries.id })
@@ -263,6 +267,51 @@ export async function safeSettleExpense(
     await insertJournalEntry(db, draft, createdBy)
   } catch (err) {
     console.error('ledger: failed to settle expense', e.id, err)
+  }
+}
+
+// §6.9 — reverse the "bill issued" entry when a bill is cancelled. Posts an
+// ADJUSTMENT with swapped debit/credit that references the original entry. No-op
+// if the bill was never posted or is already reversed (best-effort).
+export async function safeReverseBill(db: Database, billId: string, createdBy?: string): Promise<void> {
+  try {
+    const [orig] = await db
+      .select({ id: journalEntries.id, entryDate: journalEntries.entryDate, period: journalEntries.period })
+      .from(journalEntries)
+      .where(and(eq(journalEntries.sourceType, 'BILL'), eq(journalEntries.sourceId, billId)))
+      .limit(1)
+    if (!orig) return
+    const [{ already }] = await db
+      .select({ already: sql<number>`count(*)::int` })
+      .from(journalEntries)
+      .where(eq(journalEntries.reversesId, orig.id))
+    if (Number(already) > 0) return // already reversed
+
+    const lines = await db
+      .select({ accountId: journalLines.accountId, debit: journalLines.debit, credit: journalLines.credit, apartmentId: journalLines.apartmentId })
+      .from(journalLines)
+      .where(eq(journalLines.entryId, orig.id))
+    if (lines.length === 0) return
+
+    const reversed: JournalLineInput[] = reverseLines(
+      lines.map((l) => ({ accountId: l.accountId, debit: l.debit, credit: l.credit, apartmentId: l.apartmentId })),
+    )
+    await insertJournalEntry(
+      db,
+      {
+        entryDate: orig.entryDate,
+        narration: 'Bill cancelled — reversal',
+        sourceType: 'ADJUSTMENT',
+        sourceId: billId,
+        period: orig.period,
+        isReversal: true,
+        reversesId: orig.id,
+        lines: reversed,
+      },
+      createdBy,
+    )
+  } catch (e) {
+    console.error('ledger: failed to reverse bill', billId, e)
   }
 }
 

@@ -296,6 +296,11 @@ function BillConfigForm({ initial }: { initial: BillConfig }) {
         lineItems: lines
           .filter((l) => l.description.trim() && l.amount)
           .map((l) => ({ description: l.description.trim(), amount: rupeesToPaise(l.amount), taxRatePct: parseInt(l.taxRatePct) || 0 })),
+        // Interest-on-arrears settings (#95) are preserved here; the editable
+        // controls land with the M3.5 admin-UI pass.
+        interestEnabled: initial.interestEnabled,
+        interestRatePct: initial.interestRatePct,
+        gracePeriodDays: initial.gracePeriodDays,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bill-config'] }),
   })

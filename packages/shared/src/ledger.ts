@@ -86,7 +86,16 @@ export type JournalDraft = {
   sourceType: z.infer<typeof journalSourceSchema>
   sourceId?: string | null
   period: string // 'YYYY-MM'
+  isReversal?: boolean
+  reversesId?: string | null
   lines: JournalLineInput[]
+}
+
+// Build the reversing entry for an existing set of lines (swap debit/credit),
+// posted as an ADJUSTMENT so it never collides with the original's idempotency
+// slot. Used for bill cancellation (§6.9) and other corrections.
+export function reverseLines(lines: JournalLineInput[]): JournalLineInput[] {
+  return lines.map((l) => ({ ...l, debit: l.credit, credit: l.debit }))
 }
 
 // ----- Balanced-entry invariant -----
