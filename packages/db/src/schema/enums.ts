@@ -63,3 +63,17 @@ export const backgroundCheckStatus = pgEnum('background_check_status', ['PENDING
 export const billType = pgEnum('bill_type', ['MONTHLY', 'ONE_TIME'])
 export const billStatus = pgEnum('bill_status', ['ISSUED', 'PARTIALLY_PAID', 'PAID', 'CANCELLED'])
 export const paymentMethod = pgEnum('payment_method', ['CASH', 'CHEQUE', 'UPI', 'BANK_TRANSFER', 'ONLINE'])
+
+// Double-entry ledger (#97). FUND = corpus/sinking/reserve (equity-like for a
+// non-profit society).
+export const accountType = pgEnum('account_type', ['ASSET', 'LIABILITY', 'INCOME', 'EXPENSE', 'FUND'])
+export const journalSource = pgEnum('journal_source', [
+  'BILL',
+  'PAYMENT',
+  'EXPENSE',
+  'INTEREST',
+  'WAIVER',
+  'MANUAL',
+  'OPENING',
+  'ADJUSTMENT',
+])

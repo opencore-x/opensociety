@@ -57,6 +57,17 @@ export const backgroundCheckStatusSchema = z.enum(['PENDING', 'CLEARED', 'FLAGGE
 export const billTypeSchema = z.enum(['MONTHLY', 'ONE_TIME'])
 export const billStatusSchema = z.enum(['ISSUED', 'PARTIALLY_PAID', 'PAID', 'CANCELLED'])
 export const paymentMethodSchema = z.enum(['CASH', 'CHEQUE', 'UPI', 'BANK_TRANSFER', 'ONLINE'])
+export const accountTypeSchema = z.enum(['ASSET', 'LIABILITY', 'INCOME', 'EXPENSE', 'FUND'])
+export const journalSourceSchema = z.enum([
+  'BILL',
+  'PAYMENT',
+  'EXPENSE',
+  'INTEREST',
+  'WAIVER',
+  'MANUAL',
+  'OPENING',
+  'ADJUSTMENT',
+])
 
 export type UserRole = z.infer<typeof userRoleSchema>
 export type UserStatus = z.infer<typeof userStatusSchema>
@@ -78,3 +89,5 @@ export type BackgroundCheckStatus = z.infer<typeof backgroundCheckStatusSchema>
 export type BillType = z.infer<typeof billTypeSchema>
 export type BillStatus = z.infer<typeof billStatusSchema>
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>
+export type AccountType = z.infer<typeof accountTypeSchema>
+export type JournalSource = z.infer<typeof journalSourceSchema>

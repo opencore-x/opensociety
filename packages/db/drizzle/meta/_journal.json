@@ -134,6 +134,13 @@
       "when": 1784054897898,
       "tag": "0018_oval_green_goblin",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784197208648,
+      "tag": "0019_complete_black_crow",
+      "breakpoints": true
     }
   ]
 }
