@@ -26,12 +26,20 @@ import {
   incomeExpenditure,
   balanceSheet,
   receiptsAndPayments,
+  trialBalanceTable,
+  incomeExpenditureTable,
+  balanceSheetTable,
+  receiptsPaymentsTable,
+  buildTallyXml,
+  tallyParentForType,
   type AccountBalance,
   type CashEntryLine,
+  type TallyVoucher,
 } from '@opensociety/shared'
 import type { VisitorTrends } from '@opensociety/shared'
 import { withDb, withAuth, requireRole } from '../middleware'
 import { renderVisitorTrendsPdf } from '../lib/visitor-trends-pdf'
+import { tableExport } from '../lib/report-export'
 import type { AppEnv } from '../types'
 
 export const reportRoutes = new Hono<AppEnv>()
@@ -233,33 +241,42 @@ async function accountBalances(
   return rows.map((r) => ({ ...r, debit: Number(r.debit), credit: Number(r.credit) }))
 }
 
-// Trial Balance as of ?toDate (default: all). Nets to zero.
+// Trial Balance as of ?toDate (default: all). Nets to zero. ?format=xlsx|csv.
 reportRoutes.get('/trial-balance', async (c) => {
   const toDate = c.req.query('toDate')
-  return c.json({ toDate: toDate ?? null, ...trialBalance(await accountBalances(c, { toDate })) })
+  const tb = trialBalance(await accountBalances(c, { toDate }))
+  const exp = tableExport(c.req.query('format'), trialBalanceTable(tb), `trial-balance${toDate ? `-${toDate}` : ''}`)
+  return exp ?? c.json({ toDate: toDate ?? null, ...tb })
 })
 
-// Income & Expenditure (accrual) for ?fromDate..?toDate.
+// Income & Expenditure (accrual) for ?fromDate..?toDate. ?format=xlsx|csv.
 reportRoutes.get('/income-expenditure', async (c) => {
   const fromDate = c.req.query('fromDate')
   const toDate = c.req.query('toDate')
-  return c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, ...incomeExpenditure(await accountBalances(c, { fromDate, toDate })) })
+  const ie = incomeExpenditure(await accountBalances(c, { fromDate, toDate }))
+  const exp = tableExport(c.req.query('format'), incomeExpenditureTable(ie), `income-expenditure${toDate ? `-${toDate}` : ''}`)
+  return exp ?? c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, ...ie })
 })
 
 // Balance Sheet as of ?toDate. Current surplus = I&E surplus up to the same date
-// so the sheet balances.
+// so the sheet balances. ?format=xlsx|csv.
 reportRoutes.get('/balance-sheet', async (c) => {
   const toDate = c.req.query('toDate')
   const balances = await accountBalances(c, { toDate })
-  const surplus = incomeExpenditure(balances).surplus
-  return c.json({ toDate: toDate ?? null, ...balanceSheet(balances, surplus) })
+  const bs = balanceSheet(balances, incomeExpenditure(balances).surplus)
+  const exp = tableExport(c.req.query('format'), balanceSheetTable(bs), `balance-sheet${toDate ? `-${toDate}` : ''}`)
+  return exp ?? c.json({ toDate: toDate ?? null, ...bs })
 })
 
-// Receipts & Payments (cash basis) for ?fromDate..?toDate.
+// Receipts & Payments (cash basis) for ?fromDate..?toDate. ?format=xlsx|csv.
 reportRoutes.get('/receipts-payments', async (c) => {
   const db = c.get('db')
   const fromDate = c.req.query('fromDate')
   const toDate = c.req.query('toDate')
+  const respond = (rp: ReturnType<typeof receiptsAndPayments>) => {
+    const exp = tableExport(c.req.query('format'), receiptsPaymentsTable(rp), `receipts-payments${toDate ? `-${toDate}` : ''}`)
+    return exp ?? c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, ...rp })
+  }
 
   // Cash/bank leaf accounts (codes 10xx, e.g. Bank, Cash in Hand).
   const cashAccts = await db
@@ -267,9 +284,7 @@ reportRoutes.get('/receipts-payments', async (c) => {
     .from(accounts)
     .where(and(sql`${accounts.code} like '10%'`, eq(accounts.isGroup, false)))
   const cashIds = cashAccts.map((a) => a.id)
-  if (cashIds.length === 0) {
-    return c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, openingBalance: 0, receipts: [], payments: [], totalReceipts: 0, totalPayments: 0, closingBalance: 0 })
-  }
+  if (cashIds.length === 0) return respond(receiptsAndPayments([], 0))
 
   // Opening cash balance = Σ(debit − credit) on cash accounts before the window.
   let openingBalance = 0
@@ -292,9 +307,7 @@ reportRoutes.get('/receipts-payments', async (c) => {
     .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
     .where(and(...entryConds))
   const entryIds = entryRows.map((r) => r.entryId)
-  if (entryIds.length === 0) {
-    return c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, openingBalance, receipts: [], payments: [], totalReceipts: 0, totalPayments: 0, closingBalance: openingBalance })
-  }
+  if (entryIds.length === 0) return respond(receiptsAndPayments([], openingBalance))
 
   const cashSet = new Set(cashIds)
   const lineRows = await db
@@ -318,7 +331,61 @@ reportRoutes.get('/receipts-payments', async (c) => {
     credit: l.credit,
   }))
 
-  return c.json({ fromDate: fromDate ?? null, toDate: toDate ?? null, ...receiptsAndPayments(lines, openingBalance) })
+  return respond(receiptsAndPayments(lines, openingBalance))
+})
+
+// Tally XML export of all journal vouchers + ledger masters for ?fromDate..
+// ?toDate. Importable into TallyPrime (receipt/payment/journal vouchers).
+reportRoutes.get('/tally-export', async (c) => {
+  const db = c.get('db')
+  const fromDate = c.req.query('fromDate')
+  const toDate = c.req.query('toDate')
+  const conds = []
+  if (fromDate) conds.push(gte(journalEntries.entryDate, fromDate))
+  if (toDate) conds.push(lte(journalEntries.entryDate, toDate))
+  const entries = await db
+    .select({
+      id: journalEntries.id,
+      entryDate: journalEntries.entryDate,
+      narration: journalEntries.narration,
+      sourceType: journalEntries.sourceType,
+    })
+    .from(journalEntries)
+    .where(conds.length ? and(...conds) : undefined)
+    .orderBy(journalEntries.entryDate)
+
+  const entryIds = entries.map((e) => e.id)
+  const lineRows = entryIds.length
+    ? await db
+        .select({ entryId: journalLines.entryId, ledger: accounts.name, debit: journalLines.debit, credit: journalLines.credit })
+        .from(journalLines)
+        .innerJoin(accounts, eq(accounts.id, journalLines.accountId))
+        .where(inArray(journalLines.entryId, entryIds))
+    : []
+  const byEntry = new Map<string, { ledger: string; debit: number; credit: number }[]>()
+  for (const l of lineRows) {
+    const arr = byEntry.get(l.entryId) ?? []
+    arr.push({ ledger: l.ledger, debit: l.debit, credit: l.credit })
+    byEntry.set(l.entryId, arr)
+  }
+  const tallyType = (s: string): TallyVoucher['type'] =>
+    s === 'PAYMENT' ? 'Receipt' : s === 'EXPENSE' ? 'Payment' : 'Journal'
+  const vouchers: TallyVoucher[] = entries.map((e) => ({
+    date: String(e.entryDate),
+    type: tallyType(e.sourceType),
+    narration: e.narration,
+    entries: byEntry.get(e.id) ?? [],
+  }))
+
+  const accts = await db
+    .select({ name: accounts.name, type: accounts.type })
+    .from(accounts)
+    .where(eq(accounts.isGroup, false))
+  const ledgers = accts.map((a) => ({ name: a.name, parent: tallyParentForType(a.type) }))
+
+  return new Response(buildTallyXml(vouchers, ledgers), {
+    headers: { 'content-type': 'application/xml', 'content-disposition': 'attachment; filename="tally-export.xml"' },
+  })
 })
 
 // House-help insights (#69): active-help count, most-employed types, and

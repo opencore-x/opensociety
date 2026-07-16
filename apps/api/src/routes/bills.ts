@@ -13,10 +13,12 @@ import {
   periodMonthOf,
   ACCOUNT_CODES,
   INTEREST_BILL_TITLE_PREFIX as INTEREST_TITLE_PREFIX,
+  duesTable,
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import { generateMonthlyBills } from '../lib/generate-bills'
 import { safePostBill, safeReverseBill, resolveAccounts } from '../lib/ledger-posting'
+import { tableExport } from '../lib/report-export'
 import { renderInvoicePdf } from '../lib/invoice-pdf'
 import type { AppEnv } from '../types'
 
@@ -133,7 +135,8 @@ billRoutes.get('/dues', requireRole('ADMIN'), async (c) => {
     })
     .filter((r) => r.outstanding > 0)
     .sort((a, b) => b.outstanding - a.outstanding)
-  return c.json(rows)
+  const exp = tableExport(c.req.query('format'), duesTable(rows), 'outstanding-dues')
+  return exp ?? c.json(rows)
 })
 
 // Per-apartment accrued simple interest on overdue, unpaid, non-interest bills
