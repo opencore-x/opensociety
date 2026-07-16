@@ -54,11 +54,11 @@ describe('reports routes — admin-only auth contract', () => {
 
 describe('reports routes — handler', () => {
   it('admin GET /finance returns the report shape', async () => {
-    // user, then billed/collected/methods queries all empty
-    setQueue([[ADMIN], [], [], []])
+    // user, then billed/collected/methods empty, then the cash+bank aggregate
+    setQueue([[ADMIN], [], [], [], [{ cashBank: 0 }]])
     const res = await reportRoutes.request('/finance', as('a1'), env)
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { byMonth: unknown[]; totalBilled: number; totalCollected: number }
-    expect(body).toMatchObject({ byMonth: [], totalBilled: 0, totalCollected: 0 })
+    const body = (await res.json()) as { byMonth: unknown[]; totalBilled: number; totalCollected: number; cashBankBalance: number }
+    expect(body).toMatchObject({ byMonth: [], totalBilled: 0, totalCollected: 0, cashBankBalance: 0 })
   })
 })

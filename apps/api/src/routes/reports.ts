@@ -26,6 +26,8 @@ import {
   incomeExpenditure,
   balanceSheet,
   receiptsAndPayments,
+  bucketAging,
+  AGING_BUCKETS,
   trialBalanceTable,
   incomeExpenditureTable,
   balanceSheetTable,
@@ -97,11 +99,19 @@ reportRoutes.get('/finance', async (c) => {
     .from(payments)
     .groupBy(payments.method)
 
+  // Cash + bank balance from the ledger (0 until the GL is initialized).
+  const [{ cashBank }] = await db
+    .select({ cashBank: sql<number>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
+    .from(journalLines)
+    .innerJoin(accounts, eq(accounts.id, journalLines.accountId))
+    .where(and(sql`${accounts.code} like '10%'`, eq(accounts.isGroup, false)))
+
   return c.json({
     byMonth,
     byMethod: methods.map((m) => ({ method: m.method, amount: Number(m.amount) })).sort((a, b) => b.amount - a.amount),
     totalBilled: byMonth.reduce((s, r) => s + r.billed, 0),
     totalCollected: byMonth.reduce((s, r) => s + r.collected, 0),
+    cashBankBalance: Number(cashBank),
   })
 })
 
@@ -408,6 +418,63 @@ reportRoutes.get('/tally-export', async (c) => {
 
   return new Response(buildTallyXml(vouchers, ledgers), {
     headers: { 'content-type': 'application/xml', 'content-disposition': 'attachment; filename="tally-export.xml"' },
+  })
+})
+
+// Aging analysis of outstanding dues (#100): buckets 0-30 / 31-60 / 61-90 / 90+
+// days past due, both in total and per flat. ?asOf=YYYY-MM-DD (default: today).
+reportRoutes.get('/aging', async (c) => {
+  const db = c.get('db')
+  const asOf = c.req.query('asOf') ? new Date(`${c.req.query('asOf')}T23:59:59.999Z`) : new Date()
+  const asOfMs = asOf.getTime()
+
+  const rows = await db
+    .select({
+      apartmentId: maintenanceBills.apartmentId,
+      tower: apartments.tower,
+      apartmentNo: apartments.apartmentNo,
+      total: maintenanceBills.totalAmount,
+      dueDate: maintenanceBills.dueDate,
+      paid: sql<number>`coalesce(sum(${payments.amount}), 0)`,
+    })
+    .from(maintenanceBills)
+    .innerJoin(apartments, eq(apartments.id, maintenanceBills.apartmentId))
+    .leftJoin(payments, eq(payments.billId, maintenanceBills.id))
+    .where(and(isNotNull(maintenanceBills.dueDate), sql`${maintenanceBills.status} <> 'CANCELLED'`))
+    .groupBy(
+      maintenanceBills.id,
+      maintenanceBills.apartmentId,
+      apartments.tower,
+      apartments.apartmentNo,
+      maintenanceBills.totalAmount,
+      maintenanceBills.dueDate,
+    )
+
+  const perApt = new Map<string, { label: string; items: { outstanding: number; dueDateMs: number }[] }>()
+  const allItems: { outstanding: number; dueDateMs: number }[] = []
+  for (const r of rows) {
+    const outstanding = Number(r.total) - Number(r.paid)
+    if (outstanding <= 0 || !r.dueDate) continue
+    const item = { outstanding, dueDateMs: new Date(r.dueDate as unknown as string).getTime() }
+    allItems.push(item)
+    const e = perApt.get(r.apartmentId) ?? { label: `${r.tower}-${r.apartmentNo}`, items: [] }
+    e.items.push(item)
+    perApt.set(r.apartmentId, e)
+  }
+
+  const buckets = bucketAging(allItems, asOfMs)
+  const byApartment = [...perApt.entries()]
+    .map(([apartmentId, v]) => {
+      const b = bucketAging(v.items, asOfMs)
+      return { apartmentId, apartment: v.label, buckets: b, outstanding: AGING_BUCKETS.reduce((s, k) => s + b[k], 0) }
+    })
+    .sort((a, b) => b.outstanding - a.outstanding)
+
+  return c.json({
+    asOf: asOf.toISOString().slice(0, 10),
+    buckets,
+    total: AGING_BUCKETS.reduce((s, k) => s + buckets[k], 0),
+    byApartment,
   })
 })
 
