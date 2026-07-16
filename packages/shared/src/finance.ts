@@ -172,6 +172,51 @@ export function sumApartmentInterest(
   return bills.reduce((s, b) => s + computeInterest(b.outstanding, b.dueDateMs, asOfMs, ratePct, graceDays), 0)
 }
 
+// Title prefix marking auto-generated interest-on-arrears bills (#95), so they
+// can be told apart from ordinary charges in statements/reports.
+export const INTEREST_BILL_TITLE_PREFIX = 'Interest on arrears'
+
+// ----- Per-flat statement of account (#96) -----
+
+export type StatementEntryType = 'BILL' | 'INTEREST' | 'PAYMENT' | 'ADJUSTMENT'
+
+export type StatementEntryInput = {
+  date: string // ISO timestamp
+  type: StatementEntryType
+  description: string
+  debit: number // paise (charges raise the balance)
+  credit: number // paise (payments lower it)
+  ref?: string | null // source bill/payment id
+}
+
+export type StatementEntry = StatementEntryInput & { balance: number }
+
+export type Statement = {
+  opening: number
+  closing: number
+  totalDebit: number
+  totalCredit: number
+  entries: StatementEntry[]
+}
+
+// Merge a flat's charges (debits) and payments (credits) into a dated,
+// running-balance statement. Balance is debit-positive = amount the flat owes;
+// closing = opening + Σdebit − Σcredit, which reconciles to outstanding dues.
+// `opening` is the net balance carried in from before the statement window.
+export function buildStatement(rows: StatementEntryInput[], opening = 0): Statement {
+  const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date))
+  let balance = opening
+  let totalDebit = 0
+  let totalCredit = 0
+  const entries = sorted.map((r) => {
+    balance += r.debit - r.credit
+    totalDebit += r.debit
+    totalCredit += r.credit
+    return { ...r, balance }
+  })
+  return { opening, closing: balance, totalDebit, totalCredit, entries }
+}
+
 export type CollectionRow = { period: string; billed: number; collected: number }
 export type MethodRow = { method: string; amount: number }
 export type FinanceReport = {
