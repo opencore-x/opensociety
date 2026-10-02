@@ -44,6 +44,7 @@ function Nav() {
           headerStyle: { backgroundColor: palette.background },
           headerTintColor: palette.ink,
           headerShadowVisible: false,
+          statusBarStyle: 'dark',
           headerTitleStyle: { fontSize: 16, fontWeight: '600' },
           headerBackButtonDisplayMode: 'minimal',
           contentStyle: { backgroundColor: palette.background },
