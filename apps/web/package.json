@@ -8,7 +8,8 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "node server.mjs"
   },
   "dependencies": {
     "@clerk/tanstack-react-start": "^1.4.12",
