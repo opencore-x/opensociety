@@ -33,7 +33,12 @@ export function PageIntro({
   return (
     <View className="mb-1 flex-row items-center gap-4">
       <View className="flex-1 gap-2">
-        <Text role="heading" className="w-full text-[28px] font-bold leading-9 tracking-tight">
+        <Text
+          role="heading"
+          className="w-full"
+          // Keep native font metrics together for measurement on the first render.
+          style={{ fontSize: 28, fontWeight: '700', lineHeight: 36, letterSpacing: -0.5 }}
+        >
           {title}
         </Text>
         {description && (
