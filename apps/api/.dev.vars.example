@@ -9,3 +9,9 @@ DATABASE_URL=postgresql://user:password@host/database?sslmode=require
 CLERK_SECRET_KEY=sk_test_...
 CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_WEBHOOK_SECRET=whsec_...
+
+# Push is disabled until migration 0023 and per-app credentials are ready.
+PUSH_ENABLED=false
+BILL_REMINDER_DAYS=-7,0,3
+SOCIETY_TIME_ZONE=Asia/Kolkata
+# EXPO_ACCESS_TOKEN=...  # Only if enhanced Expo push security is enabled.
