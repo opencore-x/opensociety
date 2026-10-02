@@ -36,6 +36,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Bundle Node API
+        run: pnpm --filter @opensociety/api build:node
+
       - name: Type-check
         run: pnpm check-types
 
@@ -44,3 +47,22 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  hosting:
+    name: Hosting containers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build API image
+        run: docker build --target api -t opensociety-api:test .
+      - name: Build staging web image
+        run: |
+          docker build --target web -t opensociety-web:test \
+            --build-arg DEPLOY_ENV=staging \
+            --build-arg VITE_API_URL=https://api.example.com \
+            --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_test_ZXhhbXBsZS5jb20k .
+      - name: Smoke-test containers without external services
+        run: node --test scripts/hosting-smoke.test.mjs
