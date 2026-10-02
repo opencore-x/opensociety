@@ -1,5 +1,5 @@
-import type { ComponentProps, ReactNode } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useT } from '../../lib/i18n';
 import { palette } from '../../lib/theme';
@@ -10,6 +10,30 @@ import { Text } from './text';
 import { ConnectionNotice } from './feedback';
 import { useSyncStatus } from '../../lib/offline/use-sync-status';
 
+/** Keeps native forms and input-bearing lists above the Android keyboard. */
+export function ScreenFrame({ children }: { children: ReactNode }) {
+  const container = useRef<View>(null);
+  const [top, setTop] = useState(0);
+  return (
+    <SafeAreaView
+      ref={container}
+      edges={['bottom', 'left', 'right']}
+      className="bg-background"
+      style={{ flex: 1 }}
+      onLayout={() => container.current?.measureInWindow((_x, y) => setTop(y))}
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        enabled={Platform.OS === 'android'}
+        behavior="height"
+        keyboardVerticalOffset={top}
+      >
+        {children}
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
 export function Screen({
   contentContainerClassName,
   children,
@@ -17,7 +41,7 @@ export function Screen({
   ...props
 }: ComponentProps<typeof ScrollView> & { connectionNotice?: boolean }) {
   return (
-    <SafeAreaView edges={['bottom', 'left', 'right']} className="flex-1 bg-background">
+    <ScreenFrame>
       <ScrollView
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
@@ -30,7 +54,7 @@ export function Screen({
         {connectionNotice && <ConnectionNotice />}
         {children}
       </ScrollView>
-    </SafeAreaView>
+    </ScreenFrame>
   );
 }
 

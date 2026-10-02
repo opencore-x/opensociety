@@ -12,17 +12,16 @@ import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
-import { PageIntro, ScreenState, EmptyState } from '../components/ui/screen'
+import { PageIntro, ScreenFrame, ScreenState, EmptyState } from '../components/ui/screen'
 import { AdaptiveRow, Feedback, Badge, Section } from '../components/ui/feedback'
 import { Icon } from '../components/ui/icon'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 // Guard gate view: the visitors a guard acts on — APPROVED (expected at the
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
 export default function Gate() {
   const qc = useQueryClient()
   const { t } = useT()
-  const insets = useSafeAreaInsets()
   const { isOnline } = useSyncStatus()
   const { data, isPending, isError, refetch, isRefetching } = useQuery({
     queryKey: ['visitors'],
@@ -55,7 +54,7 @@ export default function Gate() {
   const gate = (data ?? []).filter((v) => v.status === 'APPROVED' || v.status === 'ENTERED')
 
   return (
-    <>
+    <ScreenFrame>
       <FlatList
         className="bg-background"
         contentContainerStyle={{
@@ -63,9 +62,10 @@ export default function Gate() {
           maxWidth: 720,
           alignSelf: 'center',
           padding: 20,
-          paddingBottom: insets.bottom + 24,
+          paddingBottom: 24,
           gap: 16,
         }}
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         refreshing={isRefetching}
         onRefresh={() => refetch()}
@@ -160,7 +160,7 @@ export default function Gate() {
           }}
         />
       )}
-    </>
+    </ScreenFrame>
   )
 }
 
