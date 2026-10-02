@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ActivityIndicator, View } from 'react-native'
+import { View } from 'react-native'
 import type { BillStatus } from '@opensociety/shared'
 import { formatPaise } from '@opensociety/shared'
 import { apiClient } from '../api/client'
@@ -8,7 +8,7 @@ import { cn } from '../lib/utils'
 import { Text } from '../components/ui/text'
 import { Icon } from '../components/ui/icon'
 import { EmptyState, PageIntro, Screen, ScreenState } from '../components/ui/screen'
-import { Button } from '../components/ui/button'
+import { AdaptiveRow, Feedback, LoadingState } from '../components/ui/feedback'
 
 const STATUS_STYLE: Record<BillStatus, string> = {
   ISSUED: 'bg-blue-100 text-blue-800',
@@ -40,8 +40,8 @@ export default function Bills() {
     enabled: !!primaryApt,
   })
 
-  if (bills.isLoading) return <ScreenState loading />
-  if (bills.isError)
+  if (bills.isPending) return <ScreenState loading />
+  if (bills.isError && !bills.data)
     return <ScreenState title={t('bills.loadError')} onRetry={() => bills.refetch()} />
 
   return (
@@ -52,8 +52,8 @@ export default function Bills() {
         const outstanding = b.totalAmount - (b.paidAmount ?? 0)
         return (
           <View key={b.id} className="gap-4 rounded-xl border border-border bg-card p-5">
-            <View className="flex-row flex-wrap items-center justify-between gap-3">
-              <Text className="flex-1 text-base font-semibold">{b.title}</Text>
+            <AdaptiveRow className="justify-between">
+              <Text className="flex-auto text-base font-semibold">{b.title}</Text>
               <Text
                 className={cn(
                   'overflow-hidden rounded-full px-3 py-1 text-xs font-semibold',
@@ -62,7 +62,7 @@ export default function Bills() {
               >
                 {t('design.billStatus.' + b.status)}
               </Text>
-            </View>
+            </AdaptiveRow>
             <Text className="text-sm text-muted-foreground">
               {b.periodMonth ?? t('bills.oneTime')}
               {b.dueDate ? ` · ${t('bills.due')} ${fmtDate(b.dueDate)}` : ''}
@@ -83,16 +83,13 @@ export default function Bills() {
         )
       })}
 
-      <Text className="mt-4 text-lg font-bold">{t('bills.paymentHistory')}</Text>
-      {payments.isLoading ? (
-        <ActivityIndicator />
+      <Text accessibilityRole="header" className="mt-4 text-lg font-bold">
+        {t('bills.paymentHistory')}
+      </Text>
+      {payments.isPending ? (
+        <LoadingState />
       ) : payments.isError ? (
-        <View className="gap-3 rounded-xl border border-border bg-card p-5">
-          <Text className="text-sm text-muted-foreground">{t('design.paymentsError')}</Text>
-          <Button variant="outline" onPress={() => payments.refetch()}>
-            <Text>{t('design.retry')}</Text>
-          </Button>
-        </View>
+        <Feedback message={t('design.paymentsError')} onRetry={() => payments.refetch()} />
       ) : (
         (payments.data ?? []).length === 0 && (
           <EmptyState icon="history" title={t('bills.noPayments')} />
@@ -117,9 +114,26 @@ export default function Bills() {
         </View>
       ))}
 
+      <Text accessibilityRole="header" className="mt-4 text-lg font-bold">
+        {t('bills.statement')}
+      </Text>
+      {myApts.isPending || (primaryApt && statement.isPending) ? (
+        <LoadingState />
+      ) : myApts.isError || statement.isError ? (
+        <Feedback
+          message={t('design.loadFailed')}
+          onRetry={() => {
+            myApts.refetch()
+            if (primaryApt) statement.refetch()
+          }}
+        />
+      ) : !primaryApt ? (
+        <EmptyState icon="home" title={t('common.noFlats')} description={t('design.noFlatsHint')} />
+      ) : !statement.data?.entries.length ? (
+        <EmptyState icon="receipt" title={t('design.statementEmpty')} />
+      ) : null}
       {statement.data && statement.data.entries.length > 0 && (
         <>
-          <Text className="mt-4 text-lg font-bold">{t('bills.statement')}</Text>
           {statement.data.entries.map((e, i) => (
             <View
               key={`${e.ref ?? ''}-${i}`}
@@ -142,10 +156,10 @@ export default function Bills() {
               </View>
             </View>
           ))}
-          <View className="flex-row items-center justify-between px-1 pt-1">
+          <AdaptiveRow className="justify-between px-1 pt-1">
             <Text className="text-sm font-bold">{t('bills.closingBalance')}</Text>
             <Text className="text-sm font-bold">{formatPaise(statement.data.closing)}</Text>
-          </View>
+          </AdaptiveRow>
         </>
       )}
     </Screen>
