@@ -23,11 +23,6 @@ import {
 // on (source_type, source_id)). If the chart of accounts hasn't been initialized
 // yet, posting is skipped until an admin runs POST /ledger/init.
 
-function isUniqueViolation(e: unknown): boolean {
-  const code = (e as { code?: string })?.code
-  return code === '23505' || /duplicate key value/i.test((e as Error)?.message ?? '')
-}
-
 function toDateStr(d: Date | string): string {
   return (d instanceof Date ? d.toISOString() : new Date(d).toISOString()).slice(0, 10)
 }
@@ -40,46 +35,46 @@ export async function resolveAccounts(db: Database, codes: string[]): Promise<Ma
   return new Map(rows.map((r) => [r.code, r.id]))
 }
 
-// Persist a balanced draft as one journal entry + its lines. Returns the entry
-// id, or null when the entry already exists (idempotent). Throws only on an
-// unbalanced draft — that is a programming error, not a data condition.
+// Persist headers and lines in the same statement. A failed line rolls back
+// its header, leaving the business event eligible for a subsequent retry.
+export async function insertJournalEntries(db: Database, drafts: JournalDraft[], createdBy?: string): Promise<string[]> {
+  if (!drafts.length) return []
+  const entries = drafts.map((draft) => {
+    const errors = validateEntryLines(draft.lines)
+    if (errors.length) throw new Error(`unbalanced journal entry: ${errors.join('; ')}`)
+    return {
+      id: crypto.randomUUID(), entry_date: draft.entryDate, narration: draft.narration,
+      source_type: draft.sourceType, source_id: draft.sourceId ?? null, period: draft.period,
+      is_reversal: draft.isReversal ?? false, reverses_id: draft.reversesId ?? null,
+      created_by: createdBy ?? null,
+    }
+  })
+  const lines = drafts.flatMap((draft, i) => draft.lines.map((line) => ({
+    entry_id: entries[i].id, account_id: line.accountId, debit: line.debit, credit: line.credit,
+    apartment_id: line.apartmentId ?? null, vendor_id: line.vendorId ?? null, memo: line.memo ?? null,
+  })))
+  const result = await db.execute<{ id: string }>(sql`
+    with created as (
+      insert into journal_entries (id, entry_date, narration, source_type, source_id, period, is_reversal, reverses_id, created_by)
+      select id, entry_date, narration, source_type, source_id, period, is_reversal, reverses_id, created_by
+      from jsonb_to_recordset(${JSON.stringify(entries)}::jsonb) as entry(
+        id uuid, entry_date date, narration text, source_type journal_source, source_id uuid,
+        period text, is_reversal boolean, reverses_id uuid, created_by uuid
+      ) on conflict (source_type, source_id) where source_type in ('BILL', 'PAYMENT', 'EXPENSE', 'INTEREST') do nothing
+      returning id
+    ), lines as (
+      insert into journal_lines (entry_id, account_id, debit, credit, apartment_id, vendor_id, memo)
+      select line.entry_id, line.account_id, line.debit, line.credit, line.apartment_id, line.vendor_id, line.memo
+      from jsonb_to_recordset(${JSON.stringify(lines)}::jsonb) as line(
+        entry_id uuid, account_id uuid, debit integer, credit integer, apartment_id uuid, vendor_id uuid, memo text
+      ) join created on created.id = line.entry_id
+    ) select id from created
+  `)
+  return result.rows.map((row) => row.id)
+}
+
 export async function insertJournalEntry(db: Database, draft: JournalDraft, createdBy?: string): Promise<string | null> {
-  const errors = validateEntryLines(draft.lines)
-  if (errors.length) throw new Error(`unbalanced journal entry: ${errors.join('; ')}`)
-
-  let entryId: string
-  try {
-    const [entry] = await db
-      .insert(journalEntries)
-      .values({
-        entryDate: draft.entryDate,
-        narration: draft.narration,
-        sourceType: draft.sourceType,
-        sourceId: draft.sourceId ?? null,
-        period: draft.period,
-        isReversal: draft.isReversal ?? false,
-        reversesId: draft.reversesId ?? null,
-        createdBy: createdBy ?? null,
-      })
-      .returning({ id: journalEntries.id })
-    entryId = entry.id
-  } catch (e) {
-    if (isUniqueViolation(e)) return null // already posted
-    throw e
-  }
-
-  await db.insert(journalLines).values(
-    draft.lines.map((l) => ({
-      entryId,
-      accountId: l.accountId,
-      debit: l.debit,
-      credit: l.credit,
-      apartmentId: l.apartmentId ?? null,
-      vendorId: l.vendorId ?? null,
-      memo: l.memo ?? null,
-    })),
-  )
-  return entryId
+  return (await insertJournalEntries(db, [draft], createdBy))[0] ?? null
 }
 
 // §6.1 — post the "bill issued" entry for a freshly created bill. Each line

@@ -1,19 +1,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 const { fakeDb, setQueue } = vi.hoisted(() => {
-  let queue: unknown[][] = []
+  let queue: unknown[] = []
   const makeChain = (): unknown =>
     new Proxy(function () {}, {
       get(_t, prop) {
         if (prop === 'then') {
-          const r = queue.length ? (queue.shift() as unknown[]) : []
+          const r = queue.length ? queue.shift() : []
           return (resolve: (v: unknown) => void) => resolve(r)
         }
         return () => makeChain()
       },
       apply: () => makeChain(),
     })
-  return { fakeDb: () => makeChain(), setQueue: (q: unknown[][]) => (queue = q) }
+  return { fakeDb: () => makeChain(), setQueue: (q: unknown[]) => (queue = q) }
 })
 
 vi.mock('@opensociety/db', async (orig) => ({
@@ -86,7 +86,7 @@ describe('POST /journal-entries — balanced-entry guard', () => {
   })
 
   it('201s a balanced entry from an admin', async () => {
-    setQueue([[ADMIN], [{ id: 'entry-1' }]])
+    setQueue([[ADMIN], { rows: [{ id: 'entry-1' }] }])
     const res = await jsonReq('/journal-entries', 'a1', {
       entryDate: '2026-07-10',
       narration: 'Opening balance',
