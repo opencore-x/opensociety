@@ -5,6 +5,8 @@ import { Icon } from './ui/icon'
 import { Input } from './ui/input'
 import { PageIntro, Screen } from './ui/screen'
 import { Text } from './ui/text'
+import { Feedback } from './ui/feedback'
+import { useSyncStatus } from '../lib/offline/use-sync-status'
 
 type SignInFormProps = {
   email: string
@@ -28,8 +30,11 @@ export function SignInForm({
   error,
 }: SignInFormProps) {
   const { t } = useT()
+  const { isOnline } = useSyncStatus()
+  const unavailable = disabled || !isOnline
   return (
-    <Screen contentContainerClassName="gap-8 py-8">
+    <Screen connectionNotice={false} contentContainerClassName="gap-8 py-8">
+      {!isOnline && <Feedback tone="info" message={t('design.signInOffline')} />}
       <View className="h-16 w-16 items-center justify-center rounded-3xl bg-primary">
         <Icon name="home" size={30} color="#FFFFFF" />
       </View>
@@ -58,7 +63,7 @@ export function SignInForm({
             returnKeyType="go"
             value={password}
             onChangeText={onPasswordChange}
-            onSubmitEditing={() => !disabled && onSubmit()}
+            onSubmitEditing={() => !unavailable && onSubmit()}
           />
         </View>
         {error && (
@@ -69,8 +74,8 @@ export function SignInForm({
         <Button
           size="lg"
           onPress={onSubmit}
-          disabled={disabled}
-          accessibilityState={{ busy: pending, disabled }}
+          disabled={unavailable}
+          accessibilityState={{ busy: pending, disabled: unavailable }}
         >
           <Text>{pending ? t('signIn.signingIn') : t('nav.signIn')}</Text>
         </Button>
