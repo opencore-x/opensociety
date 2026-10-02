@@ -94,7 +94,7 @@ export default function Index() {
               accessibilityState={{ selected: mode === value }}
               onPress={() => setMode(value)}
               className={cn(
-                'min-h-11 flex-1 items-center justify-center rounded-full px-3 py-2',
+                'min-h-[44px] flex-1 items-center justify-center rounded-full px-3 py-2',
                 mode === value && 'bg-card',
               )}
             >

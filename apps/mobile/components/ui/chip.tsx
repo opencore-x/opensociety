@@ -20,7 +20,7 @@ function Chip({
         role="button"
         accessibilityState={{ ...accessibilityState, selected: !!selected }}
         className={cn(
-          'min-h-11 items-center justify-center rounded-full border px-4 py-2.5 active:opacity-75',
+          'min-h-[44px] items-center justify-center rounded-full border px-4 py-2.5 active:opacity-75',
           selected ? 'border-primary bg-primary' : 'border-input bg-background',
           className,
         )}
