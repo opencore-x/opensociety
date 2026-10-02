@@ -42,23 +42,27 @@ packages/
 
 ## Quickstart
 
-```
-pnpm install
-pnpm check-types                              # type-check all packages
-pnpm --filter @opensociety/db db:generate    # generate a migration from the schema
-pnpm --filter @opensociety/api dev           # wrangler dev (needs apps/api/.dev.vars)
-pnpm --filter @opensociety/web dev           # http://localhost:3000
+Use Node 22 and the pinned pnpm 10 workspace install. Local development runs directly on the Mac; Docker builds and container checks run in GitHub Actions.
+
+```sh
+pnpm install --frozen-lockfile
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+# Fill in the development Neon/Clerk values, then start both applications:
+pnpm dev
 ```
 
-Then open the admin dashboard at **http://localhost:3000/admin**.
+Turborepo builds the shared and database packages before starting the Node API on port 8787 and the web dashboard on port 3000. Its watcher rebuilds workspace dependencies and restarts affected applications when files change. Open **http://localhost:3000/admin**. Start the mobile app separately with `pnpm --filter @opensociety/mobile start` when needed.
+
+Run `pnpm build`, `pnpm check-types`, `pnpm lint`, and `pnpm test` from the root. These reuse the workspace install and Turbo cache. `pnpm --filter @opensociety/api dev:worker` remains available for the Workers adapter.
 
 ### Environment
 
 Copy the example env files and fill in real values (all are gitignored):
 
 ```
-cp apps/api/.dev.vars.example apps/api/.dev.vars   # DATABASE_URL, CLERK_* (API)
-cp apps/web/.env.example apps/web/.env             # VITE_API_URL, VITE_DEV_USER_ID (web)
+cp apps/api/.env.example apps/api/.env   # DATABASE_URL, CLERK_* (Node API)
+cp apps/web/.env.example apps/web/.env   # VITE_API_URL, VITE_CLERK_PUBLISHABLE_KEY
 ```
 
 Per-society secrets (`DATABASE_URL`, `CLERK_*`, R2) go in `apps/api/.dev.vars` for local Workers development. Node hosting uses runtime environment variables. See [the deployment guide](deploy/README.md) for container builds, configuration, migrations, scheduled jobs, and rollback.

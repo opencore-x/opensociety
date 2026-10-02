@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "tsx --env-file-if-exists=.env src/node/server.ts",
     "deploy": "wrangler deploy",
     "build": "tsc --noEmit",
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
     "build:node": "node build-node.mjs",
-    "start": "node dist/node.mjs"
+    "start": "node dist/node.mjs",
+    "dev:worker": "wrangler dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1145.0",
@@ -33,6 +34,7 @@
     "@types/node": "^22.10.2",
     "esbuild": "^0.28.2",
     "eslint": "^9.18.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^3.0.5",
     "wrangler": "^3.99.0"

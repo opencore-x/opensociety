@@ -2,7 +2,7 @@
 
 The Droplet is not provisioned, confirmed on 2026-10-02. No public deployment, production migration, DNS change, or image publication has been performed. Shared account and billing facts remain in the shared hosting memory.
 
-Run one API and one web container per society, with Neon for the database and R2 for object storage. A shared host-level Caddy process terminates HTTPS and forwards to loopback-only ports. Each container has a 384 MiB memory cap. Measure these initial limits alongside the other shared applications before claiming capacity. Build images on CI or a development machine, never on the small Droplet.
+Run one API and one web container per society, with Neon for the database and R2 for object storage. A shared host-level Caddy process terminates HTTPS and forwards to loopback-only ports. Each container has a 384 MiB memory cap. Measure these initial limits alongside the other shared applications before claiming capacity. Build images in GitHub Actions. Local development uses pnpm workspaces and Turborepo to keep Docker images and cache off the Mac.
 
 ## Build
 
@@ -15,12 +15,9 @@ pnpm check-types
 pnpm lint
 pnpm test
 pnpm --filter @opensociety/api build:node
-docker build --target api -t opensociety-api:local .
-docker build --target web -t opensociety-web:local \
-  --build-arg DEPLOY_ENV=staging \
-  --build-arg VITE_API_URL=https://api.staging.example.com \
-  --build-arg VITE_CLERK_PUBLISHABLE_KEY=YOUR_STAGING_PUBLIC_KEY .
 ```
+
+Use `pnpm dev` for local API/web development. CI builds and smoke-tests both containers without using local Docker storage.
 
 Only public configuration goes into web build arguments. Secrets belong in the API runtime environment. Production web builds require a live Clerk publishable key. Production API runtime requires a live secret unless `APP_ENV=staging` is explicit. Both require exact HTTPS origins. Set `WEB_ORIGINS` for the Workers adapter too if deploying it.
 
