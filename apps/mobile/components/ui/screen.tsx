@@ -13,8 +13,9 @@ import { useSyncStatus } from '../../lib/offline/use-sync-status';
 export function Screen({
   contentContainerClassName,
   children,
+  connectionNotice = true,
   ...props
-}: ComponentProps<typeof ScrollView>) {
+}: ComponentProps<typeof ScrollView> & { connectionNotice?: boolean }) {
   return (
     <SafeAreaView edges={['bottom', 'left', 'right']} className="flex-1 bg-background">
       <ScrollView
@@ -26,7 +27,7 @@ export function Screen({
         )}
         {...props}
       >
-        <ConnectionNotice />
+        {connectionNotice && <ConnectionNotice />}
         {children}
       </ScrollView>
     </SafeAreaView>

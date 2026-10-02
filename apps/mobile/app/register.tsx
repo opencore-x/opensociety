@@ -66,7 +66,7 @@ export default function Register() {
   const canSubmit = name.trim().length > 0 && !!apartmentId && !create.isPending;
 
   return (
-    <Screen>
+    <Screen connectionNotice={false}>
       <PageIntro title={t('nav.registerVisitor')} description={t('design.registerHint')} />
       <OfflineBanner className="rounded-md" />
       <SyncErrorTray />
