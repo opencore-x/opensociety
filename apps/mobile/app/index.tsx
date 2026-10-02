@@ -70,7 +70,7 @@ export default function Index() {
   const items = mode === 'resident' ? EVERYDAY : GATE
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
       <ScrollView contentContainerClassName="gap-7 p-5 pb-8" showsVerticalScrollIndicator={false}>
         <View className="flex-row items-center gap-2.5 pt-2">
           <View className="h-9 w-9 items-center justify-center rounded-full bg-primary">

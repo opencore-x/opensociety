@@ -3,6 +3,7 @@ import { Link } from 'expo-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, FlatList, Modal, Platform, View, Linking } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
+import { StatusBar } from 'expo-status-bar'
 import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
@@ -16,6 +17,7 @@ import { PageIntro, ScreenFrame, ScreenState, EmptyState } from '../components/u
 import { AdaptiveRow, Feedback, Badge, Section } from '../components/ui/feedback'
 import { Icon } from '../components/ui/icon'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { palette } from '../lib/theme'
 
 // Guard gate view: the visitors a guard acts on — APPROVED (expected at the
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
@@ -187,7 +189,8 @@ function QrScannerModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-primary">
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.primary }}>
+        <StatusBar style="light" />
         <View accessibilityViewIsModal className="flex-1 items-center justify-center">
           {Platform.OS === 'web' ? (
             <View className="items-center gap-4 p-6">

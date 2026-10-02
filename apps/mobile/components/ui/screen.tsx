@@ -18,8 +18,7 @@ export function ScreenFrame({ children }: { children: ReactNode }) {
     <SafeAreaView
       ref={container}
       edges={['bottom', 'left', 'right']}
-      className="bg-background"
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: palette.background }}
       onLayout={() => container.current?.measureInWindow((_x, y) => setTop(y))}
     >
       <KeyboardAvoidingView
