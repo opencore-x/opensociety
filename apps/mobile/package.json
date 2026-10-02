@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",
+    "@expo/dom-webview": "~57.0.1",
     "@expo/metro-runtime": "~57.0.16",
     "@opensociety/shared": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
