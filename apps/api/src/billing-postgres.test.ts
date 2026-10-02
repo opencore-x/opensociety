@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
 import { accounts, apartments, billLineItems, journalEntries, journalLines, maintenanceBills, type Database } from '@opensociety/db'
-import { insertJournalEntry } from './lib/ledger-posting'
+import { insertJournalEntry, postMonthlyBills } from './lib/ledger-posting'
 import { generateMonthlyBills } from './lib/generate-bills'
 
 const postgres = new PGlite()
@@ -73,3 +73,23 @@ it('keeps journal entries atomic and allows retry after a rejected line', async 
   expect(await pg.select().from(journalEntries)).toHaveLength(1)
   expect(await pg.select().from(journalLines)).toHaveLength(2)
 })
+
+
+it('posts 1,000 bills in batches and recovers generation completed before ledger initialization', async () => {
+  await pg.insert(apartments).values(Array.from({ length: 1000 }, (_, i) => ({ tower: 'A', apartmentNo: String(i + 1) })))
+  await generateMonthlyBills(db, options)
+  expect(await postMonthlyBills(db, options.periodMonth)).toBe(0)
+  await pg.insert(accounts).values([
+    { code: '1100', name: 'Receivable', type: 'ASSET' },
+    { code: '2200', name: 'GST', type: 'LIABILITY' },
+    { code: '4000', name: 'Income', type: 'INCOME' },
+  ])
+  expect(await postMonthlyBills(db, options.periodMonth)).toBe(1000)
+  expect(await pg.select().from(journalEntries)).toHaveLength(1000)
+  const lines = await pg.select().from(journalLines)
+  expect(lines).toHaveLength(3000)
+  expect(lines.reduce((sum, line) => sum + line.debit - line.credit, 0)).toBe(0)
+  expect(lines.reduce((sum, line) => sum + line.debit, 0)).toBe(11800000)
+  expect(await postMonthlyBills(db, options.periodMonth)).toBe(0)
+  expect(await pg.select().from(journalLines)).toHaveLength(3000)
+}, 15_000)

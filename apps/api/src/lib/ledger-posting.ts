@@ -1,6 +1,6 @@
 import type { Database } from '@opensociety/db'
 import { accounts, journalEntries, journalLines, maintenanceBills, billLineItems, payments } from '@opensociety/db'
-import { and, eq, inArray, ne, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
 import {
   ACCOUNT_CODES,
   postBillIssued as buildBillEntry,
@@ -126,6 +126,40 @@ export async function postBill(db: Database, billId: string, createdBy?: string)
     narration: 'Maintenance bill issued',
   })
   return insertJournalEntry(db, draft, createdBy)
+}
+
+// Fetch a month's unposted bills once, then persist bounded batches. Re-running
+// also repairs bills whose earlier posting failed after generation committed.
+export async function postMonthlyBills(db: Database, period: string, createdBy?: string): Promise<number> {
+  const acc = await resolveAccounts(db, [ACCOUNT_CODES.MEMBER_DUES_RECEIVABLE, ACCOUNT_CODES.GST_OUTPUT_PAYABLE, ACCOUNT_CODES.MAINTENANCE_INCOME])
+  const receivable = acc.get(ACCOUNT_CODES.MEMBER_DUES_RECEIVABLE)
+  const gst = acc.get(ACCOUNT_CODES.GST_OUTPUT_PAYABLE)
+  const income = acc.get(ACCOUNT_CODES.MAINTENANCE_INCOME)
+  if (!receivable || !gst || !income) return 0
+  const rows = await db.select({
+    billId: maintenanceBills.id, apartmentId: maintenanceBills.apartmentId, issuedAt: maintenanceBills.issuedAt,
+    amount: billLineItems.amount, tax: billLineItems.taxAmount, accountId: billLineItems.accountId,
+  }).from(maintenanceBills)
+    .innerJoin(billLineItems, eq(billLineItems.billId, maintenanceBills.id))
+    .leftJoin(journalEntries, and(eq(journalEntries.sourceType, 'BILL'), eq(journalEntries.sourceId, maintenanceBills.id)))
+    .where(and(eq(maintenanceBills.type, 'MONTHLY'), eq(maintenanceBills.periodMonth, period), ne(maintenanceBills.status, 'CANCELLED'), isNull(journalEntries.id)))
+  const groups = new Map<string, { apartmentId: string; entryDate: string; lines: BillPostingLine[] }>()
+  for (const row of rows) {
+    const group = groups.get(row.billId) ?? { apartmentId: row.apartmentId, entryDate: toDateStr(row.issuedAt), lines: [] }
+    group.lines.push({ accountId: row.accountId ?? income, net: row.amount, tax: row.tax })
+    groups.set(row.billId, group)
+  }
+  const drafts = [...groups].map(([billId, bill]) => buildBillEntry({
+    ...bill, billId, period, accounts: { memberDuesReceivable: receivable, gstOutputPayable: gst }, narration: 'Maintenance bill issued',
+  }))
+  let posted = 0
+  for (let i = 0; i < drafts.length; i += 100) posted += (await insertJournalEntries(db, drafts.slice(i, i + 100), createdBy)).length
+  return posted
+}
+
+export async function safePostMonthlyBills(db: Database, period: string, createdBy?: string): Promise<void> {
+  try { await postMonthlyBills(db, period, createdBy) }
+  catch { console.error('ledger: failed to post monthly bills', period) }
 }
 
 // §6.2 — post the "payment received" entry. Debits Bank/Cash; credits Member
