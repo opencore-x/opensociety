@@ -12,6 +12,7 @@ export function Screen({ contentContainerClassName, ...props }: ComponentProps<t
   return (
     <SafeAreaView edges={['bottom', 'left', 'right']} className="flex-1 bg-background">
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         contentContainerClassName={cn('gap-5 p-5 pb-8', contentContainerClassName)}
         {...props}

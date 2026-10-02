@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Alert, ScrollView, View } from 'react-native'
+import { Alert, View } from 'react-native'
 import { useMutation } from '@tanstack/react-query'
 import type { VehicleVerification } from '@opensociety/shared'
 
@@ -8,6 +8,7 @@ import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { Screen, PageIntro } from '../components/ui/screen'
 
 // Guard gate tool: type an arriving vehicle's plate to see whether it's a
 // registered resident vehicle (with owner flat + parking slots) or unknown.
@@ -18,10 +19,12 @@ export default function VehicleGate() {
   const canCheck = plate.trim().length > 0 && !verify.isPending
 
   return (
-    <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
+    <Screen>
+      <PageIntro title={t('nav.vehicleGate')} description={t('design.vehicleGateHint')} />
       <View className="flex-row items-center gap-2">
         <Input
           className="flex-1 tracking-widest"
+          accessibilityLabel={t('vgate.platePlaceholder')}
           placeholder={t('vgate.platePlaceholder')}
           autoCapitalize="characters"
           autoCorrect={false}
@@ -38,7 +41,7 @@ export default function VehicleGate() {
       )}
 
       {verify.data && <Result key={verify.data.plate} result={verify.data} />}
-    </ScrollView>
+    </Screen>
   )
 }
 
@@ -92,7 +95,7 @@ function Result({ result }: { result: VehicleVerification }) {
           ))
         )}
       </View>
-      <View className="flex-row gap-2">
+      <View className="flex-row flex-wrap gap-2">
         <Button variant="outline" disabled={notify.isPending} onPress={() => confirm('BLOCKED')}><Text>{t('vgate.blocked')}</Text></Button>
         <Button variant="outline" disabled={notify.isPending} onPress={() => confirm('TOWED')}><Text>{t('vgate.towed')}</Text></Button>
       </View>

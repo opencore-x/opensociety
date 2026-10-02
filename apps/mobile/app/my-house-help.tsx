@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
+import { ActivityIndicator, Pressable, View } from 'react-native'
 import type { Apartment } from '@opensociety/shared'
 import { apiClient, type HouseHelpWithRating } from '../api/client'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Text } from '../components/ui/text'
+import { Screen, PageIntro } from '../components/ui/screen'
 import { cn } from '../lib/utils'
 
 // Resident view: manage which registered house help serves each of their flats.
@@ -38,11 +39,12 @@ export default function MyHouseHelp() {
     )
 
   return (
-    <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
+    <Screen>
+      <PageIntro title={t('nav.myHouseHelp')} description={t('design.helpHint')} />
       {myApts.map((a) => (
         <ApartmentAssignments key={a.id} apartment={a} registry={registry.data ?? []} />
       ))}
-    </ScrollView>
+    </Screen>
   )
 }
 
@@ -108,7 +110,7 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
         <Text className="text-sm text-muted-foreground">{t('myHouseHelp.noneYet')}</Text>
       )}
       {(assigned.data ?? []).map((h) => (
-        <View key={h.id} className="flex-row items-center gap-3 rounded-xl bg-muted p-3">
+        <View key={h.id} className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-5">
           <View className="flex-1 gap-1.5">
             <View className="flex-row flex-wrap items-center gap-2">
               <Text className="text-base font-semibold">{h.name}</Text>
@@ -143,7 +145,7 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
         <>
           <Text className="mt-1 text-sm font-semibold text-foreground">{t('myHouseHelp.addHelp')}</Text>
           {unassigned.map((h) => (
-            <View key={h.id} className="flex-row items-center gap-3 rounded-xl bg-muted p-3">
+            <View key={h.id} className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-5">
               <View className="flex-1">
                 <Text className="text-base font-semibold">{h.name}</Text>
                 <Text className="text-sm text-muted-foreground">{h.type}</Text>

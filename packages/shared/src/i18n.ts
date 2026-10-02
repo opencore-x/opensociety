@@ -946,6 +946,7 @@ const webHi: Dict = {
 }
 
 const mobileEn: Dict = {
+  'design.maintenanceDescription': 'Something needs attention? Let your society team know.',
   'design.billsTitle': "Your home, in balance.",
   'design.billsDescription': "A clear view of your maintenance bills and payments.",
   'design.paymentsError': "Payment history could not be loaded.",
@@ -1128,6 +1129,7 @@ const mobileEn: Dict = {
   'myHouseHelp.addHelp': 'Add help',
 }
 const mobileHi: Dict = {
+  'design.maintenanceDescription': 'घर में किसी काम की ज़रूरत है? अपनी सोसाइटी की टीम को बताएँ।',
   'design.billsTitle': "बिल और भुगतान, एक जगह।",
   'design.billsDescription': "अपने रखरखाव बिल और भुगतान का साफ़ हिसाब।",
   'design.paymentsError': "भुगतान का इतिहास लोड नहीं हो सका।",

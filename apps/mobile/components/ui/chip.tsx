@@ -9,15 +9,16 @@ function Chip({
   label,
   selected,
   className,
+  accessibilityState,
   ...props
 }: React.ComponentProps<typeof Pressable> & { label: string; selected?: boolean }) {
   return (
     <TextClassContext.Provider
-      value={cn('text-sm font-medium', selected ? 'text-primary-foreground' : 'text-foreground')}
+      value={cn('shrink text-center text-sm font-medium', selected ? 'text-primary-foreground' : 'text-foreground')}
     >
       <Pressable
         role="button"
-        accessibilityState={{ selected: !!selected, ...props.accessibilityState }}
+        accessibilityState={{ ...accessibilityState, selected: !!selected }}
         className={cn(
           'min-h-11 items-center justify-center rounded-full border px-4 py-2.5 active:opacity-75',
           selected ? 'border-primary bg-primary' : 'border-input bg-background',

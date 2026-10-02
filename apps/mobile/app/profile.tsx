@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 
 import { apiClient } from '../api/client'
 import { useT } from '../lib/i18n'
 import { Text } from '../components/ui/text'
+import { Screen, PageIntro } from '../components/ui/screen'
 
 function groupBy<T>(items: T[], key: (item: T) => string): Record<string, T[]> {
   const map: Record<string, T[]> = {}
@@ -45,9 +46,10 @@ export default function Profile() {
     )
 
   return (
-    <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
+    <Screen>
+      <PageIntro title={t('design.household')} description={t('design.profileHint')} />
       {myApts.map((a) => (
-        <View key={a.id} className="gap-3 rounded-xl bg-muted p-4">
+        <View key={a.id} className="gap-3 rounded-xl border border-border bg-card p-5">
           <View>
             <Text className="text-lg font-bold">
               {a.tower}-{a.apartmentNo}
@@ -86,7 +88,7 @@ export default function Profile() {
           </View>
         </View>
       ))}
-    </ScrollView>
+    </Screen>
   )
 }
 

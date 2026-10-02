@@ -28,7 +28,7 @@ const buttonVariants = cva(
   },
 )
 
-const buttonTextVariants = cva('text-sm font-semibold', {
+const buttonTextVariants = cva('shrink text-center text-sm font-semibold', {
   variants: {
     variant: {
       default: 'text-primary-foreground',
@@ -44,13 +44,13 @@ const buttonTextVariants = cva('text-sm font-semibold', {
 
 type ButtonProps = React.ComponentProps<typeof Pressable> & VariantProps<typeof buttonVariants>
 
-function Button({ className, variant, size, disabled, ...props }: ButtonProps) {
+function Button({ className, variant, size, disabled, accessibilityState, ...props }: ButtonProps) {
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant })}>
       <Pressable
         role="button"
         disabled={disabled}
-        accessibilityState={{ disabled: !!disabled, ...props.accessibilityState }}
+        accessibilityState={{ ...accessibilityState, disabled: !!disabled }}
         className={cn(buttonVariants({ variant, size }), disabled && 'opacity-50', className)}
         {...props}
       />

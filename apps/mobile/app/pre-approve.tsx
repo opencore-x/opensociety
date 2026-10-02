@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import type { VisitorPreApproval } from '@opensociety/shared'
 import { preApprovalQrValue } from '@opensociety/shared'
@@ -10,6 +10,7 @@ import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { Screen, PageIntro } from '../components/ui/screen'
 
 export default function PreApprove() {
   const qc = useQueryClient()
@@ -42,7 +43,7 @@ export default function PreApprove() {
         <View className="rounded-xl bg-card p-4">
           <QRCode value={preApprovalQrValue(created.code)} size={200} />
         </View>
-        <Text className="text-[44px] font-extrabold tracking-[6px] text-primary" selectable>
+        <Text className="text-[44px] font-extrabold tracking-[6px] text-primary" selectable adjustsFontSizeToFit minimumFontScale={0.5} numberOfLines={1}>
           {created.code}
         </Text>
         <Text className="mb-2 text-center text-sm text-muted-foreground">{t('preApprove.hint')}</Text>
@@ -64,12 +65,14 @@ export default function PreApprove() {
   const canSubmit = name.trim().length > 0 && !!apartmentId && !create.isPending
 
   return (
-    <ScrollView contentContainerClassName="gap-4 p-4">
+    <Screen>
+      <PageIntro title={t('design.createPass')} description={t('design.inviteHint')} />
       <Field label={t('register.visitorName')}>
-        <Input placeholder="e.g. Priya" value={name} onChangeText={setName} autoFocus />
+        <Input accessibilityLabel={t('register.visitorName')} placeholder={t('register.visitorName')} value={name} onChangeText={setName} />
       </Field>
       <Field label={t('register.phoneOptional')}>
         <Input
+          accessibilityLabel={t('register.phoneOptional')}
           placeholder={t('register.phonePlaceholder')}
           value={phone}
           onChangeText={setPhone}
@@ -104,7 +107,7 @@ export default function PreApprove() {
           </Text>
         )}
       </View>
-    </ScrollView>
+    </Screen>
   )
 }
 

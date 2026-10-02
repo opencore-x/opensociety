@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import { visitorTypeSchema, type CreateVisitorEntry, type VisitorEntry, type VisitorType } from '@opensociety/shared'
 
 import { apiClient } from '../api/client'
@@ -15,6 +15,7 @@ import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { Screen, PageIntro } from '../components/ui/screen'
 
 const TYPES = visitorTypeSchema.options
 
@@ -55,15 +56,17 @@ export default function Register() {
   const canSubmit = name.trim().length > 0 && !!apartmentId && !create.isPending
 
   return (
-    <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
-      <OfflineBanner className="-mx-4 -mt-4 mb-0 rounded-none" />
+    <Screen>
+      <PageIntro title={t('nav.registerVisitor')} description={t('design.registerHint')} />
+      <OfflineBanner className="rounded-md" />
       <SyncErrorTray />
       <Field label={t('register.visitorName')}>
-        <Input placeholder="e.g. Rahul" value={name} onChangeText={setName} autoFocus />
+        <Input accessibilityLabel={t('register.visitorName')} placeholder={t('register.visitorName')} value={name} onChangeText={setName} />
       </Field>
 
       <Field label={t('register.phoneOptional')}>
         <Input
+          accessibilityLabel={t('register.phoneOptional')}
           placeholder={t('register.phonePlaceholder')}
           value={phone}
           onChangeText={setPhone}
@@ -109,7 +112,7 @@ export default function Register() {
           </Text>
         )}
       </View>
-    </ScrollView>
+    </Screen>
   )
 }
 

@@ -7,6 +7,8 @@ import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { PageIntro } from '../components/ui/screen'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // Guard house-help view: pre-approved domestic staff are checked in instantly
 // (no resident approval). Each active worker shows their in/out state and the
@@ -14,6 +16,7 @@ import { Text } from '../components/ui/text'
 export default function HouseHelp() {
   const qc = useQueryClient()
   const { t } = useT()
+  const insets = useSafeAreaInsets()
   const help = useQuery({ queryKey: ['house-help'], queryFn: () => apiClient.listHouseHelp() })
   const openEntries = useQuery({
     queryKey: ['house-help-entries', 'active'],
@@ -64,10 +67,14 @@ export default function HouseHelp() {
 
   return (
     <FlatList
-      contentContainerClassName="gap-2 p-4"
+      className="bg-background"
+      contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 24, gap: 16 }}
+      keyboardShouldPersistTaps="handled"
       data={rows}
       keyExtractor={(h) => h.id}
       ListHeaderComponent={
+        <View className="gap-4 mb-2">
+        <PageIntro title={t('nav.houseHelp')} description={t('design.gateHelpHint')} />
         <Input
           className="mb-1"
           placeholder={t('houseHelp.searchPlaceholder')}
@@ -75,13 +82,14 @@ export default function HouseHelp() {
           value={search}
           onChangeText={setSearch}
         />
+        </View>
       }
       ListEmptyComponent={<Text className="text-sm text-muted-foreground">{t('houseHelp.empty')}</Text>}
       renderItem={({ item }) => {
         const openEntryId = openByHelp.get(item.id)
         const inside = openEntryId != null
         return (
-          <View className="gap-2.5 rounded-xl bg-muted p-3">
+          <View className="gap-2.5 rounded-xl border border-border bg-card p-5">
             <View className="flex-row items-center">
               <View className="flex-1">
                 <Text className="text-base font-semibold">{item.name}</Text>
@@ -96,7 +104,7 @@ export default function HouseHelp() {
                 {inside ? t('houseHelp.inside') : t('houseHelp.out')}
               </Text>
             </View>
-            <View className="flex-row gap-2">
+            <View className="flex-row flex-wrap gap-2">
               {inside ? (
                 <Button variant="outline" onPress={() => checkOut.mutate(openEntryId)} disabled={busy}>
                   <Text>{t('common.checkOut')}</Text>
@@ -115,5 +123,5 @@ export default function HouseHelp() {
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
+  return <View className="flex-1 items-center justify-center gap-3 bg-background p-6">{children}</View>
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import type { Apartment, CreateVehicle, VehicleType } from '@opensociety/shared'
 import { vehicleTypeSchema } from '@opensociety/shared'
 import { apiClient } from '../api/client'
@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { Screen, PageIntro } from '../components/ui/screen'
 import { cn } from '../lib/utils'
 
 // Resident view: register and manage the vehicles for their own flat(s).
@@ -72,7 +73,8 @@ export default function MyVehicles() {
   const canAdd = flat != null && registrationNumber.trim().length > 0 && !add.isPending
 
   return (
-    <ScrollView className="bg-background" contentContainerClassName="gap-5 p-4">
+    <Screen>
+      <PageIntro title={t('nav.myVehicles')} description={t('design.vehiclesHint')} />
       <View className="gap-2.5">
         <Text className="text-base font-bold">{t('myVehicles.registerTitle')}</Text>
         {myApts.length > 1 && (
@@ -112,7 +114,7 @@ export default function MyVehicles() {
         {(vehicles.data ?? []).map((v) => (
           <View
             key={v.id}
-            className={cn('flex-row items-center gap-3 rounded-xl bg-muted p-3', !v.isActive && 'opacity-60')}
+            className={cn('flex-row items-center gap-3 rounded-xl border border-border bg-card p-5', !v.isActive && 'opacity-60')}
           >
             <View className="flex-1">
               <Text className="text-base font-semibold tabular-nums">{v.registrationNumber}</Text>
@@ -130,7 +132,7 @@ export default function MyVehicles() {
           </View>
         ))}
       </View>
-    </ScrollView>
+    </Screen>
   )
 }
 

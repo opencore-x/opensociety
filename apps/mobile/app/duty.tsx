@@ -6,6 +6,8 @@ import { useT } from '../lib/i18n'
 import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Text } from '../components/ui/text'
+import { PageIntro } from '../components/ui/screen'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // Guard duty screen: each active guard clocks in / out of their shift. An open
 // duty session marks a guard ON DUTY. (Location capture on native needs
@@ -13,6 +15,7 @@ import { Text } from '../components/ui/text'
 export default function Duty() {
   const qc = useQueryClient()
   const { t } = useT()
+  const insets = useSafeAreaInsets()
   const guards = useQuery({ queryKey: ['guards'], queryFn: () => apiClient.listGuards() })
   const active = useQuery({ queryKey: ['duty-active'], queryFn: () => apiClient.listActiveDuty() })
 
@@ -48,7 +51,10 @@ export default function Duty() {
 
   return (
     <FlatList
-      contentContainerClassName="gap-2 p-4"
+      className="bg-background"
+      contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 24, gap: 16 }}
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={<PageIntro title={t('nav.guardDuty')} description={t('design.dutyHint')} />}
       data={rows}
       keyExtractor={(g) => g.id}
       ListEmptyComponent={<Text className="text-sm text-muted-foreground">{t('duty.empty')}</Text>}
@@ -56,7 +62,7 @@ export default function Duty() {
         const sessionId = sessionByGuard.get(item.id)
         const onDuty = sessionId != null
         return (
-          <View className="gap-2.5 rounded-xl bg-muted p-3">
+          <View className="gap-2.5 rounded-xl border border-border bg-card p-5">
             <View className="flex-row items-center">
               <View className="flex-1">
                 <Text className="text-base font-semibold">{item.name}</Text>
@@ -71,7 +77,7 @@ export default function Duty() {
                 {onDuty ? t('duty.onDuty') : t('duty.off')}
               </Text>
             </View>
-            <View className="flex-row gap-2">
+            <View className="flex-row flex-wrap gap-2">
               {onDuty ? (
                 <Button variant="outline" onPress={() => clockOut.mutate(sessionId!)} disabled={busy}>
                   <Text>{t('duty.clockOut')}</Text>
@@ -90,5 +96,5 @@ export default function Duty() {
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
+  return <View className="flex-1 items-center justify-center gap-3 bg-background p-6">{children}</View>
 }

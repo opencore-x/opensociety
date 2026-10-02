@@ -12,12 +12,15 @@ import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { PageIntro } from '../components/ui/screen'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // Guard gate view: the visitors a guard acts on — APPROVED (expected at the
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
 export default function Gate() {
   const qc = useQueryClient()
   const { t } = useT()
+  const insets = useSafeAreaInsets()
   const { isOnline } = useSyncStatus()
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['visitors'],
@@ -66,12 +69,15 @@ export default function Gate() {
   return (
     <>
     <FlatList
-      contentContainerClassName="gap-2 p-4"
+      className="bg-background"
+      contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 24, gap: 16 }}
+      keyboardShouldPersistTaps="handled"
       data={gate}
       keyExtractor={(v) => v.id}
       ListHeaderComponent={
         <>
-        <OfflineBanner className="-mx-4 -mt-4 mb-2 rounded-none" />
+        <PageIntro title={t('nav.gate')} description={t('design.gateHint')} />
+        <OfflineBanner className="mb-2 rounded-md" />
         <SyncErrorTray className="mb-2" />
         <View className="mb-1 gap-2">
           <View className="flex-row items-center gap-2">
@@ -107,7 +113,7 @@ export default function Gate() {
       renderItem={({ item }) => {
         const actions = availableVisitorActions(item.status)
         return (
-          <View className="gap-2.5 rounded-xl bg-muted p-3">
+          <View className="gap-2.5 rounded-xl border border-border bg-card p-5">
             <View className="flex-row items-center">
               <View className="flex-1">
                 <Text className="text-base font-semibold">{item.visitorName}</Text>
@@ -117,7 +123,7 @@ export default function Gate() {
                 {item.status}
               </Text>
             </View>
-            <View className="flex-row gap-2">
+            <View className="flex-row flex-wrap gap-2">
               {actions.includes('checkin') && (
                 <Button onPress={() => checkIn.mutate(item.id)} disabled={busy || !isOnline}>
                   <Text>{t('common.checkIn')}</Text>
@@ -214,5 +220,5 @@ function QrScannerModal({
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
+  return <View className="flex-1 items-center justify-center gap-3 bg-background p-6">{children}</View>
 }

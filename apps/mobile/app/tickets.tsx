@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import type { TicketCategory, TicketPriority, TicketStatus } from '@opensociety/shared'
 import { ticketCategorySchema, ticketPrioritySchema } from '@opensociety/shared'
 import { apiClient } from '../api/client'
@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { Screen, PageIntro } from '../components/ui/screen'
 import { cn } from '../lib/utils'
 
 const STATUS_COLOR: Record<TicketStatus, string> = {
@@ -56,15 +57,17 @@ export default function Tickets() {
   const rows = tickets.data ?? []
 
   return (
-    <ScrollView className="bg-background" contentContainerClassName="gap-3.5 p-4">
-      <Text className="text-lg font-bold">{t('tickets.raiseTitle')}</Text>
+    <Screen>
+      <PageIntro title={t('tickets.raiseTitle')} description={t('design.maintenanceDescription')} />
 
       <Field label={t('common.title')}>
-        <Input placeholder="e.g. Leaking tap" value={title} onChangeText={setTitle} />
+        <Input accessibilityLabel={t('common.title')} placeholder={t('common.title')} value={title} onChangeText={setTitle} />
       </Field>
       <Field label={t('common.description')}>
         <Input
-          className="h-auto min-h-16 py-2"
+          className="min-h-28 py-3"
+          textAlignVertical="top"
+          accessibilityLabel={t('common.description')}
           placeholder={t('tickets.descPlaceholder')}
           value={description}
           onChangeText={setDescription}
@@ -121,7 +124,7 @@ export default function Tickets() {
         <Text className="text-sm text-muted-foreground">{t('tickets.empty')}</Text>
       ) : (
         rows.map((ticket) => (
-          <View key={ticket.id} className="gap-1 rounded-xl border border-border bg-card p-3">
+          <View key={ticket.id} className="gap-1 rounded-xl border border-border bg-card p-5">
             <View className="flex-row items-center justify-between">
               <Text className="shrink text-base font-semibold">{ticket.title}</Text>
               <Text className={cn('text-xs font-bold', STATUS_COLOR[ticket.status])}>{ticket.status}</Text>
@@ -133,7 +136,7 @@ export default function Tickets() {
           </View>
         ))
       )}
-    </ScrollView>
+    </Screen>
   )
 }
 
