@@ -946,6 +946,7 @@ const webHi: Dict = {
 }
 
 const mobileEn: Dict = {
+  'design.retry': 'Try again',
   "vgate.notifyTitle": "Notify vehicle owner",
   "vgate.notifyConfirm": "Send a notification asking the owner to contact the gate?",
   "vgate.blocked": "Report blocked",
@@ -1083,6 +1084,7 @@ const mobileEn: Dict = {
   'myHouseHelp.addHelp': 'Add help',
 }
 const mobileHi: Dict = {
+  'design.retry': 'फिर कोशिश करें',
   "vgate.notifyTitle": "वाहन मालिक को सूचित करें",
   "vgate.notifyConfirm": "मालिक को गेट से संपर्क करने की सूचना भेजें?",
   "vgate.blocked": "रास्ता रोके जाने की सूचना",

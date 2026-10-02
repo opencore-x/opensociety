@@ -2,6 +2,8 @@ import '../global.css'
 
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
+import { palette } from '../lib/theme'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo'
 
@@ -35,24 +37,36 @@ function AuthBridge() {
 function Nav() {
   const { t } = useT()
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ title: t('nav.appName') }} />
-      <Stack.Screen name="sign-in" options={{ title: t('nav.signIn') }} />
-      <Stack.Screen name="profile" options={{ title: t('nav.profile') }} />
-      <Stack.Screen name="visitors" options={{ title: t('nav.visitors') }} />
-      <Stack.Screen name="visitor-history" options={{ title: t('nav.visitorHistory') }} />
-      <Stack.Screen name="pre-approve" options={{ title: t('nav.preApproveVisitor') }} />
-      <Stack.Screen name="notices" options={{ title: t('nav.notices') }} />
-      <Stack.Screen name="tickets" options={{ title: t('nav.maintenance') }} />
-      <Stack.Screen name="gate" options={{ title: t('nav.gate') }} />
-      <Stack.Screen name="vehicle-gate" options={{ title: t('nav.vehicleGate') }} />
-      <Stack.Screen name="duty" options={{ title: t('nav.guardDuty') }} />
-      <Stack.Screen name="register" options={{ title: t('nav.registerVisitor') }} />
-      <Stack.Screen name="house-help" options={{ title: t('nav.houseHelp') }} />
-      <Stack.Screen name="my-house-help" options={{ title: t('nav.myHouseHelp') }} />
-      <Stack.Screen name="my-vehicles" options={{ title: t('nav.myVehicles') }} />
-      <Stack.Screen name="bills" options={{ title: t('nav.bills') }} />
-    </Stack>
+    <>
+      <StatusBar style="dark" />
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: palette.background },
+          headerTintColor: palette.ink,
+          headerShadowVisible: false,
+          headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+          headerBackButtonDisplayMode: 'minimal',
+          contentStyle: { backgroundColor: palette.background },
+        }}
+      >
+        <Stack.Screen name="index" options={{ title: t('nav.appName') }} />
+        <Stack.Screen name="sign-in" options={{ title: t('nav.signIn') }} />
+        <Stack.Screen name="profile" options={{ title: t('nav.profile') }} />
+        <Stack.Screen name="visitors" options={{ title: t('nav.visitors') }} />
+        <Stack.Screen name="visitor-history" options={{ title: t('nav.visitorHistory') }} />
+        <Stack.Screen name="pre-approve" options={{ title: t('nav.preApproveVisitor') }} />
+        <Stack.Screen name="notices" options={{ title: t('nav.notices') }} />
+        <Stack.Screen name="tickets" options={{ title: t('nav.maintenance') }} />
+        <Stack.Screen name="gate" options={{ title: t('nav.gate') }} />
+        <Stack.Screen name="vehicle-gate" options={{ title: t('nav.vehicleGate') }} />
+        <Stack.Screen name="duty" options={{ title: t('nav.guardDuty') }} />
+        <Stack.Screen name="register" options={{ title: t('nav.registerVisitor') }} />
+        <Stack.Screen name="house-help" options={{ title: t('nav.houseHelp') }} />
+        <Stack.Screen name="my-house-help" options={{ title: t('nav.myHouseHelp') }} />
+        <Stack.Screen name="my-vehicles" options={{ title: t('nav.myVehicles') }} />
+        <Stack.Screen name="bills" options={{ title: t('nav.bills') }} />
+      </Stack>
+    </>
   )
 }
 

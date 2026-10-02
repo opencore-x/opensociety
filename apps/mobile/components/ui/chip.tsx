@@ -17,10 +17,11 @@ function Chip({
     >
       <Pressable
         role="button"
+        accessibilityState={{ selected: !!selected, ...props.accessibilityState }}
         className={cn(
-          'rounded-full border px-3 py-2 active:opacity-90',
+          'min-h-11 items-center justify-center rounded-full border px-4 py-2.5 active:opacity-75',
           selected ? 'border-primary bg-primary' : 'border-input bg-background',
-          className
+          className,
         )}
         {...props}
       >
