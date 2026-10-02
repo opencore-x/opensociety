@@ -7,6 +7,8 @@ export type Bindings = {
   CLERK_PUBLISHABLE_KEY?: string
   CLERK_WEBHOOK_SECRET?: string
   UPLOADS: R2Bucket
+  PUSH_ENABLED?: string
+  EXPO_ACCESS_TOKEN?: string
 }
 
 export type Variables = {
