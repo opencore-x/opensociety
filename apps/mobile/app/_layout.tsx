@@ -2,6 +2,7 @@ import '../global.css'
 
 import { useEffect } from 'react'
 import { Stack } from 'expo-router'
+import { Platform } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { palette } from '../lib/theme'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
@@ -44,7 +45,7 @@ function Nav() {
           headerStyle: { backgroundColor: palette.background },
           headerTintColor: palette.ink,
           headerShadowVisible: false,
-          statusBarStyle: 'dark',
+          statusBarStyle: Platform.OS === 'android' ? 'dark' : undefined,
           headerTitleStyle: { fontSize: 16, fontWeight: '600' },
           headerBackButtonDisplayMode: 'minimal',
           contentStyle: { backgroundColor: palette.background },
