@@ -21,6 +21,7 @@ describe('Node deployment configuration', () => {
     expect(readNodeConfig({ ...production, APP_ENV: 'staging', CLERK_SECRET_KEY: 'sk_test_test' }).clerkSecret).toBe('sk_test_test')
   })
   it('rejects malformed runtime settings without exposing secret values', () => {
+    expect(() => readNodeConfig({ ...base, DATABASE_URL: 'secret-not-a-url' })).toThrow('DATABASE_URL must be a valid URL')
     for (const PORT of ['0', '70000', 'invalid']) expect(() => readNodeConfig({ ...base, PORT })).toThrow('PORT')
     expect(() => readNodeConfig({ ...production, S3_ENDPOINT: 'https://user:password@host' })).toThrow('contain no credentials')
     expect(() => readNodeConfig({ ...production, DATABASE_URL: 'https://example.com' })).toThrow('PostgreSQL')

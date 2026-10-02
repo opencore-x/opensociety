@@ -2,6 +2,10 @@ export type UploadConfig = { endpoint: string; bucket: string; accessKeyId: stri
 
 export function readNodeConfig(env: Record<string, string | undefined>) {
   const production = env.NODE_ENV === 'production'
+  const parseUrl = (value: string, setting: string) => {
+    try { return new URL(value) }
+    catch { throw new Error(`${setting} must be a valid URL`) }
+  }
   const required = (key: string) => {
     const value = env[key]?.trim()
     if (!value) throw new Error(`${key} is required`)
@@ -10,7 +14,7 @@ export function readNodeConfig(env: Record<string, string | undefined>) {
   const port = Number(env.PORT ?? 8787)
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be between 1 and 65535')
   const databaseUrl = required('DATABASE_URL')
-  const database = new URL(databaseUrl)
+  const database = parseUrl(databaseUrl, 'DATABASE_URL')
   if (!['postgres:', 'postgresql:'].includes(database.protocol)) throw new Error('DATABASE_URL must use PostgreSQL')
   const clerkSecret = env.CLERK_SECRET_KEY?.trim()
   if (production && !/^sk_(live|test)_/.test(clerkSecret ?? '')) throw new Error('Production requires CLERK_SECRET_KEY')
@@ -20,7 +24,7 @@ export function readNodeConfig(env: Record<string, string | undefined>) {
   const origins = (env.WEB_ORIGINS ?? (production ? '' : 'http://localhost:3000,http://localhost:8081')).split(',').filter(Boolean)
   if (!origins.length) throw new Error('WEB_ORIGINS is required')
   for (const origin of origins) {
-    const url = new URL(origin)
+    const url = parseUrl(origin, 'WEB_ORIGINS')
     if (url.origin !== origin || (production && url.protocol !== 'https:') || !['http:', 'https:'].includes(url.protocol)) {
       throw new Error('WEB_ORIGINS must contain exact web origins, using HTTPS in production')
     }
@@ -29,7 +33,7 @@ export function readNodeConfig(env: Record<string, string | undefined>) {
   let uploads: UploadConfig | undefined
   if (endpoint || production) {
     if (!endpoint) throw new Error('R2_ACCOUNT_ID or S3_ENDPOINT is required')
-    const url = new URL(endpoint)
+    const url = parseUrl(endpoint, 'Storage endpoint')
     if (url.username || url.password || !['http:', 'https:'].includes(url.protocol) || (production && url.protocol !== 'https:')) {
       throw new Error('The storage endpoint must use HTTPS in production and contain no credentials')
     }
