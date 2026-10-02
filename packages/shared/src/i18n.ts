@@ -946,6 +946,8 @@ const webHi: Dict = {
 }
 
 const mobileEn: Dict = {
+  'design.signInTitle': 'Welcome home.',
+  'design.signInDescription': 'Sign in to connect with your community and take care of the everyday.',
   'design.maintenanceDescription': 'Something needs attention? Let your society team know.',
   'design.billsTitle': "Your home, in balance.",
   'design.billsDescription': "A clear view of your maintenance bills and payments.",
@@ -1129,6 +1131,8 @@ const mobileEn: Dict = {
   'myHouseHelp.addHelp': 'Add help',
 }
 const mobileHi: Dict = {
+  'design.signInTitle': 'घर में आपका स्वागत है।',
+  'design.signInDescription': 'अपनी सोसाइटी से जुड़ने और रोज़मर्रा के काम सँभालने के लिए साइन इन करें।',
   'design.maintenanceDescription': 'घर में किसी काम की ज़रूरत है? अपनी सोसाइटी की टीम को बताएँ।',
   'design.billsTitle': "बिल और भुगतान, एक जगह।",
   'design.billsDescription': "अपने रखरखाव बिल और भुगतान का साफ़ हिसाब।",
