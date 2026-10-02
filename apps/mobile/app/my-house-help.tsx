@@ -9,6 +9,7 @@ import { Text } from '../components/ui/text';
 import { Screen, PageIntro, ScreenState, EmptyState } from '../components/ui/screen';
 import { Feedback, LoadingState, Section, Badge } from '../components/ui/feedback';
 import { useSyncStatus } from '../lib/offline/use-sync-status';
+import { cn } from '../lib/utils';
 
 // Resident view: manage which registered house help serves each of their flats.
 export default function MyHouseHelp() {
@@ -83,11 +84,18 @@ function StarRating({ help, apartmentKey }: { help: HouseHelpWithRating; apartme
                 disabled: rate.isPending || !isOnline,
                 selected: rate.data?.rating === n
               }}
-              className="min-h-[48px] min-w-[48px] items-center justify-center rounded-full border border-border bg-secondary px-3"
+              className={cn(
+                'min-h-[48px] min-w-[48px] items-center justify-center rounded-full border px-3',
+                rate.data?.rating === n ? 'border-primary bg-primary' : 'border-border bg-secondary'
+              )}
               onPress={() => rate.mutate(n)}
               disabled={rate.isPending || !isOnline}
             >
-              <Text className="font-semibold text-primary">{n}</Text>
+              <Text
+                className={cn('font-semibold', rate.data?.rating === n ? 'text-white' : 'text-primary')}
+              >
+                {n}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -155,7 +163,7 @@ function ApartmentAssignments({
       {(assign.isError || remove.isError) && <Feedback />}
       {(assigned.data ?? []).map((h) => (
         <View key={h.id} className="gap-4 rounded-xl border border-border bg-card p-5">
-          <View className="flex-1 gap-1.5">
+          <View className="gap-1.5">
             <View className="flex-row flex-wrap items-center gap-2">
               <Text className="text-base font-semibold">{h.name}</Text>
               <Badge
@@ -190,7 +198,7 @@ function ApartmentAssignments({
           </Text>
           {unassigned.map((h) => (
             <View key={h.id} className="gap-4 rounded-xl border border-border bg-card p-5">
-              <View className="flex-1">
+              <View>
                 <Text className="text-base font-semibold">{h.name}</Text>
                 <Text className="text-sm text-muted-foreground">{t('value.' + h.type)}</Text>
               </View>
