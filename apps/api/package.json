@@ -9,7 +9,9 @@
     "build": "tsc --noEmit",
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:node": "node build-node.mjs",
+    "start": "node dist/node.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1145.0",
