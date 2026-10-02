@@ -27,7 +27,7 @@ import { pushRoutes } from './routes/push'
 import { dispatchAndSchedule, requestPushDispatch } from './lib/push-dispatch'
 import { sendBillReminders } from './lib/bill-reminders'
 
-const app = new Hono<AppEnv>()
+export const app = new Hono<AppEnv>()
 
 // TODO: tighten origins once web/mobile deploy URLs are known.
 app.use('*', cors())
@@ -64,7 +64,7 @@ app.onError((err, c) => {
 
 // Monthly cron (see wrangler.jsonc crons): generate bills for the current month
 // from the saved bill config. Idempotent, so re-runs are safe.
-async function runMonthlyBilling(env: Bindings, scheduledTime: number) {
+export async function runMonthlyBilling(env: Bindings, scheduledTime: number) {
   const db = createDb(env.DATABASE_URL)
   const [cfg] = await db.select().from(billConfig).limit(1)
   if (!cfg || cfg.lineItems.length === 0) {
