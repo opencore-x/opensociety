@@ -10,7 +10,7 @@ function Text({ className, ...props }: React.ComponentProps<typeof RNText>) {
   const contextClass = React.useContext(TextClassContext)
   return (
     <RNText
-      className={cn('text-foreground text-base leading-6', contextClass, className)}
+      className={cn('text-foreground text-base', contextClass, className)}
       {...props}
     />
   )

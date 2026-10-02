@@ -32,7 +32,7 @@ export function PageIntro({
   return (
     <View className="mb-1 flex-row items-center gap-4">
       <View className="flex-1 gap-2">
-        <Text role="heading" className="text-[28px] font-bold tracking-tight">
+        <Text role="heading" className="text-[28px] font-bold leading-9 tracking-tight">
           {title}
         </Text>
         {description && (
