@@ -1,4 +1,5 @@
-import { pgTable, uuid, text, integer, timestamp, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, integer, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import { apartments } from './apartments'
 import { users } from './users'
 import { accounts } from './ledger'
@@ -29,6 +30,8 @@ export const maintenanceBills = pgTable('maintenance_bills', {
 }, (t) => [
   index('maintenance_bills_apartment_id_idx').on(t.apartmentId),
   index('maintenance_bills_period_month_idx').on(t.periodMonth),
+  uniqueIndex('maintenance_bills_monthly_apartment_uniq').on(t.apartmentId, t.periodMonth)
+    .where(sql`${t.type} = 'MONTHLY' and ${t.periodMonth} is not null`),
 ])
 
 // A single charge on a bill, with its own GST rate (percent). taxAmount is the

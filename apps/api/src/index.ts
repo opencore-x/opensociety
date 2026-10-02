@@ -4,7 +4,7 @@ import { createDb, billConfig } from '@opensociety/db'
 import { periodMonthOf, dueDateForPeriod } from '@opensociety/shared'
 import type { AppEnv, Bindings } from './types'
 import { generateMonthlyBills } from './lib/generate-bills'
-import { safePostBill } from './lib/ledger-posting'
+import { postMonthlyBills } from './lib/ledger-posting'
 import { societyRoutes } from './routes/society'
 import { apartmentRoutes } from './routes/apartments'
 import { visitorRoutes } from './routes/visitors'
@@ -27,10 +27,16 @@ import { pushRoutes } from './routes/push'
 import { dispatchAndSchedule, requestPushDispatch } from './lib/push-dispatch'
 import { sendBillReminders } from './lib/bill-reminders'
 
-const app = new Hono<AppEnv>()
+export const app = new Hono<AppEnv>()
 
-// TODO: tighten origins once web/mobile deploy URLs are known.
-app.use('*', cors())
+app.use('*', cors({
+  origin: (origin, c) => {
+    const configured: string | undefined = c.env?.WEB_ORIGINS
+    const allowed = configured?.split(',').map((value) => value.trim()) ??
+      (c.env?.CLERK_SECRET_KEY ? [] : ['http://localhost:3000', 'http://localhost:8081'])
+    return allowed.includes(origin) ? origin : undefined
+  },
+}))
 
 // Health checks intentionally avoid the DB so they work without DATABASE_URL.
 app.get('/', (c) => c.json({ name: 'opensociety-api', status: 'ok' }))
@@ -59,12 +65,12 @@ app.route('/push', pushRoutes)
 app.notFound((c) => c.json({ error: 'not found' }, 404))
 app.onError((err, c) => {
   console.error(err)
-  return c.json({ error: err.message || 'internal error' }, 500)
+  return c.json({ error: 'internal error' }, 500)
 })
 
 // Monthly cron (see wrangler.jsonc crons): generate bills for the current month
 // from the saved bill config. Idempotent, so re-runs are safe.
-async function runMonthlyBilling(env: Bindings, scheduledTime: number) {
+export async function runMonthlyBilling(env: Bindings, scheduledTime: number) {
   const db = createDb(env.DATABASE_URL)
   const [cfg] = await db.select().from(billConfig).limit(1)
   if (!cfg || cfg.lineItems.length === 0) {
@@ -78,7 +84,8 @@ async function runMonthlyBilling(env: Bindings, scheduledTime: number) {
     dueDate: new Date(dueDateForPeriod(period, cfg.dueDayOfMonth)),
     lineItems: cfg.lineItems,
   })
-  for (const billId of result.billIds) await safePostBill(db, billId)
+  // Let the scheduler retry failures; bill creation is already idempotent.
+  await postMonthlyBills(db, period)
   console.log(`auto-billing ${period}: created ${result.created}, skipped ${result.skipped}`)
   // TODO: notify residents when bills are generated (blocked on the push service, #15).
 }
