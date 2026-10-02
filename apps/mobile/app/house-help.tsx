@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, FlatList, View } from 'react-native'
+import { FlatList, View } from 'react-native'
 import { apiClient } from '../api/client'
 import { useT } from '../lib/i18n'
-import { cn } from '../lib/utils'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { PageIntro, ScreenState, EmptyState } from '../components/ui/screen'
+import { AdaptiveRow, Badge, ConnectionNotice, Feedback } from '../components/ui/feedback'
+import { useSyncStatus } from '../lib/offline/use-sync-status'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // Guard house-help view: pre-approved domestic staff are checked in instantly
 // (no resident approval). Each active worker shows their in/out state and the
@@ -14,6 +17,8 @@ import { Text } from '../components/ui/text'
 export default function HouseHelp() {
   const qc = useQueryClient()
   const { t } = useT()
+  const insets = useSafeAreaInsets()
+  const { isOnline } = useSyncStatus()
   const help = useQuery({ queryKey: ['house-help'], queryFn: () => apiClient.listHouseHelp() })
   const openEntries = useQuery({
     queryKey: ['house-help-entries', 'active'],
@@ -33,7 +38,7 @@ export default function HouseHelp() {
     mutationFn: (entryId: string) => apiClient.checkOutHouseHelpEntry(entryId),
     onSuccess: invalidate,
   })
-  const busy = checkIn.isPending || checkOut.isPending
+  const busy = checkIn.isPending || checkOut.isPending || !isOnline
 
   // houseHelpId -> open entry id (currently inside)
   const openByHelp = useMemo(() => {
@@ -48,61 +53,82 @@ export default function HouseHelp() {
     return q ? active.filter((h) => h.name.toLowerCase().includes(q)) : active
   }, [help.data, search])
 
-  if (help.isLoading)
+  if (help.isPending || openEntries.isPending) return <ScreenState loading />
+  if (help.isError || openEntries.isError)
     return (
-      <Centered>
-        <ActivityIndicator />
-      </Centered>
-    )
-  if (help.isError)
-    return (
-      <Centered>
-        <Text className="text-base font-semibold text-destructive">{t('gate.apiUnreachable')}</Text>
-        <Text className="text-sm text-muted-foreground">{String((help.error as Error)?.message ?? 'error')}</Text>
-      </Centered>
+      <ScreenState
+        onRetry={() => {
+          help.refetch()
+          openEntries.refetch()
+        }}
+      />
     )
 
   return (
     <FlatList
-      contentContainerClassName="gap-2 p-4"
+      className="bg-background"
+      contentContainerStyle={{
+        width: '100%',
+        maxWidth: 720,
+        alignSelf: 'center',
+        padding: 20,
+        paddingBottom: insets.bottom + 24,
+        gap: 16,
+      }}
+      keyboardShouldPersistTaps="handled"
+      onRefresh={() => {
+        help.refetch()
+        openEntries.refetch()
+      }}
+      refreshing={help.isRefetching || openEntries.isRefetching}
       data={rows}
       keyExtractor={(h) => h.id}
       ListHeaderComponent={
-        <Input
-          className="mb-1"
-          placeholder={t('houseHelp.searchPlaceholder')}
-          autoCorrect={false}
-          value={search}
-          onChangeText={setSearch}
-        />
+        <View className="gap-4 mb-2">
+          <ConnectionNotice />
+          {(checkIn.isError || checkOut.isError) && <Feedback />}
+          <PageIntro title={t('nav.houseHelp')} description={t('design.gateHelpHint')} />
+          <Input
+            className="mb-1"
+            accessibilityLabel={t('houseHelp.searchPlaceholder')}
+            placeholder={t('houseHelp.searchPlaceholder')}
+            autoCorrect={false}
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
       }
-      ListEmptyComponent={<Text className="text-sm text-muted-foreground">{t('houseHelp.empty')}</Text>}
+      ListEmptyComponent={
+        <EmptyState icon="heart" title={t(search ? 'design.noMatch' : 'houseHelp.empty')} />
+      }
       renderItem={({ item }) => {
         const openEntryId = openByHelp.get(item.id)
         const inside = openEntryId != null
         return (
-          <View className="gap-2.5 rounded-xl bg-muted p-3">
-            <View className="flex-row items-center">
-              <View className="flex-1">
+          <View className="gap-2.5 rounded-xl border border-border bg-card p-5">
+            <AdaptiveRow>
+              <View className="flex-auto">
                 <Text className="text-base font-semibold">{item.name}</Text>
-                <Text className="text-sm text-muted-foreground">{item.type}</Text>
+                <Text className="text-sm text-muted-foreground">{t('value.' + item.type)}</Text>
               </View>
-              <Text
-                className={cn(
-                  'overflow-hidden rounded-md px-2 py-1 text-xs',
-                  inside ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'
-                )}
-              >
-                {inside ? t('houseHelp.inside') : t('houseHelp.out')}
-              </Text>
-            </View>
-            <View className="flex-row gap-2">
+              <Badge label={t(inside ? 'houseHelp.inside' : 'houseHelp.out')} positive={inside} />
+            </AdaptiveRow>
+            <View className="flex-row flex-wrap gap-2">
               {inside ? (
-                <Button variant="outline" onPress={() => checkOut.mutate(openEntryId)} disabled={busy}>
+                <Button
+                  variant="outline"
+                  accessibilityLabel={`${t('common.checkOut')} ${item.name}`}
+                  onPress={() => checkOut.mutate(openEntryId)}
+                  disabled={busy}
+                >
                   <Text>{t('common.checkOut')}</Text>
                 </Button>
               ) : (
-                <Button onPress={() => checkIn.mutate(item.id)} disabled={busy}>
+                <Button
+                  accessibilityLabel={`${t('common.checkIn')} ${item.name}`}
+                  onPress={() => checkIn.mutate(item.id)}
+                  disabled={busy}
+                >
                   <Text>{t('common.checkIn')}</Text>
                 </Button>
               )}
@@ -112,8 +138,4 @@ export default function HouseHelp() {
       }}
     />
   )
-}
-
-function Centered({ children }: { children: React.ReactNode }) {
-  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
 }

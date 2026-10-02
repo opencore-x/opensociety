@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'expo-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, FlatList, Modal, Platform, View } from 'react-native'
+import { ActivityIndicator, FlatList, Modal, Platform, View, Linking } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
+import { StatusBar } from 'expo-status-bar'
 import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/shared'
 import { apiClient } from '../api/client'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
@@ -12,6 +13,11 @@ import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { PageIntro, ScreenFrame, ScreenState, EmptyState } from '../components/ui/screen'
+import { AdaptiveRow, Feedback, Badge, Section } from '../components/ui/feedback'
+import { Icon } from '../components/ui/icon'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { palette } from '../lib/theme'
 
 // Guard gate view: the visitors a guard acts on — APPROVED (expected at the
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
@@ -19,7 +25,7 @@ export default function Gate() {
   const qc = useQueryClient()
   const { t } = useT()
   const { isOnline } = useSyncStatus()
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isPending, isError, refetch, isRefetching } = useQuery({
     queryKey: ['visitors'],
     queryFn: () => apiClient.listVisitors(),
   })
@@ -44,108 +50,119 @@ export default function Gate() {
   })
   const busy = checkIn.isPending || checkOut.isPending
 
-  if (isLoading)
-    return (
-      <Centered>
-        <ActivityIndicator />
-      </Centered>
-    )
-  // Only take over the screen when there's nothing to show. Offline, a failed
-  // background refetch still leaves the last-synced list (persisted cache) in
-  // `data` — keep showing it under the offline banner rather than blanking out.
-  if (isError && !data)
-    return (
-      <Centered>
-        <Text className="text-base font-semibold text-destructive">{t('gate.apiUnreachable')}</Text>
-        <Text className="text-sm text-muted-foreground">{String((error as Error)?.message ?? 'error')}</Text>
-      </Centered>
-    )
+  if (isPending) return <ScreenState loading />
+  if (isError && !data) return <ScreenState onRetry={() => refetch()} />
 
   const gate = (data ?? []).filter((v) => v.status === 'APPROVED' || v.status === 'ENTERED')
 
   return (
-    <>
-    <FlatList
-      contentContainerClassName="gap-2 p-4"
-      data={gate}
-      keyExtractor={(v) => v.id}
-      ListHeaderComponent={
-        <>
-        <OfflineBanner className="-mx-4 -mt-4 mb-2 rounded-none" />
-        <SyncErrorTray className="mb-2" />
-        <View className="mb-1 gap-2">
-          <View className="flex-row items-center gap-2">
-            <Input
-              className="flex-1 tracking-widest"
-              placeholder={t('gate.codePlaceholder')}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              value={code}
-              onChangeText={setCode}
-            />
-            <Button
-              onPress={() => redeem.mutate(code.trim().toUpperCase())}
-              disabled={redeem.isPending || code.trim().length === 0 || !isOnline}
-            >
-              <Text>{redeem.isPending ? t('gate.redeeming') : t('gate.redeem')}</Text>
-            </Button>
+    <ScreenFrame>
+      <FlatList
+        className="bg-background"
+        contentContainerStyle={{
+          width: '100%',
+          maxWidth: 720,
+          alignSelf: 'center',
+          padding: 20,
+          paddingBottom: 24,
+          gap: 16,
+        }}
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
+        refreshing={isRefetching}
+        onRefresh={() => refetch()}
+        data={gate}
+        keyExtractor={(v) => v.id}
+        ListHeaderComponent={
+          <View className="gap-4">
+            <PageIntro title={t('nav.gate')} description={t('design.gateHint')} />
+            <OfflineBanner className="mb-2 rounded-md" />
+            <SyncErrorTray className="mb-2" />
+            <Section>
+              {(checkIn.isError || checkOut.isError) && <Feedback />}
+              <AdaptiveRow>
+                <Input
+                  className="flex-1 tracking-widest"
+                  accessibilityLabel={t('gate.codePlaceholder')}
+                  placeholder={t('gate.codePlaceholder')}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  value={code}
+                  onChangeText={setCode}
+                />
+                <Button
+                  onPress={() => redeem.mutate(code.trim().toUpperCase())}
+                  disabled={redeem.isPending || code.trim().length === 0 || !isOnline}
+                >
+                  <Text>{redeem.isPending ? t('gate.redeeming') : t('gate.redeem')}</Text>
+                </Button>
+              </AdaptiveRow>
+              <Button variant="outline" onPress={() => setScanning(true)} disabled={!isOnline}>
+                <Text>{t('gate.scanQr')}</Text>
+              </Button>
+              {redeem.isError && <Feedback message={t('gate.invalidCode')} />}
+              {!isOnline && (
+                <Text className="text-sm text-muted-foreground">{t('gate.offlineNote')}</Text>
+              )}
+              <Link href="/register" asChild>
+                <Button>
+                  <Icon name="plus" color="#FFFFFF" />
+                  <Text>{t('nav.registerVisitor')}</Text>
+                </Button>
+              </Link>
+            </Section>
           </View>
-          <Button variant="outline" onPress={() => setScanning(true)} disabled={!isOnline}>
-            <Text>{t('gate.scanQr')}</Text>
-          </Button>
-          {redeem.isError && (
-            <Text className="text-sm text-destructive">{String((redeem.error as Error)?.message ?? t('gate.invalidCode'))}</Text>
-          )}
-          {!isOnline && <Text className="text-sm text-muted-foreground">{t('gate.offlineNote')}</Text>}
-          <Link href="/register" className="py-1 text-base font-semibold text-primary">
-            + {t('nav.registerVisitor')}
-          </Link>
-        </View>
-        </>
-      }
-      ListEmptyComponent={<Text className="text-sm text-muted-foreground">{t('gate.empty')}</Text>}
-      renderItem={({ item }) => {
-        const actions = availableVisitorActions(item.status)
-        return (
-          <View className="gap-2.5 rounded-xl bg-muted p-3">
-            <View className="flex-row items-center">
-              <View className="flex-1">
-                <Text className="text-base font-semibold">{item.visitorName}</Text>
-                <Text className="text-sm text-muted-foreground">{item.type}</Text>
+        }
+        ListEmptyComponent={<EmptyState icon="shield" title={t('gate.empty')} />}
+        renderItem={({ item }) => {
+          const actions = availableVisitorActions(item.status)
+          return (
+            <View className="gap-2.5 rounded-xl border border-border bg-card p-5">
+              <AdaptiveRow>
+                <View className="flex-auto">
+                  <Text className="text-base font-semibold">{item.visitorName}</Text>
+                  <Text className="text-sm text-muted-foreground">{t('value.' + item.type)}</Text>
+                </View>
+                <Badge label={t('value.' + item.status)} />
+              </AdaptiveRow>
+              <View className="flex-row flex-wrap gap-2">
+                {actions.includes('checkin') && (
+                  <Button
+                    accessibilityLabel={`${t('common.checkIn')} ${item.visitorName}`}
+                    onPress={() => checkIn.mutate(item.id)}
+                    disabled={busy || !isOnline}
+                  >
+                    <Text>{t('common.checkIn')}</Text>
+                  </Button>
+                )}
+                {actions.includes('checkout') && (
+                  <Button
+                    variant="outline"
+                    accessibilityLabel={`${t('common.checkOut')} ${item.visitorName}`}
+                    onPress={() => checkOut.mutate(item.id)}
+                    disabled={busy || !isOnline}
+                  >
+                    <Text>{t('common.checkOut')}</Text>
+                  </Button>
+                )}
               </View>
-              <Text className="overflow-hidden rounded-md bg-primary/10 px-2 py-1 text-xs text-primary">
-                {item.status}
-              </Text>
             </View>
-            <View className="flex-row gap-2">
-              {actions.includes('checkin') && (
-                <Button onPress={() => checkIn.mutate(item.id)} disabled={busy || !isOnline}>
-                  <Text>{t('common.checkIn')}</Text>
-                </Button>
-              )}
-              {actions.includes('checkout') && (
-                <Button variant="outline" onPress={() => checkOut.mutate(item.id)} disabled={busy || !isOnline}>
-                  <Text>{t('common.checkOut')}</Text>
-                </Button>
-              )}
-            </View>
-          </View>
-        )
-      }}
-    />
-    {/* Mount the camera scanner only while open, so expo-camera isn't loaded /
-        the camera isn't held on the gate list until the guard taps Scan. */}
-    {scanning && (
-      <QrScannerModal
-        visible={scanning}
-        onClose={() => setScanning(false)}
-        onScan={(c) => {
-          setScanning(false)
-          redeem.mutate(c)
+          )
         }}
       />
-    )}
-    </>
+      {/* Mount the camera scanner only while open, so expo-camera isn't loaded /
+        the camera isn't held on the gate list until the guard taps Scan. */}
+      {scanning && (
+        <QrScannerModal
+          visible={scanning}
+          onClose={() => setScanning(false)}
+          onScan={(c) => {
+            setScanning(false)
+            redeem.mutate(c)
+          }}
+        />
+      )}
+    </ScreenFrame>
   )
 }
 
@@ -164,6 +181,7 @@ function QrScannerModal({
   const { t } = useT()
   const [permission, requestPermission] = useCameraPermissions()
   const handledRef = useRef(false)
+  const [settingsError, setSettingsError] = useState(false)
 
   useEffect(() => {
     if (visible) handledRef.current = false
@@ -171,48 +189,69 @@ function QrScannerModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 items-center justify-center bg-black">
-        {Platform.OS === 'web' ? (
-          <View className="items-center gap-4 p-6">
-            <Text className="text-center text-base leading-6 text-white">{t('gate.qrWebHint')}</Text>
-          </View>
-        ) : !permission ? (
-          <ActivityIndicator />
-        ) : !permission.granted ? (
-          <View className="items-center gap-4 p-6">
-            <Text className="text-center text-base leading-6 text-white">{t('gate.cameraNeeded')}</Text>
-            <Button onPress={requestPermission}>
-              <Text>{t('gate.grantCamera')}</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.primary }}>
+        <StatusBar style="light" />
+        <View accessibilityViewIsModal className="flex-1 items-center justify-center">
+          {Platform.OS === 'web' ? (
+            <View className="items-center gap-4 p-6">
+              <Text className="text-center text-base leading-6 text-white">
+                {t('gate.qrWebHint')}
+              </Text>
+            </View>
+          ) : !permission ? (
+            <ActivityIndicator color="#FFFFFF" accessibilityLabel={t('common.loading')} />
+          ) : !permission.granted ? (
+            <View className="items-center gap-4 p-6">
+              <Text className="text-center text-base leading-6 text-white">
+                {t(permission.canAskAgain ? 'gate.cameraNeeded' : 'design.cameraSettingsHint')}
+              </Text>
+              <Icon name="shield" color="#FFFFFF" size={48} />
+              <Button
+                variant="secondary"
+                onPress={() => {
+                  setSettingsError(false)
+                  ;(permission.canAskAgain ? requestPermission() : Linking.openSettings()).catch(
+                    () => setSettingsError(true),
+                  )
+                }}
+              >
+                <Text>
+                  {t(permission.canAskAgain ? 'gate.grantCamera' : 'design.cameraSettings')}
+                </Text>
+              </Button>
+              {settingsError && (
+                <Text accessibilityRole="alert" className="text-white">
+                  {t('design.actionFailed')}
+                </Text>
+              )}
+            </View>
+          ) : (
+            <>
+              <CameraView
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                onBarcodeScanned={({ data }) => {
+                  if (handledRef.current) return
+                  const code = parsePreApprovalQrValue(data)
+                  if (!code) return
+                  handledRef.current = true
+                  onScan(code)
+                }}
+              />
+              <View className="absolute inset-x-0 bottom-[120px] items-center" pointerEvents="none">
+                <Text className="overflow-hidden rounded-md bg-black/50 px-3 py-2 text-sm text-white">
+                  {t('gate.pointCamera')}
+                </Text>
+              </View>
+            </>
+          )}
+          <View className="absolute inset-x-6 bottom-6">
+            <Button variant="outline" onPress={onClose}>
+              <Text>{t('common.cancel')}</Text>
             </Button>
           </View>
-        ) : (
-          <>
-            <CameraView
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-              onBarcodeScanned={({ data }) => {
-                if (handledRef.current) return
-                const code = parsePreApprovalQrValue(data)
-                if (!code) return
-                handledRef.current = true
-                onScan(code)
-              }}
-            />
-            <View className="absolute inset-x-0 bottom-[120px] items-center" pointerEvents="none">
-              <Text className="overflow-hidden rounded-md bg-black/50 px-3 py-2 text-sm text-white">{t('gate.pointCamera')}</Text>
-            </View>
-          </>
-        )}
-        <View className="absolute inset-x-6 bottom-10">
-          <Button variant="outline" onPress={onClose}>
-            <Text>{t('common.cancel')}</Text>
-          </Button>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   )
-}
-
-function Centered({ children }: { children: React.ReactNode }) {
-  return <View className="flex-1 items-center justify-center gap-1">{children}</View>
 }

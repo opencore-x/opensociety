@@ -1,5 +1,6 @@
 import { Link } from 'expo-router'
-import { Pressable, View } from 'react-native'
+import { View } from 'react-native'
+import { Button } from './ui/button'
 import { useState } from 'react'
 import { useAuth, useClerk } from '@clerk/clerk-expo'
 
@@ -29,19 +30,19 @@ export function AuthStatus() {
   return isSignedIn ? (
     <View className="gap-2">
       {push.status !== 'unavailable' && (
-        <Pressable accessibilityRole="button" disabled={push.status === 'busy' || push.status === 'ready'} onPress={() => push.enable()}>
+        <Button variant="outline" disabled={push.status === 'busy' || push.status === 'ready'} onPress={() => push.enable()}>
           <Text className="text-sm text-primary">{t(push.status === 'ready' ? 'push.ready' : push.status === 'busy' ? 'push.busy' : 'push.enable')}</Text>
-        </Pressable>
+        </Button>
       )}
       {push.status === 'error' && <Text className="text-sm text-destructive">{t('push.failed')}</Text>}
-      <Pressable accessibilityRole="button" disabled={busy} onPress={exit}>
+      <Button variant="ghost" disabled={busy} onPress={exit}>
         <Text className="text-base font-semibold text-primary">{busy ? t('common.loading') : t('push.signOut')}</Text>
-      </Pressable>
+      </Button>
       {error && <Text className="text-sm text-destructive">{t('push.signOutFailed')}</Text>}
     </View>
   ) : (
-    <Link href="/sign-in" className="text-base font-semibold text-primary">
-      Sign in →
+    <Link href="/sign-in" asChild>
+      <Button size="lg"><Text>{t('nav.signIn')}</Text></Button>
     </Link>
   )
 }

@@ -1,12 +1,9 @@
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useSignIn } from '@clerk/clerk-expo'
-import { View } from 'react-native'
 
 import { useT } from '../lib/i18n'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Text } from '../components/ui/text'
+import { SignInForm } from '../components/sign-in-form'
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn()
@@ -39,23 +36,15 @@ export default function SignInScreen() {
   }
 
   return (
-    <View className="flex-1 justify-center gap-3 bg-background p-6">
-      <Input
-        placeholder={t('signIn.email')}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <Input placeholder={t('signIn.password')} secureTextEntry value={password} onChangeText={setPassword} />
-      <Button
-        onPress={onSubmit}
-        disabled={!isLoaded || pending || !email.trim() || !password}
-      >
-        <Text>{pending ? t('signIn.signingIn') : t('nav.signIn')}</Text>
-      </Button>
-      {error && <Text className="text-sm text-destructive">{error}</Text>}
-    </View>
+    <SignInForm
+      email={email}
+      password={password}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      onSubmit={onSubmit}
+      disabled={!isLoaded || pending || !email.trim() || !password}
+      pending={pending}
+      error={error}
+    />
   )
 }

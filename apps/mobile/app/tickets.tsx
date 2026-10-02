@@ -1,35 +1,43 @@
-import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
-import type { TicketCategory, TicketPriority, TicketStatus } from '@opensociety/shared'
-import { ticketCategorySchema, ticketPrioritySchema } from '@opensociety/shared'
-import { apiClient } from '../api/client'
-import { useT } from '../lib/i18n'
-import { Button } from '../components/ui/button'
-import { Chip } from '../components/ui/chip'
-import { Input } from '../components/ui/input'
-import { Text } from '../components/ui/text'
-import { cn } from '../lib/utils'
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { View } from 'react-native';
+import type { TicketCategory, TicketPriority, TicketStatus } from '@opensociety/shared';
+import { ticketCategorySchema, ticketPrioritySchema } from '@opensociety/shared';
+import { apiClient } from '../api/client';
+import { useT } from '../lib/i18n';
+import { useSyncStatus } from '../lib/offline/use-sync-status';
+import { Button } from '../components/ui/button';
+import { Chip } from '../components/ui/chip';
+import { Input } from '../components/ui/input';
+import { Text } from '../components/ui/text';
+import { Screen, PageIntro, EmptyState } from '../components/ui/screen';
+import { Feedback, Field, LoadingState, Section } from '../components/ui/feedback';
+import { ApartmentPicker } from '../components/apartment-picker';
+import { cn } from '../lib/utils';
 
 const STATUS_COLOR: Record<TicketStatus, string> = {
-  OPEN: 'text-amber-600',
+  OPEN: 'text-amber-800',
   IN_PROGRESS: 'text-primary',
   RESOLVED: 'text-green-700',
   CLOSED: 'text-muted-foreground',
-  CANCELLED: 'text-muted-foreground',
-}
+  CANCELLED: 'text-muted-foreground'
+};
 
 export default function Tickets() {
-  const qc = useQueryClient()
-  const { t } = useT()
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [apartmentId, setApartmentId] = useState<string | null>(null)
-  const [category, setCategory] = useState<TicketCategory>('OTHER')
-  const [priority, setPriority] = useState<TicketPriority>('NORMAL')
+  const qc = useQueryClient();
+  const { t } = useT();
+  const { isOnline } = useSyncStatus();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [apartmentId, setApartmentId] = useState<string | null>(null);
+  const [category, setCategory] = useState<TicketCategory>('OTHER');
+  const [priority, setPriority] = useState<TicketPriority>('NORMAL');
 
-  const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
-  const tickets = useQuery({ queryKey: ['tickets'], queryFn: () => apiClient.listTickets() })
+  const apartments = useQuery({
+    queryKey: ['apartments'],
+    queryFn: () => apiClient.listApartments()
+  });
+  const tickets = useQuery({ queryKey: ['tickets'], queryFn: () => apiClient.listTickets() });
 
   const create = useMutation({
     mutationFn: () =>
@@ -38,110 +46,109 @@ export default function Tickets() {
         title: title.trim(),
         description: description.trim(),
         category,
-        priority,
+        priority
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tickets'] })
-      setTitle('')
-      setDescription('')
-      setApartmentId(null)
-      setCategory('OTHER')
-      setPriority('NORMAL')
-    },
-  })
+      qc.invalidateQueries({ queryKey: ['tickets'] });
+      setTitle('');
+      setDescription('');
+      setApartmentId(null);
+      setCategory('OTHER');
+      setPriority('NORMAL');
+    }
+  });
 
   const canSubmit =
-    title.trim().length > 0 && description.trim().length > 0 && !!apartmentId && !create.isPending
+    title.trim().length > 0 &&
+    description.trim().length > 0 &&
+    !!apartmentId &&
+    !create.isPending &&
+    isOnline;
 
-  const rows = tickets.data ?? []
+  const rows = tickets.data ?? [];
 
   return (
-    <ScrollView className="bg-background" contentContainerClassName="gap-3.5 p-4">
-      <Text className="text-lg font-bold">{t('tickets.raiseTitle')}</Text>
+    <Screen>
+      <PageIntro title={t('tickets.raiseTitle')} description={t('design.maintenanceDescription')} />
 
-      <Field label={t('common.title')}>
-        <Input placeholder="e.g. Leaking tap" value={title} onChangeText={setTitle} />
-      </Field>
-      <Field label={t('common.description')}>
-        <Input
-          className="h-auto min-h-16 py-2"
-          placeholder={t('tickets.descPlaceholder')}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-        />
-      </Field>
-      <Field label={t('common.apartment')}>
-        {apartments.isLoading ? (
-          <ActivityIndicator />
-        ) : apartments.isError ? (
-          <Text className="text-sm text-destructive">{t('register.loadError')}</Text>
-        ) : (
+      <Section>
+        <Field label={t('common.title')}>
+          <Input
+            accessibilityLabel={t('common.title')}
+            placeholder={t('common.title')}
+            value={title}
+            onChangeText={setTitle}
+          />
+        </Field>
+        <Field label={t('common.description')}>
+          <Input
+            className="min-h-28 py-3"
+            textAlignVertical="top"
+            accessibilityLabel={t('common.description')}
+            placeholder={t('tickets.descPlaceholder')}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+          />
+        </Field>
+        <ApartmentPicker query={apartments} selected={apartmentId} onSelect={setApartmentId} />
+        <Field label={t('common.category')}>
           <View className="flex-row flex-wrap gap-2">
-            {(apartments.data ?? []).map((a) => (
+            {ticketCategorySchema.options.map((c) => (
               <Chip
-                key={a.id}
-                label={`${a.tower}-${a.apartmentNo}`}
-                selected={apartmentId === a.id}
-                onPress={() => setApartmentId(a.id)}
+                key={c}
+                label={t('value.' + c)}
+                selected={category === c}
+                onPress={() => setCategory(c)}
               />
             ))}
           </View>
-        )}
-      </Field>
-      <Field label={t('common.category')}>
-        <View className="flex-row flex-wrap gap-2">
-          {ticketCategorySchema.options.map((c) => (
-            <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />
-          ))}
+        </Field>
+        <Field label={t('common.priority')}>
+          <View className="flex-row flex-wrap gap-2">
+            {ticketPrioritySchema.options.map((p) => (
+              <Chip
+                key={p}
+                label={t('value.' + p)}
+                selected={priority === p}
+                onPress={() => setPriority(p)}
+              />
+            ))}
+          </View>
+        </Field>
+        <View className="mt-1 gap-2">
+          <Button size="lg" onPress={() => create.mutate()} disabled={!canSubmit}>
+            <Text>{create.isPending ? t('tickets.submitting') : t('tickets.submit')}</Text>
+          </Button>
+          {create.isError && <Feedback />}
+          {create.isSuccess && <Feedback tone="success" message={t('design.ticketSaved')} />}
         </View>
-      </Field>
-      <Field label={t('common.priority')}>
-        <View className="flex-row flex-wrap gap-2">
-          {ticketPrioritySchema.options.map((p) => (
-            <Chip key={p} label={p} selected={priority === p} onPress={() => setPriority(p)} />
-          ))}
-        </View>
-      </Field>
-      <View className="mt-1 gap-2">
-        <Button onPress={() => create.mutate()} disabled={!canSubmit}>
-          <Text>{create.isPending ? t('tickets.submitting') : t('tickets.submit')}</Text>
-        </Button>
-        {create.isError && (
-          <Text className="text-sm text-destructive">
-            {String((create.error as Error)?.message ?? t('common.failed'))}
-          </Text>
-        )}
-      </View>
-
-      <Text className="mt-3 text-lg font-bold">{t('tickets.yourTickets')}</Text>
-      {tickets.isLoading ? (
-        <ActivityIndicator />
+      </Section>
+      <Text accessibilityRole="header" className="mt-3 text-lg font-bold">
+        {t('tickets.yourTickets')}
+      </Text>
+      {tickets.isPending ? (
+        <LoadingState />
+      ) : tickets.isError ? (
+        <Feedback message={t('design.loadFailed')} onRetry={() => tickets.refetch()} />
       ) : rows.length === 0 ? (
-        <Text className="text-sm text-muted-foreground">{t('tickets.empty')}</Text>
+        <EmptyState icon="tool" title={t('tickets.empty')} />
       ) : (
         rows.map((ticket) => (
-          <View key={ticket.id} className="gap-1 rounded-xl border border-border bg-card p-3">
-            <View className="flex-row items-center justify-between">
+          <View key={ticket.id} className="gap-3 rounded-xl border border-border bg-card p-5">
+            <View className="gap-2">
               <Text className="shrink text-base font-semibold">{ticket.title}</Text>
-              <Text className={cn('text-xs font-bold', STATUS_COLOR[ticket.status])}>{ticket.status}</Text>
+              <Text className={cn('text-xs font-bold', STATUS_COLOR[ticket.status])}>
+                {t('value.' + ticket.status)}
+              </Text>
             </View>
             <Text className="text-sm text-muted-foreground">{ticket.description}</Text>
             <Text className="mt-0.5 text-xs text-muted-foreground">
-              {ticket.category} · {ticket.priority}
+              {t('value.' + ticket.category)} · {t('value.' + ticket.priority)}
             </Text>
           </View>
         ))
       )}
-    </ScrollView>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View className="gap-1.5">
-      <Text className="text-sm font-medium">{label}</Text>
-      {children}
-    </View>
-  )
+    </Screen>
+  );
 }
