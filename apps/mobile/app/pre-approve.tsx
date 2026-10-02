@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Share, View, useWindowDimensions } from 'react-native';
+import { Platform, Share, View, useWindowDimensions } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import type { VisitorPreApproval } from '@opensociety/shared';
 import { preApprovalQrValue } from '@opensociety/shared';
@@ -68,7 +68,13 @@ export default function PreApprove() {
             <Text
               accessibilityLabel={`${t('design.passCode')}: ${created.code.split('').join(' ')}`}
               className="w-full text-center text-primary"
-              style={{ fontSize: 40, fontWeight: '700', letterSpacing: 4 }}
+              style={{
+                fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                fontSize: 40,
+                lineHeight: 52,
+                fontWeight: '700',
+                letterSpacing: 4
+              }}
               selectable
               adjustsFontSizeToFit
               minimumFontScale={0.5}
