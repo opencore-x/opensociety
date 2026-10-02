@@ -99,7 +99,10 @@ export default function Index() {
               )}
             >
               <Text
-                className={cn('text-sm font-semibold', mode !== value && 'text-muted-foreground')}
+                className={cn(
+                  'self-stretch text-center text-sm font-semibold leading-6',
+                  mode !== value && 'text-muted-foreground',
+                )}
               >
                 {t(value === 'resident' ? 'design.myHome' : 'design.gateTools')}
               </Text>
