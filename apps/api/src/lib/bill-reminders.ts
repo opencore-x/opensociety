@@ -1,8 +1,7 @@
-import { and, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm'
-import { maintenanceBills, type Database } from '@opensociety/db'
+import { and, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm'
+import { maintenanceBills, residencies, type Database } from '@opensociety/db'
 import { formatPaise } from '@opensociety/shared'
-import { apartmentRecipients } from './push-events'
-import { enqueuePush, processPushQueue } from './push-queue'
+import { enqueuePushBatch, processPushQueue } from './push-queue'
 
 export function reminderOffsets(value = '-7,0,3') {
   const offsets = value.split(',').map((s) => Number(s.trim()))
@@ -37,14 +36,20 @@ export async function sendBillReminders(db: Database, options: { now: Date; time
     gte(maintenanceBills.dueDate, new Date(now.getTime() - (Math.max(...offsets) + 2) * 86400_000)),
     lte(maintenanceBills.dueDate, new Date(now.getTime() - (Math.min(...offsets) - 2) * 86400_000)),
   ))
-  for (const bill of rows) {
-    const balance = Number(bill.outstanding)
-    if (!bill.dueDate || balance <= 0 || !reminderDue(bill.dueDate, now, offsets, timeZone)) continue
-    await enqueuePush(db, await apartmentRecipients(db, bill.apartmentId), `bill:${bill.id}:reminder:${localDay(now, timeZone)}`, {
-      title: 'Maintenance bill reminder',
-      body: `${formatPaise(balance)} outstanding, due ${localDay(bill.dueDate, timeZone)}. Open Bills for details and contact the society office to pay.`,
-      data: { screen: 'bills' },
-    }, now)
+  const due = rows.filter((bill) => bill.dueDate && Number(bill.outstanding) > 0 && reminderDue(bill.dueDate, now, offsets, timeZone))
+  if (due.length) {
+    const occupants = await db.select({ userId: residencies.userId, apartmentId: residencies.apartmentId }).from(residencies)
+      .where(and(inArray(residencies.apartmentId, [...new Set(due.map((bill) => bill.apartmentId))]), isNull(residencies.endDate)))
+    const byApartment = new Map<string, string[]>()
+    for (const occupant of occupants) byApartment.set(occupant.apartmentId, [...(byApartment.get(occupant.apartmentId) ?? []), occupant.userId])
+    await enqueuePushBatch(db, due.map((bill) => ({
+      userIds: byApartment.get(bill.apartmentId) ?? [], eventKey: `bill:${bill.id}:reminder:${localDay(now, timeZone)}`,
+      message: {
+        title: 'Maintenance bill reminder',
+        body: `${formatPaise(Number(bill.outstanding))} outstanding, due ${localDay(bill.dueDate!, timeZone)}. Open Bills for details and contact the society office to pay.`,
+        data: { screen: 'bills' },
+      },
+    })), now)
   }
   await processPushQueue(db, accessToken, now)
 }

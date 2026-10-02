@@ -8,18 +8,29 @@ const MAX_ATTEMPTS = 5
 const BATCH_SIZE = 100
 type Delivery = typeof pushDeliveries.$inferSelect
 
+export type PushEvent = { userIds: string[]; eventKey: string; message: PushMessage }
+
 export async function enqueuePush(db: Database, userIds: string[], eventKey: string, message: PushMessage, now = new Date()) {
-  const recipients = [...new Set(userIds)]
+  return enqueuePushBatch(db, [{ userIds, eventKey, message }], now)
+}
+
+export async function enqueuePushBatch(db: Database, events: PushEvent[], now = new Date()) {
+  const recipients = [...new Set(events.flatMap((event) => event.userIds))]
   if (!recipients.length) return
-  const validated = pushMessageSchema.parse(message)
+  const validated = events.map((event) => ({ ...event, message: pushMessageSchema.parse(event.message) }))
   const devices = await db.select({ token: pushDevices.token, userId: pushDevices.userId })
     .from(pushDevices).innerJoin(users, eq(users.id, pushDevices.userId))
     .where(and(inArray(pushDevices.userId, recipients), eq(users.status, 'APPROVED'), eq(users.isActive, true),
       gt(pushDevices.updatedAt, new Date(now.getTime() - 30 * 86400_000))))
-  for (let i = 0; i < devices.length; i += BATCH_SIZE) {
-    await db.insert(pushDeliveries).values(devices.slice(i, i + BATCH_SIZE).map((device) => ({
-      ...device, eventKey, message: validated, createdAt: now, nextAttemptAt: now, expiresAt: new Date(now.getTime() + 86400_000),
-    }))).onConflictDoNothing()
+  const byUser = new Map<string, typeof devices>()
+  for (const device of devices) byUser.set(device.userId, [...(byUser.get(device.userId) ?? []), device])
+  const deliveries = validated.flatMap((event) => [...new Set(event.userIds)].flatMap((userId) =>
+    (byUser.get(userId) ?? []).map((device) => ({
+      ...device, eventKey: event.eventKey, message: event.message, createdAt: now, nextAttemptAt: now,
+      expiresAt: new Date(now.getTime() + 86400_000),
+    }))))
+  for (let i = 0; i < deliveries.length; i += BATCH_SIZE) {
+    await db.insert(pushDeliveries).values(deliveries.slice(i, i + BATCH_SIZE)).onConflictDoNothing()
   }
 }
 

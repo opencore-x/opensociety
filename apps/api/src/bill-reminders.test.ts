@@ -2,10 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Database } from '@opensociety/db'
 import { localDay, reminderDue, reminderOffsets, sendBillReminders } from './lib/bill-reminders'
 
-const { enqueue, dispatch, recipients } = vi.hoisted(() => ({ enqueue: vi.fn(), dispatch: vi.fn(), recipients: vi.fn() }))
-vi.mock('./lib/push-queue', () => ({ enqueuePush: enqueue, processPushQueue: dispatch }))
-vi.mock('./lib/push-events', () => ({ apartmentRecipients: recipients }))
-beforeEach(() => { enqueue.mockReset(); dispatch.mockReset(); recipients.mockReset().mockResolvedValue(['resident']) })
+const { enqueue, dispatch } = vi.hoisted(() => ({ enqueue: vi.fn(), dispatch: vi.fn() }))
+vi.mock('./lib/push-queue', () => ({ enqueuePushBatch: enqueue, processPushQueue: dispatch }))
+beforeEach(() => { enqueue.mockReset(); dispatch.mockReset() })
 
 describe('bill reminders', () => {
   it('defaults to a week before, the due day, and three days overdue', () => {
@@ -33,11 +32,11 @@ describe('bill reminders', () => {
       { id: 'partial', apartmentId: 'b', dueDate, outstanding: 12500 },
       { id: 'later', apartmentId: 'c', dueDate: new Date('2026-12-01T00:00:00Z'), outstanding: 100 },
     ]
-    const chain = { select: () => chain, from: () => chain, where: async () => rows }
+    const results = [rows, [{ userId: 'resident', apartmentId: 'b' }]]
+    const chain = { select: () => chain, from: () => chain, where: async () => results.shift() }
     const now = new Date('2026-10-10T04:00:00Z')
     await sendBillReminders(chain as unknown as Database, { now })
-    expect(recipients).toHaveBeenCalledWith(chain, 'b')
     expect(enqueue).toHaveBeenCalledTimes(1)
-    expect(enqueue).toHaveBeenCalledWith(chain, ['resident'], 'bill:partial:reminder:2026-10-10', expect.objectContaining({ body: expect.stringContaining('₹125.00'), data: { screen: 'bills' } }), now)
+    expect(enqueue).toHaveBeenCalledWith(chain, [{ userIds: ['resident'], eventKey: 'bill:partial:reminder:2026-10-10', message: expect.objectContaining({ body: expect.stringContaining('₹125.00'), data: { screen: 'bills' } }) }], now)
   })
 })
