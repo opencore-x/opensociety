@@ -38,6 +38,17 @@ const env = {} as AppEnv['Bindings'] // no CLERK_SECRET_KEY -> dev x-user-id pat
 const asUser = (id: string) => ({ headers: { 'x-user-id': id } })
 
 describe('requireAuth', () => {
+  it('rejects the dev identity header when Clerk is configured', async () => {
+    const app = buildApp({ id: 'a1', role: 'ADMIN', status: 'APPROVED' })
+    const configured = { ...env, CLERK_SECRET_KEY: 'configured' }
+    for (const authorization of [undefined, 'Basic invalid']) {
+      const headers: Record<string, string> = { 'x-user-id': 'a1' }
+      if (authorization) headers.authorization = authorization
+      const res = await app.request('/admin', { headers }, configured)
+      expect(res.status).toBe(401)
+    }
+  })
+
   it('401s when no acting user is present', async () => {
     const res = await buildApp().request('/open', {}, env)
     expect(res.status).toBe(401)
