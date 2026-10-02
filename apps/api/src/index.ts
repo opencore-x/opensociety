@@ -23,6 +23,7 @@ import { reportRoutes } from './routes/reports'
 import { ledgerRoutes } from './routes/ledger'
 import { expenseRoutes } from './routes/expenses'
 import { webhookRoutes } from './routes/webhooks'
+import { pushRoutes } from './routes/push'
 
 const app = new Hono<AppEnv>()
 
@@ -51,6 +52,7 @@ app.route('/reports', reportRoutes)
 app.route('/ledger', ledgerRoutes)
 app.route('/expenses', expenseRoutes)
 app.route('/webhooks', webhookRoutes)
+app.route('/push', pushRoutes)
 
 app.notFound((c) => c.json({ error: 'not found' }, 404))
 app.onError((err, c) => {
