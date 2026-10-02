@@ -1,53 +1,36 @@
 import type { Database } from '@opensociety/db'
-import { maintenanceBills, billLineItems, apartments } from '@opensociety/db'
-import { eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { computeBill, type BillLineInput } from '@opensociety/shared'
 
-// Generate a monthly bill (the same line items) for every active flat that does
-// not already have one for `periodMonth`. Idempotent per period. Shared by the
-// admin generate route and the monthly cron.
+// The unique monthly index arbitrates concurrent admin/cron runs. Bills and
+// their line items commit together, so a failed charge cannot leave an empty bill.
 export async function generateMonthlyBills(
   db: Database,
   opts: { periodMonth: string; title: string; dueDate?: Date | null; lineItems: BillLineInput[]; createdBy?: string },
 ): Promise<{ created: number; skipped: number; billIds: string[] }> {
+  if (!opts.lineItems.length) throw new Error('At least one bill line is required')
   const totals = computeBill(opts.lineItems)
-  const flats = await db.select({ id: apartments.id }).from(apartments).where(eq(apartments.isActive, true))
-  const existing = await db
-    .select({ apartmentId: maintenanceBills.apartmentId })
-    .from(maintenanceBills)
-    .where(eq(maintenanceBills.periodMonth, opts.periodMonth))
-  const already = new Set(existing.map((r) => r.apartmentId))
-  const targets = flats.filter((f) => !already.has(f.id))
-  if (targets.length === 0) return { created: 0, skipped: flats.length, billIds: [] }
-
-  const created = await db
-    .insert(maintenanceBills)
-    .values(
-      targets.map((f) => ({
-        apartmentId: f.id,
-        type: 'MONTHLY' as const,
-        title: opts.title,
-        periodMonth: opts.periodMonth,
-        subtotal: totals.subtotal,
-        taxAmount: totals.taxAmount,
-        totalAmount: totals.total,
-        dueDate: opts.dueDate ?? null,
-        createdBy: opts.createdBy,
-      })),
+  const lines = totals.lines.map((line) => ({
+    description: line.description, amount: line.amount, tax_rate_pct: line.taxRatePct,
+    tax_amount: line.taxAmount, account_id: line.accountId ?? null,
+  }))
+  const result = await db.execute<{ id: string | null; total: number }>(sql`
+    with active as (select id from apartments where is_active = true),
+    created as (
+      insert into maintenance_bills (apartment_id, type, title, period_month, subtotal, tax_amount, total_amount, due_date, created_by)
+      select id, 'MONTHLY', ${opts.title}, ${opts.periodMonth}, ${totals.subtotal}, ${totals.taxAmount}, ${totals.total},
+        ${opts.dueDate?.toISOString() ?? null}::timestamp, ${opts.createdBy ?? null}::uuid from active
+      on conflict (apartment_id, period_month) where type = 'MONTHLY' and period_month is not null do nothing
+      returning id
+    ), charges as (
+      insert into bill_line_items (bill_id, description, amount, tax_rate_pct, tax_amount, account_id)
+      select created.id, line.description, line.amount, line.tax_rate_pct, line.tax_amount, line.account_id
+      from created cross join jsonb_to_recordset(${JSON.stringify(lines)}::jsonb)
+        as line(description text, amount integer, tax_rate_pct integer, tax_amount integer, account_id uuid)
     )
-    .returning({ id: maintenanceBills.id })
-
-  await db.insert(billLineItems).values(
-    created.flatMap((b) =>
-      totals.lines.map((l) => ({
-        billId: b.id,
-        description: l.description,
-        amount: l.amount,
-        taxRatePct: l.taxRatePct,
-        taxAmount: l.taxAmount,
-        accountId: l.accountId ?? null,
-      })),
-    ),
-  )
-  return { created: created.length, skipped: already.size, billIds: created.map((b) => b.id) }
+    select created.id, (select count(*)::int from active) as total
+    from (select 1) singleton left join created on true
+  `)
+  const billIds = result.rows.flatMap((row) => row.id ? [row.id] : [])
+  return { created: billIds.length, skipped: Number(result.rows[0]?.total ?? 0) - billIds.length, billIds }
 }

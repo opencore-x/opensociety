@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "maintenance_bills_monthly_apartment_uniq" ON "maintenance_bills" USING btree ("apartment_id","period_month") WHERE "maintenance_bills"."type" = 'MONTHLY' and "maintenance_bills"."period_month" is not null;
