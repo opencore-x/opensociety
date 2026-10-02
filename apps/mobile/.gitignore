@@ -43,3 +43,8 @@ yarn-error.*
 .env.local
 .env.development
 .env.production
+credentials.json
+google-services.json
+*.ipa
+*.aab
+*.apk

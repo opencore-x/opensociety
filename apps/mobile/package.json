@@ -8,7 +8,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "check-types": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "eas-build-post-install": "pnpm --filter @opensociety/shared build",
+    "test": "node --test scripts/*.test.cjs"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",

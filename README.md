@@ -6,7 +6,7 @@
 
 **Frontend:**
 - Web: [TanStack Start](https://tanstack.com/start) (React) + TanStack Query
-- Mobile: [Expo](https://expo.dev) Router (React Native, SDK 54) + TanStack Query
+- Mobile: [Expo](https://expo.dev) Router (React Native, SDK 57) + TanStack Query
 
 **Backend:**
 - API: [Hono](https://hono.dev) on [Cloudflare Workers](https://workers.cloudflare.com)
@@ -63,7 +63,24 @@ cp apps/web/.env.example apps/web/.env             # VITE_API_URL, VITE_DEV_USER
 
 Per-society secrets (`DATABASE_URL`, `CLERK_*`, R2) go in `apps/api/.dev.vars` for local dev and `wrangler secret put` for production. See `.env.example` for the full list.
 
-Until Clerk sessions are wired into the web app, set `VITE_DEV_USER_ID` to a real `users.id` so authored writes (publishing notices, approving visitors) attribute correctly.
+Clerk sessions authenticate web and mobile requests. The API accepts the local `x-user-id` fallback only when no Clerk secret is configured. Keep development identity overrides out of preview and store builds.
+
+## Mobile builds
+
+EAS project: [ankitsejwal/opensociety](https://expo.dev/accounts/ankitsejwal/projects/opensociety). Run EAS commands from `apps/mobile`. `eas.json` provides development, iOS simulator, preview APK/ad-hoc, TestFlight, and Play internal profiles. Development installs use `com.opensociety.app.dev`; preview and store installs use `com.opensociety.app`. EAS manages store build numbers. The post-install hook builds the shared workspace package before Metro runs.
+
+```sh
+eas build --platform ios --profile simulator
+eas build --platform android --profile development
+eas build --platform ios --profile testflight
+eas build --platform android --profile play-internal
+```
+
+Both developer memberships are available. OpenSociety needs its own store app records and signing/provisioning credentials. The existing Google publishing service account currently has Lucidity-only access. Configure the OpenSociety credentials in EAS and grant testing-track access for this app before submitting. Set the new App Store Connect app ID in `submit.testflight.ios.ascAppId` once Apple creates it. Play submission starts as a draft for the first Console rollout.
+
+Configure `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in each EAS environment. Preview/store builds require HTTPS and reject `EXPO_PUBLIC_DEV_USER_ID`; store profiles also require a live Clerk key. The current local `.env` is for development and cannot be used to ship the app. Android push will also need an EAS file variable `GOOGLE_SERVICES_JSON` for this app's Firebase configuration. Keep signing keys and service-account JSON outside Git.
+
+The manual **Mobile build** GitHub workflow requires a repository `EXPO_TOKEN` secret and waits for the selected EAS build. It does not submit automatically. After a successful store build, use `eas submit --platform ios --profile testflight --id BUILD_ID` or `eas submit --platform android --profile play-internal --id BUILD_ID`, then verify processing and tester access in the corresponding store.
 
 ## Admin dashboard
 

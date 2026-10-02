@@ -23,7 +23,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow OpenSociety to use the camera to scan visitor pre-approval QR codes at the gate."
+          "cameraPermission": "Allow OpenSociety to use the camera to scan visitor pre-approval QR codes at the gate.",
+          "recordAudioAndroid": false,
+          "microphonePermission": false
         }
       ],
       "expo-router",
@@ -36,7 +38,15 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
-    ]
+      ],
+      "expo-status-bar"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8f52e8f5-da3c-4a16-ac82-1b5d10d75e07"
+      }
+    },
+    "owner": "ankitsejwal"
   }
 }
