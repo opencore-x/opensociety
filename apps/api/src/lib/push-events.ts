@@ -3,7 +3,8 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { residencies, users, type Database } from '@opensociety/db'
 import type { PushMessage } from '@opensociety/shared'
 import type { AppEnv } from '../types'
-import { enqueuePush, processPushQueue } from './push-queue'
+import { enqueuePush } from './push-queue'
+import { requestPushDispatch } from './push-dispatch'
 
 export async function apartmentRecipients(db: Database, apartmentId: string) {
   const rows = await db.select({ userId: residencies.userId }).from(residencies)
@@ -24,9 +25,7 @@ export async function notifyEvent(
   try {
     const db = c.get('db')
     await enqueuePush(db, await recipients(), eventKey, message)
-    c.executionCtx.waitUntil(processPushQueue(db, c.env.EXPO_ACCESS_TOKEN).catch(() => {
-      console.error('push: background dispatch failed; pending deliveries will retry')
-    }))
+    await requestPushDispatch(c.env)
     return true
   } catch {
     // The business action has already succeeded. Do not make the client repeat it.

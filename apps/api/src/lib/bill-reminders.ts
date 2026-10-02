@@ -1,7 +1,7 @@
 import { and, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm'
 import { maintenanceBills, residencies, type Database } from '@opensociety/db'
 import { formatPaise } from '@opensociety/shared'
-import { enqueuePushBatch, processPushQueue } from './push-queue'
+import { enqueuePushBatch } from './push-queue'
 
 export function reminderOffsets(value = '-7,0,3') {
   const offsets = value.split(',').map((s) => Number(s.trim()))
@@ -22,11 +22,11 @@ export function reminderDue(dueDate: Date, now: Date, offsets: number[], timeZon
   return offsets.includes(elapsedDays)
 }
 
-export async function sendBillReminders(db: Database, options: { now: Date; timeZone?: string; days?: string; accessToken?: string }) {
-  const { now, accessToken } = options
+export async function sendBillReminders(db: Database, options: { now: Date; timeZone?: string; days?: string }) {
+  const { now } = options
   const timeZone = options.timeZone ?? 'Asia/Kolkata'
   const hour = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hourCycle: 'h23' }).format(now)
-  if (hour !== '09') return
+  if (hour !== '09') return false
   const offsets = reminderOffsets(options.days)
   const rows = await db.select({
     id: maintenanceBills.id, apartmentId: maintenanceBills.apartmentId, dueDate: maintenanceBills.dueDate,
@@ -51,5 +51,5 @@ export async function sendBillReminders(db: Database, options: { now: Date; time
       },
     })), now)
   }
-  await processPushQueue(db, accessToken, now)
+  return true
 }

@@ -4,7 +4,8 @@ import type { AppEnv } from './types'
 import { notifyEvent } from './lib/push-events'
 
 const { enqueue, dispatch } = vi.hoisted(() => ({ enqueue: vi.fn(), dispatch: vi.fn() }))
-vi.mock('./lib/push-queue', () => ({ enqueuePush: enqueue, processPushQueue: dispatch }))
+vi.mock('./lib/push-queue', () => ({ enqueuePush: enqueue }))
+vi.mock('./lib/push-dispatch', () => ({ requestPushDispatch: dispatch }))
 beforeEach(() => { enqueue.mockReset().mockResolvedValue(undefined); dispatch.mockReset().mockResolvedValue(undefined) })
 
 describe('push events', () => {
@@ -25,7 +26,7 @@ describe('push events', () => {
     await Promise.all(pending)
     expect(enqueue).toHaveBeenCalledWith(undefined, ['resident'], 'visitor:1:approval', expect.any(Object))
     expect(dispatch).toHaveBeenCalledTimes(1)
-    expect(pending).toHaveLength(1)
+    expect(pending).toHaveLength(0)
   })
   it('does not repeat a successful business action when notification enqueueing fails', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {})
