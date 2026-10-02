@@ -9,7 +9,7 @@
 - Mobile: [Expo](https://expo.dev) Router (React Native, SDK 57) + TanStack Query
 
 **Backend:**
-- API: [Hono](https://hono.dev) on [Cloudflare Workers](https://workers.cloudflare.com)
+- API: [Hono](https://hono.dev) on Node 22 for shared hosting; Cloudflare Workers adapter also available
 - Database: [Neon Postgres](https://neon.tech) via [Drizzle ORM](https://orm.drizzle.team) (neon-http driver)
 - Shared contracts: Zod (`@opensociety/shared`)
 
@@ -31,7 +31,7 @@ See `BLOCKING_DECISIONS.md` (in the Obsidian notes) for the rationale behind ten
 
 ```
 apps/
-  api      Hono API on Cloudflare Workers (wrangler)
+  api      Hono API with Node and Cloudflare Workers adapters
   web      TanStack Start admin dashboard
   mobile   Expo Router app (residents + guards)
 packages/
@@ -61,7 +61,7 @@ cp apps/api/.dev.vars.example apps/api/.dev.vars   # DATABASE_URL, CLERK_* (API)
 cp apps/web/.env.example apps/web/.env             # VITE_API_URL, VITE_DEV_USER_ID (web)
 ```
 
-Per-society secrets (`DATABASE_URL`, `CLERK_*`, R2) go in `apps/api/.dev.vars` for local dev and `wrangler secret put` for production. See `.env.example` for the full list.
+Per-society secrets (`DATABASE_URL`, `CLERK_*`, R2) go in `apps/api/.dev.vars` for local Workers development. Node hosting uses runtime environment variables. See [the deployment guide](deploy/README.md) for container builds, configuration, migrations, scheduled jobs, and rollback.
 
 Clerk sessions authenticate web and mobile requests. The API accepts the local `x-user-id` fallback only when no Clerk secret is configured. Keep development identity overrides out of preview and store builds.
 
@@ -101,7 +101,7 @@ Configure this app's APNs credential in EAS for iOS. For Android, configure the 
 
 Before pilot distribution, verify on physical iOS and Android devices: permission grant/denial; foreground/background/cold-start notification taps; resident and guard event routing; tower targeting; partial/paid/cancelled bill reminders; token refresh; sign-out and account switching. Database integration tests cover queue claims, deduplication, retries, receipts, account reassignment, and dead-token removal; they do not prove delivery through APNs/FCM.
 
-Hosting is not provisioned by these changes. The current API adapter targets Workers/R2/Queues; the shared hosting plan is a DigitalOcean Droplet. Reconcile that deployment adapter, scheduled jobs, and storage before enabling a public backend. Store profiles also need the deployed HTTPS API and live Clerk configuration.
+The shared DigitalOcean Droplet is not provisioned yet. A Node API adapter, web server, R2 S3 adapter, restart recovery, and container configuration are prepared in [the deployment guide](deploy/README.md). Store profiles still need the deployed HTTPS API and live Clerk configuration.
 
 ## Admin dashboard
 
