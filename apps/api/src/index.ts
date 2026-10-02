@@ -23,6 +23,9 @@ import { reportRoutes } from './routes/reports'
 import { ledgerRoutes } from './routes/ledger'
 import { expenseRoutes } from './routes/expenses'
 import { webhookRoutes } from './routes/webhooks'
+import { pushRoutes } from './routes/push'
+import { dispatchAndSchedule, requestPushDispatch } from './lib/push-dispatch'
+import { sendBillReminders } from './lib/bill-reminders'
 
 const app = new Hono<AppEnv>()
 
@@ -51,6 +54,7 @@ app.route('/reports', reportRoutes)
 app.route('/ledger', ledgerRoutes)
 app.route('/expenses', expenseRoutes)
 app.route('/webhooks', webhookRoutes)
+app.route('/push', pushRoutes)
 
 app.notFound((c) => c.json({ error: 'not found' }, 404))
 app.onError((err, c) => {
@@ -81,7 +85,27 @@ async function runMonthlyBilling(env: Bindings, scheduledTime: number) {
 
 export default {
   fetch: app.fetch,
+  async queue(batch: MessageBatch<{ type: 'dispatch' }>, env: Bindings) {
+    if (env.PUSH_ENABLED !== 'true') { batch.ackAll(); return }
+    try {
+      // Wake-up messages carry no personal data and can be collapsed into one pass.
+      await dispatchAndSchedule(createDb(env.DATABASE_URL), env)
+      batch.ackAll()
+    } catch {
+      console.error('push: dispatch failed; retrying queue batch')
+      batch.retryAll({ delaySeconds: 60 })
+    }
+  },
   async scheduled(controller: ScheduledController, env: Bindings, ctx: ExecutionContext) {
-    ctx.waitUntil(runMonthlyBilling(env, controller.scheduledTime))
+    if (controller.cron === '0 0 1 * *') ctx.waitUntil(runMonthlyBilling(env, controller.scheduledTime))
+    if (controller.cron === '0 * * * *' && env.PUSH_ENABLED === 'true') {
+      ctx.waitUntil((async () => {
+        const ran = await sendBillReminders(createDb(env.DATABASE_URL), {
+          now: new Date(controller.scheduledTime), days: env.BILL_REMINDER_DAYS, timeZone: env.SOCIETY_TIME_ZONE,
+        })
+        // The daily reminder run also recovers DB events whose queue publication failed.
+        if (ran) await requestPushDispatch(env)
+      })())
+    }
   },
 }

@@ -18,6 +18,7 @@ import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../mid
 import { parsePagination } from '../pagination'
 import { assignVisitorParking, releaseVisitorParking } from '../lib/visitor-parking'
 import type { AppEnv } from '../types'
+import { apartmentRecipients, notifyEvent, roleRecipients } from '../lib/push-events'
 
 // Applies a lifecycle transition to a visitor entry, enforcing the state
 // machine: 404 if the entry is missing, 409 if the action is illegal from its
@@ -58,6 +59,16 @@ export async function applyTransition(
     .set({ status: VISITOR_TRANSITIONS[action].to, updatedAt: new Date(), ...extra })
     .where(eq(visitorEntries.id, id))
     .returning()
+  if (action === 'approve' || action === 'deny') {
+    await notifyEvent(c, `visitor:${id}:${action}`, () => roleRecipients(db, 'GUARD'), {
+      title: action === 'approve' ? 'Visitor approved' : 'Visitor denied',
+      body: 'Open the gate dashboard to see the updated visitor request.', data: { screen: 'gate' },
+    })
+  } else if (action === 'checkin') {
+    await notifyEvent(c, `visitor:${id}:checkin`, () => apartmentRecipients(db, entry.apartmentId), {
+      title: 'Visitor checked in', body: 'A visitor for your apartment has entered. Open the app for details.', data: { screen: 'visitors' },
+    })
+  }
   return c.json(updated)
 }
 
@@ -139,6 +150,9 @@ visitorRoutes.post('/pre-approvals/redeem', requireRole('GUARD', 'ADMIN'), zVali
     .update(visitorPreApprovals)
     .set({ useCount: pa.useCount + 1 })
     .where(eq(visitorPreApprovals.id, pa.id))
+  await notifyEvent(c, `visitor:${entry.id}:checkin`, () => apartmentRecipients(db, pa.apartmentId), {
+    title: 'Visitor checked in', body: 'A pre-approved visitor has entered. Open the app for details.', data: { screen: 'visitors' },
+  })
   return c.json(entry, 201)
 })
 
@@ -186,7 +200,12 @@ visitorRoutes.post('/', requireRole('GUARD', 'ADMIN'), zValidator('json', create
     .values(body)
     .onConflictDoNothing({ target: visitorEntries.clientId })
     .returning()
-  if (created) return c.json(created, 201)
+  if (created) {
+    await notifyEvent(c, `visitor:${created.id}:approval`, () => apartmentRecipients(db, created.apartmentId), {
+      title: 'Visitor waiting at the gate', body: 'Open the app to approve or deny the visitor request.', data: { screen: 'visitors' },
+    })
+    return c.json(created, 201)
+  }
   const [existing] = await db
     .select()
     .from(visitorEntries)

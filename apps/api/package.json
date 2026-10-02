@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240512.0",
+    "@electric-sql/pglite": "^0.5.8",
     "@opensociety/eslint-config": "workspace:*",
     "eslint": "^9.18.0",
     "typescript": "^5.7.2",

@@ -86,6 +86,7 @@ function CreateNoticeForm() {
   const [priority, setPriority] = useState<NoticePriority>('NORMAL')
   const [category, setCategory] = useState<NoticeCategory>('GENERAL')
   const [expiresAt, setExpiresAt] = useState('')
+  const [notifyTower, setNotifyTower] = useState('')
   const [attachment, setAttachment] = useState<{ url: string; name: string } | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
@@ -96,12 +97,14 @@ function CreateNoticeForm() {
     setPriority('NORMAL')
     setCategory('GENERAL')
     setExpiresAt('')
+    setNotifyTower('')
     setAttachment(null)
   }
 
   const mutation = useMutation({
     mutationFn: () => {
       const payload: CreateNotice = { title, body, priority, category }
+      if (notifyTower.trim()) payload.notifyTower = notifyTower.trim()
       if (expiresAt) payload.expiresAt = new Date(expiresAt).toISOString()
       if (attachment) {
         payload.attachmentUrl = attachment.url
@@ -215,6 +218,11 @@ function CreateNoticeForm() {
           )}
         </div>
         {uploadError && <p className="text-destructive text-sm">{uploadError}</p>}
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="n-tower">{t('page.notices.notifyTower')}</Label>
+        <Input id="n-tower" value={notifyTower} maxLength={64} onChange={(e) => setNotifyTower(e.target.value)} placeholder={t('page.notices.notifyAll')} className="w-56" />
+        <p className="text-muted-foreground text-xs">{t('page.notices.notifyHint')}</p>
       </div>
       <Button type="submit" disabled={mutation.isPending || uploading || !title.trim() || !body.trim()}>
         {mutation.isPending ? t('page.notices.publishing') : t('page.notices.publish')}

@@ -8,6 +8,13 @@ export type Dict = Record<string, string>
 export const LANGUAGES: Language[] = ['en', 'hi']
 
 const commonEn: Dict = {
+  "push.ready": "Notifications enabled",
+  "push.busy": "Enabling notifications…",
+  "push.enable": "Enable notifications",
+  "push.failed": "Could not enable notifications. Check your connection and notification settings, then try again.",
+  "push.signOut": "Sign out",
+  "push.signOutFailed": "Could not disconnect notifications. Please try signing out again when online.",
+
   'nav.houseHelp': 'House help',
   'nav.vehicles': 'Vehicles',
   'nav.visitors': 'Visitors',
@@ -28,6 +35,13 @@ const commonEn: Dict = {
   'common.date': 'Date',
 }
 const commonHi: Dict = {
+  "push.ready": "सूचनाएँ चालू हैं",
+  "push.busy": "सूचनाएँ चालू हो रही हैं…",
+  "push.enable": "सूचनाएँ चालू करें",
+  "push.failed": "सूचनाएँ चालू नहीं हो सकीं। कनेक्शन और सूचना सेटिंग जाँचकर फिर कोशिश करें।",
+  "push.signOut": "साइन आउट",
+  "push.signOutFailed": "सूचनाएँ बंद नहीं हो सकीं। ऑनलाइन होने पर फिर साइन आउट करें।",
+
   'nav.houseHelp': 'घरेलू सहायक',
   'nav.vehicles': 'वाहन',
   'nav.visitors': 'आगंतुक',
@@ -49,6 +63,10 @@ const commonHi: Dict = {
 }
 
 const webEn: Dict = {
+  "page.notices.notifyTower": "Send notifications to tower (optional)",
+  "page.notices.notifyAll": "All residents",
+  "page.notices.notifyHint": "Leave empty to notify everyone. The notice remains visible to all residents.",
+
   'nav.overview': 'Overview',
   'nav.society': 'Society',
   'nav.apartments': 'Apartments',
@@ -486,6 +504,10 @@ const webEn: Dict = {
   'page.expenses.initLedger': 'Initialize accounts',
 }
 const webHi: Dict = {
+  "page.notices.notifyTower": "इस टावर को सूचित करें (वैकल्पिक)",
+  "page.notices.notifyAll": "सभी निवासी",
+  "page.notices.notifyHint": "सभी को सूचित करने के लिए खाली छोड़ें। नोटिस सभी निवासियों को दिखेगा।",
+
   'nav.overview': 'अवलोकन',
   'nav.society': 'सोसायटी',
   'nav.apartments': 'अपार्टमेंट',
@@ -924,6 +946,13 @@ const webHi: Dict = {
 }
 
 const mobileEn: Dict = {
+  "vgate.notifyTitle": "Notify vehicle owner",
+  "vgate.notifyConfirm": "Send a notification asking the owner to contact the gate?",
+  "vgate.blocked": "Report blocked",
+  "vgate.towed": "Report towed",
+  "vgate.queued": "Notification queued.",
+  "vgate.notifyFailed": "Could not queue the notification. Please try again.",
+
   'nav.appName': 'OpenSociety',
   'nav.signIn': 'Sign in',
   'nav.preApprove': 'Pre-approve',
@@ -1054,6 +1083,13 @@ const mobileEn: Dict = {
   'myHouseHelp.addHelp': 'Add help',
 }
 const mobileHi: Dict = {
+  "vgate.notifyTitle": "वाहन मालिक को सूचित करें",
+  "vgate.notifyConfirm": "मालिक को गेट से संपर्क करने की सूचना भेजें?",
+  "vgate.blocked": "रास्ता रोके जाने की सूचना",
+  "vgate.towed": "वाहन उठाए जाने की सूचना",
+  "vgate.queued": "सूचना भेजने के लिए दर्ज हो गई।",
+  "vgate.notifyFailed": "सूचना दर्ज नहीं हो सकी। फिर कोशिश करें।",
+
   'nav.appName': 'OpenSociety',
   'nav.signIn': 'साइन इन',
   'nav.preApprove': 'पूर्व-अनुमति',

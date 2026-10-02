@@ -3,9 +3,10 @@ import type { Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { and, asc, desc, eq, inArray, isNull, isNotNull } from 'drizzle-orm'
 import { vehicles, visitorEntries, apartments, residencies, parkingSlots } from '@opensociety/db'
-import { createVehicleSchema, updateVehicleSchema, normalizePlate, canManageVehicle } from '@opensociety/shared'
+import { createVehicleSchema, updateVehicleSchema, normalizePlate, canManageVehicle, vehicleAlertSchema } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
+import { apartmentRecipients, notifyEvent } from '../lib/push-events'
 
 // The apartment ids the acting user currently lives in (open residencies).
 async function actingUserApartments(c: Context<AppEnv>): Promise<string[]> {
@@ -23,6 +24,22 @@ export const vehicleRoutes = new Hono<AppEnv>()
 vehicleRoutes.use('*', withDb)
 vehicleRoutes.use('*', withAuth)
 vehicleRoutes.use('*', requireAuth)
+
+vehicleRoutes.post('/:id/alerts', requireRole('GUARD', 'ADMIN'), zValidator('json', vehicleAlertSchema), async (c) => {
+  if (c.env.PUSH_ENABLED !== 'true') return c.json({ error: 'notifications are not configured' }, 503)
+  const db = c.get('db')
+  const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, c.req.param('id'))).limit(1)
+  if (!vehicle) return c.json({ error: 'vehicle not found' }, 404)
+  const { kind } = c.req.valid('json')
+  // Repeated taps/retries within the same 15-minute window share one event.
+  const window = Math.floor(Date.now() / 900_000)
+  const queued = await notifyEvent(c, `vehicle:${vehicle.id}:${kind}:${window}`, () => apartmentRecipients(db, vehicle.apartmentId), {
+    title: kind === 'TOWED' ? 'Vehicle towed' : 'Vehicle blocked',
+    body: 'Please contact the society gate about your vehicle.', data: { screen: 'my-vehicles' },
+  })
+  if (!queued) return c.json({ error: 'could not queue notification' }, 503)
+  return c.json({ queued: true }, 202)
+})
 
 // Registry list. Admins see all vehicles; residents see only their flats'.
 // ?apartmentId= scopes to one flat (still constrained to the caller's flats

@@ -10,7 +10,16 @@
   "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "opensociety-uploads" }],
   // Auto-generate monthly maintenance bills at 00:00 UTC on the 1st of each month
   // (see the `scheduled` handler in src/index.ts).
-  "triggers": { "crons": ["0 0 1 * *"] }
+  "triggers": { "crons": ["0 0 1 * *", "0 * * * *"] },
+  // Provision these queues before deploying. Delayed jobs stop when no deliveries remain.
+  "queues": {
+    "producers": [{ "binding": "PUSH_DISPATCH", "queue": "opensociety-push" }],
+    "consumers": [{ "queue": "opensociety-push", "max_batch_size": 100, "max_batch_timeout": 1,
+      "max_concurrency": 1, "max_retries": 5, "dead_letter_queue": "opensociety-push-failed" }]
+  },
+  // Enable after migration 0023 and this app's APNs/FCM credentials are ready.
+  "vars": { "PUSH_ENABLED": "false", "BILL_REMINDER_DAYS": "-7,0,3", "SOCIETY_TIME_ZONE": "Asia/Kolkata" }
   // Secrets (set per society via `wrangler secret put` or .dev.vars for local):
-  //   DATABASE_URL, CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY, CLERK_WEBHOOK_SECRET
+  //   DATABASE_URL, CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY, CLERK_WEBHOOK_SECRET,
+  //   EXPO_ACCESS_TOKEN (if Expo push access-token security is enabled)
 }

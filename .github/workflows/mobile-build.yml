@@ -1,0 +1,53 @@
+name: Mobile build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        options: [android, ios, all]
+        default: android
+        required: true
+      profile:
+        type: choice
+        options: [development, simulator, preview, testflight, play-internal]
+        default: development
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @opensociety/shared build
+      - run: pnpm --filter @opensociety/mobile check-types
+      - run: pnpm --filter @opensociety/mobile lint
+      - run: pnpm --filter @opensociety/mobile test
+      - run: pnpm dlx expo-doctor
+        working-directory: apps/mobile
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 23.2.0
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Build and wait for the artifact
+        working-directory: apps/mobile
+        env:
+          BUILD_PLATFORM: ${{ inputs.platform }}
+          BUILD_PROFILE: ${{ inputs.profile }}
+        run: eas build --platform "$BUILD_PLATFORM" --profile "$BUILD_PROFILE" --non-interactive --wait
