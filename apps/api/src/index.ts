@@ -4,7 +4,7 @@ import { createDb, billConfig } from '@opensociety/db'
 import { periodMonthOf, dueDateForPeriod } from '@opensociety/shared'
 import type { AppEnv, Bindings } from './types'
 import { generateMonthlyBills } from './lib/generate-bills'
-import { safePostMonthlyBills } from './lib/ledger-posting'
+import { postMonthlyBills } from './lib/ledger-posting'
 import { societyRoutes } from './routes/society'
 import { apartmentRoutes } from './routes/apartments'
 import { visitorRoutes } from './routes/visitors'
@@ -84,7 +84,8 @@ export async function runMonthlyBilling(env: Bindings, scheduledTime: number) {
     dueDate: new Date(dueDateForPeriod(period, cfg.dueDayOfMonth)),
     lineItems: cfg.lineItems,
   })
-  await safePostMonthlyBills(db, period)
+  // Let the scheduler retry failures; bill creation is already idempotent.
+  await postMonthlyBills(db, period)
   console.log(`auto-billing ${period}: created ${result.created}, skipped ${result.skipped}`)
   // TODO: notify residents when bills are generated (blocked on the push service, #15).
 }
