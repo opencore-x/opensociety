@@ -8,6 +8,13 @@ export type Dict = Record<string, string>
 export const LANGUAGES: Language[] = ['en', 'hi']
 
 const commonEn: Dict = {
+  "push.ready": "Notifications enabled",
+  "push.busy": "Enabling notifications…",
+  "push.enable": "Enable notifications",
+  "push.failed": "Could not enable notifications. Check your connection and notification settings, then try again.",
+  "push.signOut": "Sign out",
+  "push.signOutFailed": "Could not disconnect notifications. Please try signing out again when online.",
+
   'nav.houseHelp': 'House help',
   'nav.vehicles': 'Vehicles',
   'nav.visitors': 'Visitors',
@@ -28,6 +35,13 @@ const commonEn: Dict = {
   'common.date': 'Date',
 }
 const commonHi: Dict = {
+  "push.ready": "सूचनाएँ चालू हैं",
+  "push.busy": "सूचनाएँ चालू हो रही हैं…",
+  "push.enable": "सूचनाएँ चालू करें",
+  "push.failed": "सूचनाएँ चालू नहीं हो सकीं। कनेक्शन और सूचना सेटिंग जाँचकर फिर कोशिश करें।",
+  "push.signOut": "साइन आउट",
+  "push.signOutFailed": "सूचनाएँ बंद नहीं हो सकीं। ऑनलाइन होने पर फिर साइन आउट करें।",
+
   'nav.houseHelp': 'घरेलू सहायक',
   'nav.vehicles': 'वाहन',
   'nav.visitors': 'आगंतुक',

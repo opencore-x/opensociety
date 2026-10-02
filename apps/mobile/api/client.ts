@@ -23,6 +23,7 @@ import type {
   VisitorEntry,
   VisitorPreApproval,
   VisitorStatus,
+  RegisterPushToken,
 } from '@opensociety/shared'
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787'
@@ -98,7 +99,19 @@ async function api<T>(path: string, init?: RequestInit, userId = DEV_USER_ID): P
   return (await res.json()) as T
 }
 
+async function pushTokenRequest(method: 'POST' | 'DELETE', body: object, bearer: string) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 10_000)
+  try {
+    return await api<{ ok: boolean }>('/push/tokens', {
+      method, body: JSON.stringify(body), headers: { authorization: `Bearer ${bearer}` }, signal: controller.signal,
+    })
+  } finally { clearTimeout(timeout) }
+}
+
 export const apiClient = {
+  registerPushToken: (body: RegisterPushToken, bearer: string) => pushTokenRequest('POST', body, bearer),
+  unregisterPushToken: (token: string, bearer: string) => pushTokenRequest('DELETE', { token }, bearer),
   health: () => api<{ status: string }>('/health'),
   getSociety: () => api<SocietyConfig | null>('/society'),
   listApartments: () => api<Apartment[]>('/apartments'),

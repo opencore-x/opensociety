@@ -11,6 +11,7 @@ import { queryClient, persistOptions } from '../lib/offline/query-client'
 import { setupOnlineManager } from '../lib/offline/network'
 import { registerOfflineMutationDefaults } from '../lib/offline/mutation-defaults'
 import { I18nProvider, useT } from '../lib/i18n'
+import { PushProvider } from '../components/push-provider'
 
 // Drive offline state from the device network and teach the client how to
 // replay queued writes after a restart. Module scope: runs once per app load,
@@ -77,7 +78,7 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
       <AuthBridge />
-      {content}
+      <PushProvider>{content}</PushProvider>
     </ClerkProvider>
   )
 }
