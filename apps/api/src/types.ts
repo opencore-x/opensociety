@@ -9,6 +9,8 @@ export type Bindings = {
   UPLOADS: R2Bucket
   PUSH_ENABLED?: string
   EXPO_ACCESS_TOKEN?: string
+  BILL_REMINDER_DAYS?: string
+  SOCIETY_TIME_ZONE?: string
 }
 
 export type Variables = {

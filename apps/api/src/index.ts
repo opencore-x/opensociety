@@ -25,6 +25,7 @@ import { expenseRoutes } from './routes/expenses'
 import { webhookRoutes } from './routes/webhooks'
 import { pushRoutes } from './routes/push'
 import { processPushQueue } from './lib/push-queue'
+import { sendBillReminders } from './lib/bill-reminders'
 
 const app = new Hono<AppEnv>()
 
@@ -88,6 +89,12 @@ export default {
     if (controller.cron === '0 0 1 * *') ctx.waitUntil(runMonthlyBilling(env, controller.scheduledTime))
     if (controller.cron === '*/15 * * * *' && env.PUSH_ENABLED === 'true') {
       ctx.waitUntil(processPushQueue(createDb(env.DATABASE_URL), env.EXPO_ACCESS_TOKEN, new Date(controller.scheduledTime)))
+    }
+    if (controller.cron === '0 * * * *' && env.PUSH_ENABLED === 'true') {
+      ctx.waitUntil(sendBillReminders(createDb(env.DATABASE_URL), {
+        now: new Date(controller.scheduledTime), days: env.BILL_REMINDER_DAYS,
+        timeZone: env.SOCIETY_TIME_ZONE, accessToken: env.EXPO_ACCESS_TOKEN,
+      }))
     }
   },
 }
