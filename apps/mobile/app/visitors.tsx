@@ -11,15 +11,18 @@ import { EmptyState, PageIntro, ScreenState } from '../components/ui/screen'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
+import { AdaptiveRow, Badge, ConnectionNotice } from '../components/ui/feedback'
+import { useSyncStatus } from '../lib/offline/use-sync-status'
 
 export default function Visitors() {
   const qc = useQueryClient()
   const { t } = useT()
   const insets = useSafeAreaInsets()
+  const { isOnline } = useSyncStatus()
   const [denyingId, setDenyingId] = useState<string | null>(null)
   const [reason, setReason] = useState('')
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isPending, isError, refetch, isRefetching } = useQuery({
     queryKey: ['visitors'],
     queryFn: () => apiClient.listVisitors(),
   })
@@ -37,18 +40,32 @@ export default function Visitors() {
       invalidate()
     },
   })
-  const busy = approve.isPending || deny.isPending
+  const busy = approve.isPending || deny.isPending || !isOnline
 
-  if (isLoading) return <ScreenState loading />
-  if (isError) return <ScreenState title={t('gate.apiUnreachable')} onRetry={() => refetch()} />
+  if (isPending) return <ScreenState loading />
+  if (isError && !data)
+    return <ScreenState title={t('design.loadFailed')} onRetry={() => refetch()} />
 
   return (
     <FlatList
       className="bg-background"
-      contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 24, gap: 16 }}
+      contentContainerStyle={{
+        width: '100%',
+        maxWidth: 720,
+        alignSelf: 'center',
+        padding: 20,
+        paddingBottom: insets.bottom + 24,
+        gap: 16,
+      }}
+      automaticallyAdjustKeyboardInsets
+      refreshing={isRefetching}
+      onRefresh={() => refetch()}
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={
-        <PageIntro title={t('nav.visitors')} description={t('design.visitorsDescription')} />
+        <View className="gap-4">
+          <ConnectionNotice />
+          <PageIntro title={t('nav.visitors')} description={t('design.visitorsDescription')} />
+        </View>
       }
       data={data ?? []}
       keyExtractor={(v) => v.id}
@@ -64,26 +81,23 @@ export default function Visitors() {
         const denying = denyingId === item.id
         return (
           <Card className="gap-5 p-5">
-            <View className="flex-row flex-wrap items-center gap-3">
+            <AdaptiveRow>
               <View className="h-12 w-12 items-center justify-center rounded-full bg-secondary">
                 <Icon name="people" />
               </View>
-              <View className="flex-1">
+              <View className="flex-auto">
                 <Text className="text-base font-semibold">{item.visitorName}</Text>
-                <Text className="text-sm text-muted-foreground">
-                  {t('value.' + item.type)}
-                </Text>
+                <Text className="text-sm text-muted-foreground">{t('value.' + item.type)}</Text>
               </View>
-              <Text className="overflow-hidden rounded-full bg-secondary px-3 py-1 text-xs font-medium text-primary">
-                {t('value.' + item.status)}
-              </Text>
-            </View>
+              <Badge label={t('value.' + item.status)} />
+            </AdaptiveRow>
 
             {actions.length > 0 && !denying && (
-              <View className="flex-row flex-wrap gap-2">
+              <AdaptiveRow>
                 {actions.includes('approve') && (
                   <Button
-                    className="flex-1"
+                    className="flex-auto"
+                    accessibilityLabel={`${t('common.approve')} ${item.visitorName}`}
                     onPress={() => approve.mutate(item.id)}
                     disabled={busy}
                   >
@@ -92,15 +106,16 @@ export default function Visitors() {
                 )}
                 {actions.includes('deny') && (
                   <Button
-                    className="flex-1"
+                    className="flex-auto"
                     variant="outline"
+                    accessibilityLabel={`${t('common.deny')} ${item.visitorName}`}
                     onPress={() => setDenyingId(item.id)}
                     disabled={busy}
                   >
                     <Text>{t('common.deny')}</Text>
                   </Button>
                 )}
-              </View>
+              </AdaptiveRow>
             )}
 
             {((approve.isError && approve.variables === item.id) ||
@@ -113,12 +128,13 @@ export default function Visitors() {
             {denying && (
               <View className="gap-2">
                 <Input
+                  accessibilityLabel={t('visitors.denyReason')}
                   placeholder={t('visitors.denyReason')}
                   value={reason}
                   onChangeText={setReason}
                   autoFocus
                 />
-                <View className="flex-row flex-wrap gap-2">
+                <AdaptiveRow>
                   <Button
                     variant="destructive"
                     onPress={() => deny.mutate({ id: item.id, reason })}
@@ -136,7 +152,7 @@ export default function Visitors() {
                   >
                     <Text>{t('common.cancel')}</Text>
                   </Button>
-                </View>
+                </AdaptiveRow>
               </View>
             )}
           </Card>
