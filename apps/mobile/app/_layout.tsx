@@ -49,7 +49,7 @@ function Nav() {
           contentStyle: { backgroundColor: palette.background },
         }}
       >
-        <Stack.Screen name="index" options={{ title: t('nav.appName') }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="sign-in" options={{ title: t('nav.signIn') }} />
         <Stack.Screen name="profile" options={{ title: t('nav.profile') }} />
         <Stack.Screen name="visitors" options={{ title: t('nav.visitors') }} />
