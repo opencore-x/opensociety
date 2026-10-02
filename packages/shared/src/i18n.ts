@@ -63,6 +63,10 @@ const commonHi: Dict = {
 }
 
 const webEn: Dict = {
+  "page.notices.notifyTower": "Send notifications to tower (optional)",
+  "page.notices.notifyAll": "All residents",
+  "page.notices.notifyHint": "Leave empty to notify everyone. The notice remains visible to all residents.",
+
   'nav.overview': 'Overview',
   'nav.society': 'Society',
   'nav.apartments': 'Apartments',
@@ -500,6 +504,10 @@ const webEn: Dict = {
   'page.expenses.initLedger': 'Initialize accounts',
 }
 const webHi: Dict = {
+  "page.notices.notifyTower": "इस टावर को सूचित करें (वैकल्पिक)",
+  "page.notices.notifyAll": "सभी निवासी",
+  "page.notices.notifyHint": "सभी को सूचित करने के लिए खाली छोड़ें। नोटिस सभी निवासियों को दिखेगा।",
+
   'nav.overview': 'अवलोकन',
   'nav.society': 'सोसायटी',
   'nav.apartments': 'अपार्टमेंट',
