@@ -946,6 +946,13 @@ const webHi: Dict = {
 }
 
 const mobileEn: Dict = {
+  "vgate.notifyTitle": "Notify vehicle owner",
+  "vgate.notifyConfirm": "Send a notification asking the owner to contact the gate?",
+  "vgate.blocked": "Report blocked",
+  "vgate.towed": "Report towed",
+  "vgate.queued": "Notification queued.",
+  "vgate.notifyFailed": "Could not queue the notification. Please try again.",
+
   'nav.appName': 'OpenSociety',
   'nav.signIn': 'Sign in',
   'nav.preApprove': 'Pre-approve',
@@ -1076,6 +1083,13 @@ const mobileEn: Dict = {
   'myHouseHelp.addHelp': 'Add help',
 }
 const mobileHi: Dict = {
+  "vgate.notifyTitle": "वाहन मालिक को सूचित करें",
+  "vgate.notifyConfirm": "मालिक को गेट से संपर्क करने की सूचना भेजें?",
+  "vgate.blocked": "रास्ता रोके जाने की सूचना",
+  "vgate.towed": "वाहन उठाए जाने की सूचना",
+  "vgate.queued": "सूचना भेजने के लिए दर्ज हो गई।",
+  "vgate.notifyFailed": "सूचना दर्ज नहीं हो सकी। फिर कोशिश करें।",
+
   'nav.appName': 'OpenSociety',
   'nav.signIn': 'साइन इन',
   'nav.preApprove': 'पूर्व-अनुमति',

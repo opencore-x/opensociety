@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ScrollView, View } from 'react-native'
+import { Alert, ScrollView, View } from 'react-native'
 import { useMutation } from '@tanstack/react-query'
 import type { VehicleVerification } from '@opensociety/shared'
 
@@ -37,13 +37,18 @@ export default function VehicleGate() {
         <Text className="text-sm text-destructive">{String((verify.error as Error)?.message ?? 'Failed')}</Text>
       )}
 
-      {verify.data && <Result result={verify.data} />}
+      {verify.data && <Result key={verify.data.plate} result={verify.data} />}
     </ScrollView>
   )
 }
 
 function Result({ result }: { result: VehicleVerification }) {
   const { t } = useT()
+  const notify = useMutation({ mutationFn: (kind: 'BLOCKED' | 'TOWED') => apiClient.alertVehicle(result.vehicle!.id, kind) })
+  const confirm = (kind: 'BLOCKED' | 'TOWED') => Alert.alert(t('vgate.notifyTitle'), t('vgate.notifyConfirm'), [
+    { text: t('common.cancel'), style: 'cancel' },
+    { text: t('common.confirm'), onPress: () => notify.mutate(kind) },
+  ])
 
   if (!result.registered || !result.vehicle) {
     return (
@@ -87,6 +92,12 @@ function Result({ result }: { result: VehicleVerification }) {
           ))
         )}
       </View>
+      <View className="flex-row gap-2">
+        <Button variant="outline" disabled={notify.isPending} onPress={() => confirm('BLOCKED')}><Text>{t('vgate.blocked')}</Text></Button>
+        <Button variant="outline" disabled={notify.isPending} onPress={() => confirm('TOWED')}><Text>{t('vgate.towed')}</Text></Button>
+      </View>
+      {notify.isSuccess && <Text className="text-sm">{t('vgate.queued')}</Text>}
+      {notify.isError && <Text className="text-sm text-destructive">{t('vgate.notifyFailed')}</Text>}
     </View>
   )
 }

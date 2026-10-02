@@ -168,6 +168,9 @@ export const apiClient = {
     api<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(body) }, userId),
   verifyVehicle: (plate: string) =>
     api<VehicleVerification>(`/vehicles/verify?plate=${encodeURIComponent(plate)}`),
+  alertVehicle: (id: string, kind: 'BLOCKED' | 'TOWED') => api<{ queued: boolean }>(`/vehicles/${id}/alerts`, {
+    method: 'POST', body: JSON.stringify({ kind }),
+  }),
   listGuards: () => api<Guard[]>('/guards'),
   listActiveDuty: () => api<GuardDutySession[]>('/guards/duty/active'),
   clockInGuard: (guardId: string, coords?: { lat?: number; lng?: number }, userId?: string) =>

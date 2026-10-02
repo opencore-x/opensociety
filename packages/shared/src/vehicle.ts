@@ -2,6 +2,8 @@ import { z } from 'zod'
 import type { UserRole } from './enums'
 import { vehicleTypeSchema } from './enums'
 
+export const vehicleAlertSchema = z.object({ kind: z.enum(['BLOCKED', 'TOWED']) })
+
 export const vehicleSchema = z.object({
   id: z.string().uuid(),
   apartmentId: z.string().uuid(),
