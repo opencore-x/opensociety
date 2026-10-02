@@ -35,7 +35,7 @@ importers:
         version: link:../../packages/shared
       drizzle-orm:
         specifier: ^0.39.1
-        version: 0.39.3(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@0.10.4)(@types/pg@8.11.6)
+        version: 0.39.3(@cloudflare/workers-types@4.20260628.1)(@electric-sql/pglite@0.5.8)(@neondatabase/serverless@0.10.4)(@types/pg@8.11.6)
       hono:
         specifier: ^4.10.1
         version: 4.10.1
@@ -52,6 +52,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.20240512.0
         version: 4.20260628.1
+      '@electric-sql/pglite':
+        specifier: ^0.5.8
+        version: 0.5.8
       '@opensociety/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -329,7 +332,7 @@ importers:
         version: 0.10.4
       drizzle-orm:
         specifier: ^0.39.1
-        version: 0.39.3(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@0.10.4)(@types/pg@8.11.6)
+        version: 0.39.3(@cloudflare/workers-types@4.20260628.1)(@electric-sql/pglite@0.5.8)(@neondatabase/serverless@0.10.4)(@types/pg@8.11.6)
     devDependencies:
       drizzle-kit:
         specifier: ^0.30.1
@@ -979,6 +982,9 @@ packages:
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
+
+  '@electric-sql/pglite@0.5.8':
+    resolution: {integrity: sha512-n9tsbUOhwx2epK1V0ZG9Ar4SHWUju04dhmzZXiSBXwBoleOvIfals33NAaWgagQVAL4Rbvx/Ptsu3P+pA09f6Q==}
 
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
@@ -8918,6 +8924,8 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.2': {}
 
+  '@electric-sql/pglite@0.5.8': {}
+
   '@emnapi/core@1.10.0':
     dependencies:
       '@emnapi/wasi-threads': 1.2.1
@@ -12997,9 +13005,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.39.3(@cloudflare/workers-types@4.20260628.1)(@neondatabase/serverless@0.10.4)(@types/pg@8.11.6):
+  drizzle-orm@0.39.3(@cloudflare/workers-types@4.20260628.1)(@electric-sql/pglite@0.5.8)(@neondatabase/serverless@0.10.4)(@types/pg@8.11.6):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20260628.1
+      '@electric-sql/pglite': 0.5.8
       '@neondatabase/serverless': 0.10.4
       '@types/pg': 8.11.6
 

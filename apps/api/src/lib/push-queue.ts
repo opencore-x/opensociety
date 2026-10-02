@@ -18,7 +18,7 @@ export async function enqueuePush(db: Database, userIds: string[], eventKey: str
       gt(pushDevices.updatedAt, new Date(now.getTime() - 30 * 86400_000))))
   for (let i = 0; i < devices.length; i += BATCH_SIZE) {
     await db.insert(pushDeliveries).values(devices.slice(i, i + BATCH_SIZE).map((device) => ({
-      ...device, eventKey, message: validated, expiresAt: new Date(now.getTime() + 86400_000),
+      ...device, eventKey, message: validated, createdAt: now, nextAttemptAt: now, expiresAt: new Date(now.getTime() + 86400_000),
     }))).onConflictDoNothing()
   }
 }
@@ -70,8 +70,8 @@ export async function processPushQueue(db: Database, accessToken?: string, now =
       status: 'sending', attempts: sql`${pushDeliveries.attempts} + 1`, nextAttemptAt: new Date(now.getTime() + 60_000),
     }).where(sql`${pushDeliveries.id} in (
       select id from push_deliveries
-      where status in ('queued', 'sending') and next_attempt_at <= ${now}
-        and expires_at > ${now} and attempts < ${MAX_ATTEMPTS}
+      where status in ('queued', 'sending') and next_attempt_at <= ${now.toISOString()}
+        and expires_at > ${now.toISOString()} and attempts < ${MAX_ATTEMPTS}
       order by case when message->'data'->>'screen' in ('visitors', 'gate') then 0 else 1 end,
         next_attempt_at, id limit ${BATCH_SIZE} for update skip locked
     )`).returning()
@@ -117,7 +117,7 @@ export async function processPushQueue(db: Database, accessToken?: string, now =
   const receipts = await db.update(pushDeliveries).set({ nextAttemptAt: new Date(now.getTime() + 60_000) })
     .where(sql`${pushDeliveries.id} in (
       select id from push_deliveries where status = 'receipt'
-        and next_attempt_at <= ${now} and expires_at > ${now}
+        and next_attempt_at <= ${now.toISOString()} and expires_at > ${now.toISOString()}
       order by next_attempt_at, id limit ${BATCH_SIZE * 5} for update skip locked
     )`).returning()
   if (receipts.length) {
@@ -132,7 +132,7 @@ export async function processPushQueue(db: Database, accessToken?: string, now =
 
   await db.update(pushDeliveries).set({ status: 'failed', lastError: 'expired_or_attempts_exhausted' }).where(sql`
     ${pushDeliveries.status} in ('queued', 'sending', 'receipt') and (
-      ${pushDeliveries.expiresAt} <= ${now} or (${pushDeliveries.status} = 'sending' and ${pushDeliveries.attempts} >= ${MAX_ATTEMPTS} and ${pushDeliveries.nextAttemptAt} <= ${now})
+      ${pushDeliveries.expiresAt} <= ${now.toISOString()} or (${pushDeliveries.status} = 'sending' and ${pushDeliveries.attempts} >= ${MAX_ATTEMPTS} and ${pushDeliveries.nextAttemptAt} <= ${now.toISOString()})
     )`)
   await db.delete(pushDeliveries).where(lte(pushDeliveries.createdAt, new Date(now.getTime() - 7 * 86400_000)))
 }
