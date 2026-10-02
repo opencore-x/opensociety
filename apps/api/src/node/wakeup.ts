@@ -12,12 +12,15 @@ export function createWakeup(run: () => Promise<void>, onError: () => void) {
     if (timer !== undefined) clearTimeout(timer)
     timer = setTimeout(() => {
       timer = undefined
+      // Node clamps delays above 2^31-1 ms to 1 ms. Monthly deadlines can
+      // exceed that limit, so wake only to re-arm until the deadline is due.
+      if (deadline !== undefined && deadline > Date.now()) { arm(); return }
       deadline = undefined
       running = Promise.resolve().then(run).catch(() => {
         onError()
         schedule(60_000)
       }).finally(() => { running = undefined; arm() })
-    }, Math.max(0, deadline - Date.now()))
+    }, Math.min(2_147_483_647, Math.max(0, deadline - Date.now())))
   }
   function schedule(delayMs = 0) {
     if (stopped) return

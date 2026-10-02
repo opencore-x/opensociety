@@ -17,6 +17,18 @@ it('coalesces wake-ups at the earliest deadline and stops when idle', async () =
   await queue.stop()
 })
 
+it('waits for a monthly deadline beyond Node’s maximum timer delay', async () => {
+  const run = vi.fn().mockResolvedValue(undefined)
+  const queue = createWakeup(run, vi.fn())
+  const month = 31 * 86400_000
+  queue.schedule(month)
+  await vi.advanceTimersByTimeAsync(2_147_483_647)
+  expect(run).not.toHaveBeenCalled()
+  await vi.advanceTimersByTimeAsync(month - 2_147_483_647)
+  expect(run).toHaveBeenCalledTimes(1)
+  await queue.stop()
+})
+
 it('retains a wake-up requested during a pass without overlapping callbacks', async () => {
   let finish!: () => void
   const run = vi.fn().mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve }))
