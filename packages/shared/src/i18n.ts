@@ -946,6 +946,7 @@ const webHi: Dict = {
 }
 
 const mobileEn: Dict = {
+  'design.rateHelper': 'Rate this helper',
   'value.PENDING': "Awaiting approval",
   'value.APPROVED': "Approved",
   'value.DENIED': "Denied",
@@ -1198,6 +1199,7 @@ const mobileEn: Dict = {
   'myHouseHelp.addHelp': 'Add help',
 }
 const mobileHi: Dict = {
+  'design.rateHelper': 'इस सहायक को रेटिंग दें',
   'value.PENDING': "अनुमति का इंतज़ार",
   'value.APPROVED': "स्वीकृत",
   'value.DENIED': "प्रवेश अस्वीकृत",
