@@ -87,7 +87,7 @@ export default function Duty() {
         return (
           <View className="gap-2.5 rounded-xl border border-border bg-card p-5">
             <AdaptiveRow>
-              <View className="flex-1">
+              <View className="flex-auto">
                 <Text className="text-base font-semibold">{item.name}</Text>
                 <Text className="text-sm text-muted-foreground">{item.employeeCode ?? '—'}</Text>
               </View>

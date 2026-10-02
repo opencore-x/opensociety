@@ -126,7 +126,7 @@ export default function MyVehicles() {
         {(vehicles.data ?? []).map((v) => (
           <View key={v.id} className="gap-3 rounded-xl border border-border bg-card p-5">
             <AdaptiveRow>
-              <View className="flex-1">
+              <View className="flex-auto">
                 <Text className="text-base font-semibold tabular-nums">{v.registrationNumber}</Text>
                 <Text className="text-sm text-muted-foreground">
                   {t('value.' + v.type)} · {labelOf(v.apartmentId)}
