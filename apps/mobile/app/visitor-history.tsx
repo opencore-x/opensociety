@@ -94,7 +94,7 @@ export default function VisitorHistory() {
           <View className="flex-row flex-wrap gap-2">
             <Chip label={t('common.all')} selected={status === 'ALL'} onPress={() => setStatus('ALL')} />
             {visitorStatusSchema.options.map((s) => (
-              <Chip key={s} label={s} selected={status === s} onPress={() => setStatus(s)} />
+              <Chip key={s} label={t('value.' + s)} selected={status === s} onPress={() => setStatus(s)} />
             ))}
           </View>
           <Button variant="outline" onPress={onExport} disabled={rows.length === 0}>
@@ -107,10 +107,10 @@ export default function VisitorHistory() {
         <View className="gap-1 rounded-xl border border-border bg-card p-5">
           <View className="flex-row items-center justify-between gap-2">
             <Text className="flex-1 text-base font-semibold">{item.visitorName}</Text>
-            <Text className="overflow-hidden rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">{item.status}</Text>
+            <Text className="overflow-hidden rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">{t('value.' + item.status)}</Text>
           </View>
           <Text className="text-sm text-muted-foreground">
-            {item.type}
+            {t('value.' + item.type)}
             {item.vehicleNumber ? ` · ${item.vehicleNumber}` : ''}
           </Text>
           <Text className="text-xs text-muted-foreground">{formatTime(item.createdAt)}</Text>

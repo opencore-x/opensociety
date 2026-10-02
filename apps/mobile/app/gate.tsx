@@ -117,10 +117,10 @@ export default function Gate() {
             <View className="flex-row items-center">
               <View className="flex-1">
                 <Text className="text-base font-semibold">{item.visitorName}</Text>
-                <Text className="text-sm text-muted-foreground">{item.type}</Text>
+                <Text className="text-sm text-muted-foreground">{t('value.' + item.type)}</Text>
               </View>
               <Text className="overflow-hidden rounded-md bg-primary/10 px-2 py-1 text-xs text-primary">
-                {item.status}
+                {t('value.' + item.status)}
               </Text>
             </View>
             <View className="flex-row flex-wrap gap-2">

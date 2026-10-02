@@ -71,11 +71,11 @@ export default function Visitors() {
               <View className="flex-1">
                 <Text className="text-base font-semibold">{item.visitorName}</Text>
                 <Text className="text-sm text-muted-foreground">
-                  {item.type.replaceAll('_', ' ')}
+                  {t('value.' + item.type)}
                 </Text>
               </View>
               <Text className="overflow-hidden rounded-full bg-secondary px-3 py-1 text-xs font-medium text-primary">
-                {item.status.replaceAll('_', ' ')}
+                {t('value.' + item.status)}
               </Text>
             </View>
 

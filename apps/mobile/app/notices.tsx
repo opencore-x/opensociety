@@ -107,7 +107,7 @@ export default function Notices() {
           </View>
           <View className="flex-row items-center justify-between">
             <Text className="overflow-hidden rounded-md bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
-              {item.category}
+              {t('value.' + item.category)}
             </Text>
             <Text className="text-sm text-muted-foreground">{formatDate(item.publishedAt)}</Text>
           </View>

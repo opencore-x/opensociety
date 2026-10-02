@@ -107,7 +107,7 @@ export default function Bills() {
             <Icon name="check" size={20} />
           </View>
           <View className="flex-1">
-            <Text className="text-sm font-semibold">{p.method.replaceAll('_', ' ')}</Text>
+            <Text className="text-sm font-semibold">{t('value.' + p.method)}</Text>
             <Text className="text-sm text-muted-foreground">
               {fmtDate(p.paidAt)}
               {p.reference ? ` · ${p.reference}` : ''}

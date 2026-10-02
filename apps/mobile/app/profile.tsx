@@ -67,7 +67,7 @@ export default function Profile() {
               (residentsByApt[a.id] ?? []).map((r) => (
                 <View key={r.userId} className="flex-row items-center justify-between">
                   <Text className="text-sm">{r.name}</Text>
-                  <Text className="text-xs text-muted-foreground">{r.relation}</Text>
+                  <Text className="text-xs text-muted-foreground">{t('value.' + r.relation)}</Text>
                 </View>
               ))
             )}
@@ -81,7 +81,7 @@ export default function Profile() {
               (vehiclesByApt[a.id] ?? []).map((v) => (
                 <View key={v.id} className="flex-row items-center justify-between">
                   <Text className="font-mono text-sm">{v.registrationNumber}</Text>
-                  <Text className="text-xs text-muted-foreground">{v.type}</Text>
+                  <Text className="text-xs text-muted-foreground">{t('value.' + v.type)}</Text>
                 </View>
               ))
             )}

@@ -73,7 +73,7 @@ function Result({ result }: { result: VehicleVerification }) {
         <Text className="font-mono text-base font-bold text-green-900 dark:text-green-100">{v.registrationNumber}</Text>
       </View>
       <Text className="text-sm text-green-800 dark:text-green-200">
-        {[v.type, v.make, v.color].filter(Boolean).join(' · ')}
+        {[t('value.' + v.type), v.make, v.color].filter(Boolean).join(' · ')}
       </Text>
       {!v.isActive && <Text className="text-sm font-semibold text-amber-700">{t('vgate.inactive')}</Text>}
 
@@ -90,7 +90,7 @@ function Result({ result }: { result: VehicleVerification }) {
           result.parkingSlots.map((s) => (
             <View key={s.slotNumber} className="flex-row items-center justify-between">
               <Text className="font-mono text-sm text-green-900 dark:text-green-100">{s.slotNumber}</Text>
-              <Text className="text-xs text-green-800 dark:text-green-200">{s.type}</Text>
+              <Text className="text-xs text-green-800 dark:text-green-200">{t('value.' + s.type)}</Text>
             </View>
           ))
         )}

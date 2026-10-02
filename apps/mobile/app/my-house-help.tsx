@@ -131,7 +131,7 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
               </View>
             </View>
             <Text className="text-sm text-muted-foreground">
-              {h.type} · {t('myHouseHelp.trust')} {h.trustScore}/100
+              {t('value.' + h.type)} · {t('myHouseHelp.trust')} {h.trustScore}/100
             </Text>
             <StarRating help={h} apartmentKey={apartment.id} />
           </View>
@@ -148,7 +148,7 @@ function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; r
             <View key={h.id} className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-5">
               <View className="flex-1">
                 <Text className="text-base font-semibold">{h.name}</Text>
-                <Text className="text-sm text-muted-foreground">{h.type}</Text>
+                <Text className="text-sm text-muted-foreground">{t('value.' + h.type)}</Text>
               </View>
               <Button onPress={() => assign.mutate(h.id)} disabled={busy}>
                 <Text>{t('common.assign')}</Text>

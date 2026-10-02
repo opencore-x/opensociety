@@ -92,7 +92,7 @@ export default function MyVehicles() {
           onChangeText={setRegistrationNumber}
         />
         <Chips
-          options={vehicleTypeSchema.options.map((opt) => ({ value: opt, label: opt }))}
+          options={vehicleTypeSchema.options.map((opt) => ({ value: opt, label: t('value.' + opt) }))}
           selected={type}
           onSelect={(v) => setType(v as VehicleType)}
         />
@@ -119,7 +119,7 @@ export default function MyVehicles() {
             <View className="flex-1">
               <Text className="text-base font-semibold tabular-nums">{v.registrationNumber}</Text>
               <Text className="text-sm text-muted-foreground">
-                {v.type} · {labelOf(v.apartmentId)}
+                {t('value.' + v.type)} · {labelOf(v.apartmentId)}
               </Text>
             </View>
             <Button

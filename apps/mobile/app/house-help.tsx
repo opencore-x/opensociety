@@ -93,7 +93,7 @@ export default function HouseHelp() {
             <View className="flex-row items-center">
               <View className="flex-1">
                 <Text className="text-base font-semibold">{item.name}</Text>
-                <Text className="text-sm text-muted-foreground">{item.type}</Text>
+                <Text className="text-sm text-muted-foreground">{t('value.' + item.type)}</Text>
               </View>
               <Text
                 className={cn(

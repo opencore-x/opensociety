@@ -77,7 +77,7 @@ export default function Register() {
       <Field label={t('common.type')}>
         <View className="flex-row flex-wrap gap-2">
           {TYPES.map((opt) => (
-            <Chip key={opt} label={opt} selected={type === opt} onPress={() => setType(opt)} />
+            <Chip key={opt} label={t('value.' + opt)} selected={type === opt} onPress={() => setType(opt)} />
           ))}
         </View>
       </Field>

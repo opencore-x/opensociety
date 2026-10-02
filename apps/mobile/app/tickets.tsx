@@ -95,14 +95,14 @@ export default function Tickets() {
       <Field label={t('common.category')}>
         <View className="flex-row flex-wrap gap-2">
           {ticketCategorySchema.options.map((c) => (
-            <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />
+            <Chip key={c} label={t('value.' + c)} selected={category === c} onPress={() => setCategory(c)} />
           ))}
         </View>
       </Field>
       <Field label={t('common.priority')}>
         <View className="flex-row flex-wrap gap-2">
           {ticketPrioritySchema.options.map((p) => (
-            <Chip key={p} label={p} selected={priority === p} onPress={() => setPriority(p)} />
+            <Chip key={p} label={t('value.' + p)} selected={priority === p} onPress={() => setPriority(p)} />
           ))}
         </View>
       </Field>
@@ -127,11 +127,11 @@ export default function Tickets() {
           <View key={ticket.id} className="gap-1 rounded-xl border border-border bg-card p-5">
             <View className="flex-row items-center justify-between">
               <Text className="shrink text-base font-semibold">{ticket.title}</Text>
-              <Text className={cn('text-xs font-bold', STATUS_COLOR[ticket.status])}>{ticket.status}</Text>
+              <Text className={cn('text-xs font-bold', STATUS_COLOR[ticket.status])}>{t('value.' + ticket.status)}</Text>
             </View>
             <Text className="text-sm text-muted-foreground">{ticket.description}</Text>
             <Text className="mt-0.5 text-xs text-muted-foreground">
-              {ticket.category} · {ticket.priority}
+              {t('value.' + ticket.category)} · {t('value.' + ticket.priority)}
             </Text>
           </View>
         ))
