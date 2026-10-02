@@ -115,11 +115,11 @@ export default function Notices() {
           {item.attachmentUrl && (
             <Pressable
               accessibilityRole="link"
-              className="min-h-11 flex-row items-center gap-2 self-start py-2"
+              className="min-h-[44px] flex-row items-center gap-2 self-start py-2"
               onPress={() => openAttachment(item.attachmentUrl!)}
             >
               <Icon name="attachment" size={18} />
-              <Text className="flex-shrink text-sm font-semibold text-primary">
+              <Text className="shrink text-sm font-semibold text-primary">
                 {item.attachmentName ?? t('notices.attachmentFallback')}
               </Text>
             </Pressable>
