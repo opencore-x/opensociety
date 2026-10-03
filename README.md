@@ -1,133 +1,109 @@
-### opensociety
+# OpenSociety
 
-**opensociety** is a privacy-first, open-source society management platform — an alternative to MyGate and NoBrokerHood for gated communities. The code is open and your data is portable: you own your deployment.
+**A little closer to home.**
 
-## Tech Stack
+OpenSociety is an ad-free, open-source app for apartment communities. Welcome guests, keep up with neighbourhood notices, track maintenance bills, and take care of everyday requests from one calm, thoughtfully designed place.
 
-**Frontend:**
-- Web: [TanStack Start](https://tanstack.com/start) (React) + TanStack Query
-- Mobile: [Expo](https://expo.dev) Router (React Native, SDK 57) + TanStack Query
+Residents and gate staff use the iPhone and Android app. Community administrators manage the society from a web dashboard. Each society runs its own API and database, keeping its records separate and its deployment under its control.
 
-**Backend:**
-- API: [Hono](https://hono.dev) on Node 22 for shared hosting; Cloudflare Workers adapter also available
-- Database: [Neon Postgres](https://neon.tech) via [Drizzle ORM](https://orm.drizzle.team) (neon-http driver)
-- Shared contracts: Zod (`@opensociety/shared`)
+[Explore the app](#a-look-inside) · [Availability](#availability) · [Run locally](#run-locally) · [Deployment guide](deploy/README.md) · [Contribute](#contributing)
 
-**Authentication:**
-- [Clerk](https://clerk.com) (web + mobile), authn-only with a local user mirror. Resident OTP uses Clerk's built-in phone OTP — no separate SMS provider for auth.
+## A look inside
 
-**Storage & Services:**
-- Photos/documents: Cloudflare R2
-- Push notifications: Expo Push
+These are actual native app captures from iPhone and Android simulators, using fictional demo data. Select an image to see the full-size screen.
 
-## Architecture
+<p>
+  <a href="docs/screenshots/ios-home.png"><img src="docs/screenshots/ios-home.png" width="240" alt="iPhone: resident home with an invitation card and shortcuts to visitors and bills"></a>
+  <a href="docs/screenshots/android-guest-pass.png"><img src="docs/screenshots/android-guest-pass.png" width="240" alt="Android: a guest pass with a QR code, entry code, and share button"></a>
+  <a href="docs/screenshots/ios-notices.png"><img src="docs/screenshots/ios-notices.png" width="240" alt="iPhone: community notices with read status, priority, and an attachment"></a>
+</p>
 
-- **Single-tenant per society:** each society runs its own API + database instance (no `society_id`; a single `society_config` row). Complete data isolation.
-- **Shared mobile app:** one app across all societies (App Store + Play Store).
+*Resident home (iPhone) · Guest pass (Android) · Notices (iPhone)*
 
-See `BLOCKING_DECISIONS.md` (in the Obsidian notes) for the rationale behind tenancy, host, auth, and MVP-scope decisions.
+A clear view of bills and payments, the people who help at home, and arrivals at the gate.
 
-## Monorepo
+<p>
+  <a href="docs/screenshots/android-bills.png"><img src="docs/screenshots/android-bills.png" width="240" alt="Android: maintenance bills, payment history, and a statement of account"></a>
+  <a href="docs/screenshots/ios-house-help.png"><img src="docs/screenshots/ios-house-help.png" width="240" alt="iPhone: assigned household help with rating and assignment actions"></a>
+  <a href="docs/screenshots/android-gate.png"><img src="docs/screenshots/android-gate.png" width="240" alt="Android: gate desk with QR scanning, visitor registration, check-in, and check-out"></a>
+</p>
 
-```
-apps/
-  api      Hono API with Node and Cloudflare Workers adapters
-  web      TanStack Start admin dashboard
-  mobile   Expo Router app (residents + guards)
-packages/
-  db       Drizzle schema + migrations (Neon)
-  shared   Zod contracts shared across api/web/mobile
-  typescript-config  shared tsconfig bases
-```
+*Bills (Android) · Household help (iPhone) · Gate desk (Android)*
 
-## Quickstart
+## Everyday community life
 
-Use Node 22 and the pinned pnpm 10 workspace install. Local development runs directly on the Mac; Docker builds and container checks run in GitHub Actions.
+| For | What you can do |
+| --- | --- |
+| **Residents** | Pre-approve guests and share QR passes, approve or deny visitors, read notices, view bills and payment history, raise maintenance tickets, and manage household help and vehicles. |
+| **Gate staff** | Register visitors, scan passes or enter codes, check people in and out, verify vehicles, and record duty attendance. Visitor registration can queue while offline. |
+| **Administrators** | Manage apartments and resident approvals, gate staff, notices, billing, expenses, maintenance tickets, parking, and reports from the web dashboard. |
+
+The mobile app supports English and Hindi, system text scaling, and layouts for smaller screens. Additional regional languages are deferred.
+
+## Availability
+
+**OpenSociety is preparing for its first pilot.** The mobile design is implemented and reviewed on iPhone and Android simulators. Public hosting and App Store / Google Play distribution are still pending, along with physical-device, screen-reader, and live-service acceptance checks.
+
+You can explore the code and run a development instance today. A society deployment needs its own database, authentication configuration, storage, and hosting; running those services can incur costs. Start with the [deployment guide](deploy/README.md) and [mobile release guide](docs/mobile.md) when preparing a pilot.
+
+## Run locally
+
+Use **Node 22** and **pnpm 10.0.0**. The pnpm version is pinned in `package.json`. Development uses pnpm workspaces and Turborepo; no local Docker setup is required.
 
 ```sh
+git clone https://github.com/opencore-x/opensociety.git
+cd opensociety
 pnpm install --frozen-lockfile
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
-# Fill in the development Neon/Clerk values, then start both applications:
+```
+
+Set `DATABASE_URL` in `apps/api/.env` to a development Neon database and configure matching Clerk credentials in the API and web env files. R2 credentials are needed to exercise uploads. The example database URL is a placeholder.
+
+Supply the same development `DATABASE_URL` in your shell before applying the checked-in migrations. The database CLI does not load `apps/api/.env` automatically:
+
+```sh
+pnpm --filter @opensociety/db db:migrate
 pnpm dev
 ```
 
-Turborepo builds the shared and database packages before starting the Node API on port 8787 and the web dashboard on port 3000. Its watcher rebuilds workspace dependencies and restarts affected applications when files change. Open **http://localhost:3000/admin**. Start the mobile app separately with `pnpm --filter @opensociety/mobile start` when needed.
+Open **http://localhost:3000/admin**. The Node API runs on **http://localhost:8787**. Turborepo builds shared packages before startup and rebuilds affected workspace dependencies as files change.
 
-Run `pnpm build`, `pnpm check-types`, `pnpm lint`, and `pnpm test` from the root. These reuse the workspace install and Turbo cache. `pnpm --filter @opensociety/api dev:worker` remains available for the Workers adapter.
+For a local demo without Clerk, leave Clerk credentials unset, run `pnpm --filter @opensociety/db db:seed` with the development `DATABASE_URL` in your shell, and set `VITE_DEV_USER_ID=00000000-0000-0000-0000-000000000001` in `apps/web/.env` before starting the app. This seeds a development admin and sample community. Keep development identities and seed data out of deployed environments.
 
-### Environment
+For the Workers adapter, use `pnpm --filter @opensociety/api dev:worker` and keep local secrets in `apps/api/.dev.vars`. The default `pnpm dev` uses the Node adapter and `.env` files.
 
-Copy the example env files and fill in real values (all are gitignored):
+To run the iPhone or Android app, follow [mobile development](docs/mobile.md#local-development) for API addresses, environment variables, and native builds.
 
-```
-cp apps/api/.env.example apps/api/.env   # DATABASE_URL, CLERK_* (Node API)
-cp apps/web/.env.example apps/web/.env   # VITE_API_URL, VITE_CLERK_PUBLISHABLE_KEY
-```
+## How it is built
 
-Per-society secrets (`DATABASE_URL`, `CLERK_*`, R2) go in `apps/api/.dev.vars` for local Workers development. Node hosting uses runtime environment variables. See [the deployment guide](deploy/README.md) for container builds, configuration, migrations, scheduled jobs, and rollback.
+| Part | Stack | Location |
+| --- | --- | --- |
+| Mobile app | Expo Router, React Native, TanStack Query | [`apps/mobile`](apps/mobile) |
+| Admin dashboard | TanStack Start, React, shadcn/ui | [`apps/web`](apps/web) |
+| API | Hono on Node 22; Cloudflare Workers adapter also available | [`apps/api`](apps/api) |
+| Database | Neon Postgres and Drizzle ORM | [`packages/db`](packages/db) |
+| Shared contracts | Zod schemas and translations | [`packages/shared`](packages/shared) |
 
-Clerk sessions authenticate web and mobile requests. The API accepts the local `x-user-id` fallback only when no Clerk secret is configured. Keep development identity overrides out of preview and store builds.
+Clerk authenticates web and mobile sessions; the API maps them to local users and permissions. Each society has a separate API and database with a single society configuration. Cloudflare R2 stores photos and documents, and Expo Push handles mobile notifications. The [deployment guide](deploy/README.md) covers the Node hosting setup, scheduled jobs, migrations, and rollback.
 
-## Mobile builds
+## Contributing
 
-EAS project: [ankitsejwal/opensociety](https://expo.dev/accounts/ankitsejwal/projects/opensociety). Run EAS commands from `apps/mobile`. `eas.json` provides development, iOS simulator, preview APK/ad-hoc, TestFlight, and Play internal profiles. Development installs use `com.opensociety.app.dev`; preview and store installs use `com.opensociety.app`. EAS manages store build numbers. The post-install hook builds the shared workspace package before Metro runs.
+Bug reports, usability feedback, documentation improvements, and focused pull requests are welcome. [Open an issue](https://github.com/opencore-x/opensociety/issues) with the affected flow, expected behaviour, and reproduction steps. For mobile layout issues, include the platform, screen size, and system text size; use fictional data in screenshots.
+
+Before opening a code PR, run the workspace checks:
 
 ```sh
-eas build --platform ios --profile simulator
-eas build --platform android --profile development
-eas build --platform ios --profile testflight
-eas build --platform android --profile play-internal
+pnpm build
+pnpm check-types
+pnpm lint
+pnpm test
 ```
 
-Both developer memberships are available. OpenSociety needs its own store app records and signing/provisioning credentials. The existing Google publishing service account currently has Lucidity-only access. Configure the OpenSociety credentials in EAS and grant testing-track access for this app before submitting. Set the new App Store Connect app ID in `submit.testflight.ios.ascAppId` once Apple creates it. Play submission starts as a draft for the first Console rollout.
+CI runs these checks and builds and smoke-tests the hosting containers. For mobile UI changes, also review the app on both native platforms; a browser preview alone does not establish native layout quality.
 
-Configure `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in each EAS environment. Preview/store builds require HTTPS and reject `EXPO_PUBLIC_DEV_USER_ID`; store profiles also require a live Clerk key. The current local `.env` is for development and cannot be used to ship the app. Android push will also need an EAS file variable `GOOGLE_SERVICES_JSON` for this app's Firebase configuration. Keep signing keys and service-account JSON outside Git.
-
-The manual **Mobile build** GitHub workflow requires a repository `EXPO_TOKEN` secret and waits for the selected EAS build. It does not submit automatically. After a successful store build, use `eas submit --platform ios --profile testflight --id BUILD_ID` or `eas submit --platform android --profile play-internal --id BUILD_ID`, then verify processing and tester access in the corresponding store.
-
-## Push notifications
-
-The service supports visitor approval/check-in alerts, notice publication (all residents or a selected tower), blocked/towed vehicle alerts, and maintenance reminders. The mobile app registers devices after permission is granted, refreshes tokens on foreground, removes registration before sign-out, and opens the relevant screen when a notification is tapped.
-
-Apply migration `0023_push_delivery.sql` before enabling push. The database stores per-account tokens and a durable delivery outbox with event/device deduplication, bounded retries, Expo receipt checks, and stale/dead-token cleanup. Expo ticket acceptance is not treated as delivery. Messages can still arrive more than once if an upstream timeout occurs after Expo accepted a request. Gate messages take precedence over broadcasts; dispatch is limited to 500 messages per pass, with follow-up jobs draining larger backlogs. Terminal deliveries are retained for seven days and expired work is discarded.
-
-For the current Workers adapter, provision `opensociety-push` and `opensociety-push-failed`, then deploy the queue bindings in `apps/api/wrangler.jsonc`. Queue wake-ups carry no personal data and run only while deliveries/receipts are pending. The morning reminder run also recovers outbox records whose wake-up publication failed. Monitor the dead-letter queue for repeated failures.
-
-| Setting | Purpose |
-| --- | --- |
-| `PUSH_ENABLED=true` | Enable after the migration, queue bindings, and app credentials are ready; defaults to false. |
-| `EXPO_ACCESS_TOKEN` | Server secret, required if enhanced push security is enabled for this EAS project. |
-| `BILL_REMINDER_DAYS=-7,0,3` | Days relative to the due date; configurable per society. |
-| `SOCIETY_TIME_ZONE=Asia/Kolkata` | Calendar days and morning reminder window (the first hourly run in the local 09:00 hour). |
-
-Configure this app's APNs credential in EAS for iOS. For Android, configure the Firebase app matching the chosen build's package ID, its `GOOGLE_SERVICES_JSON` file, and the FCM v1 service-account credential in EAS. Lucidity's app-specific credentials do not substitute for these. Rebuild the native app after changing notification credentials/configuration. Use a development or store build for testing; Expo Go does not exercise this setup.
-
-Before pilot distribution, verify on physical iOS and Android devices: permission grant/denial; foreground/background/cold-start notification taps; resident and guard event routing; tower targeting; partial/paid/cancelled bill reminders; token refresh; sign-out and account switching. Database integration tests cover queue claims, deduplication, retries, receipts, account reassignment, and dead-token removal; they do not prove delivery through APNs/FCM.
-
-The shared DigitalOcean Droplet is not provisioned yet. A Node API adapter, web server, R2 S3 adapter, restart recovery, and container configuration are prepared in [the deployment guide](deploy/README.md). Store profiles still need the deployed HTTPS API and live Clerk configuration.
-
-## Admin dashboard
-
-The web app (`apps/web`) is a shadcn/ui dashboard with light + dark mode at `/admin`:
-
-- **Overview** — at-a-glance counts and a setup checklist
-- **Society** — society configuration
-- **Apartments** — add units individually or via bulk CSV import
-- **Residents** — approve sign-ups (assign apartment + relation) and manage roles
-- **Guards** — register gate staff, activate/deactivate
-- **Visitors** — visitor logs with status filters, approve/deny
-- **Notices** — publish announcements with priority and expiry
-
-## CI
-
-GitHub Actions runs build + type-check on every push and PR to `main` (`.github/workflows/ci.yml`).
-
-## Documentation
-
-- **Roadmap:** tracked in Lucidity (M0–M4 milestones)
-- **Database schema:** `packages/db/schema.dbml` + generated migrations in `packages/db/drizzle/`
-
----
-
-Built with ❤️ for transparency, privacy, and community ownership.
+- [Mobile design and component guidance](apps/mobile/components/README.md)
+- [Mobile development, builds, and push notifications](docs/mobile.md)
+- [Deployment and operations](deploy/README.md)
+- [Database schema](packages/db/schema.dbml) and [migrations](packages/db/drizzle)
+- [Screenshot provenance and refresh guidance](docs/screenshots/README.md)
