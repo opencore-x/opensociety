@@ -1,3 +1,4 @@
+import { isDemoBrowser } from './demo/mode'
 import type {
   Apartment,
   ApproveUser,
@@ -234,7 +235,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 const json = (body: unknown) => JSON.stringify(body)
 
-export const apiClient = {
+const liveApiClient = {
   health: () => api<{ status: string }>('/health'),
 
   // Society
@@ -497,3 +498,21 @@ export const apiClient = {
     return api<GuardDutySession[]>(`/guards/duty${qs ? `?${qs}` : ''}`)
   },
 }
+
+export type ApiClient = typeof liveApiClient
+
+// Resolve the transport before any credentials, uploads or network requests.
+// Unknown demo actions fail inside the sandbox; they never fall back to live.
+export const apiClient: ApiClient = new Proxy(liveApiClient, {
+  get(target, property: keyof ApiClient) {
+    return (...args: unknown[]) => {
+      if (isDemoBrowser()) {
+        return import('./demo/client').then(({ getDemoClient }) => {
+          const client = getDemoClient()
+          return Reflect.apply(client[property], client, args)
+        })
+      }
+      return Reflect.apply(target[property], target, args)
+    }
+  },
+})
