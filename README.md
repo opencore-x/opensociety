@@ -67,6 +67,10 @@ Until Clerk sessions are wired into the web app, set `VITE_DEV_USER_ID` to a rea
 
 ## Admin dashboard
 
+Visitors can open **`/demo`** or choose **Try the demo** on the home page to explore a populated sample society without signing up. The demo uses the same web dashboard, with fictional residents, visitors, staff, parking, notices, tickets, bills, payments and expenses. Edits and downloads run entirely in the browser; the demo never calls the society API or Clerk. Each tab has its own state, and **Reset demo** or a page refresh restores fresh sample data. No database, credentials or separate deployment is needed to run it alongside the web app.
+
+Demo actions use the shared validation and calculation helpers. Financial statements update with payments and expenses, and PDF, Excel, CSV and Tally downloads are generated locally. The demo covers the web dashboard; native mobile sessions still use the normal API and login.
+
 The web app (`apps/web`) is a shadcn/ui dashboard with light + dark mode at `/admin`:
 
 - **Overview** — at-a-glance counts and a setup checklist

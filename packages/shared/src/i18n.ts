@@ -49,6 +49,17 @@ const commonHi: Dict = {
 }
 
 const webEn: Dict = {
+  'demo.badge': 'Demo',
+  'demo.title': 'Your demo society',
+  'demo.description': 'Explore and make changes freely. All data is fictional and private to this tab. Refreshing starts over.',
+  'demo.reset': 'Reset demo',
+  'demo.exit': 'Exit demo',
+  'demo.exploreTitle': 'Try a few everyday tasks',
+  'demo.exploreDescription': 'This society is ready to explore. Your changes stay in this tab, and you can reset at any time.',
+  'demo.tryVisitor': 'Approve a visitor',
+  'demo.tryTicket': 'Resolve a ticket',
+  'demo.tryPayment': 'Record a payment',
+  'demo.tryNotice': 'Publish a notice',
   'nav.overview': 'Overview',
   'nav.society': 'Society',
   'nav.apartments': 'Apartments',
@@ -486,6 +497,17 @@ const webEn: Dict = {
   'page.expenses.initLedger': 'Initialize accounts',
 }
 const webHi: Dict = {
+  'demo.badge': 'डेमो',
+  'demo.title': 'आपकी डेमो सोसाइटी',
+  'demo.description': 'बेझिझक देखें और बदलाव करें। सभी डेटा काल्पनिक हैं और केवल इस टैब में रहते हैं। रिफ्रेश करने पर डेमो फिर से शुरू होता है।',
+  'demo.reset': 'डेमो रीसेट करें',
+  'demo.exit': 'डेमो से बाहर निकलें',
+  'demo.exploreTitle': 'रोज़ के कुछ काम आज़माएँ',
+  'demo.exploreDescription': 'यह सोसाइटी तैयार है। आपके बदलाव इसी टैब में रहते हैं और आप कभी भी रीसेट कर सकते हैं।',
+  'demo.tryVisitor': 'आगंतुक को मंज़ूरी दें',
+  'demo.tryTicket': 'शिकायत हल करें',
+  'demo.tryPayment': 'भुगतान दर्ज करें',
+  'demo.tryNotice': 'सूचना प्रकाशित करें',
   'nav.overview': 'अवलोकन',
   'nav.society': 'सोसायटी',
   'nav.apartments': 'अपार्टमेंट',

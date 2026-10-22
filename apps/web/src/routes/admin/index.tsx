@@ -7,6 +7,7 @@ import { formatPaise, collectionRatePct } from '@opensociety/shared'
 import { apiClient } from '../../lib/api'
 import { PageHeader } from '@/components/admin/ui'
 import { useT } from '@/lib/i18n'
+import { useDashboardPath } from '@/lib/dashboard-path'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -25,8 +26,9 @@ function StatCard({
   to: string
   hint?: string
 }) {
+  const dashboardPath = useDashboardPath()
   return (
-    <Link to={to} className="block">
+    <Link to={dashboardPath(to)} className="block">
       <Card className="hover:border-ring transition-colors">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-muted-foreground text-sm font-medium">{label}</CardTitle>
@@ -42,6 +44,7 @@ function StatCard({
 }
 
 function Overview() {
+  const dashboardPath = useDashboardPath()
   const { t } = useT()
   const society = useQuery({ queryKey: ['society'], queryFn: apiClient.getSociety })
   const apartments = useQuery({ queryKey: ['apartments'], queryFn: () => apiClient.listApartments() })
@@ -107,7 +110,28 @@ function Overview() {
         />
       </div>
 
-      <Card className="mt-6">
+      {dashboardPath('/admin') === '/demo' ? (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>{t('demo.exploreTitle')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4 text-sm">{t('demo.exploreDescription')}</p>
+            <div className="flex flex-wrap gap-3">
+              {[
+                ['/admin/visitors', 'demo.tryVisitor'],
+                ['/admin/tickets', 'demo.tryTicket'],
+                ['/admin/billing', 'demo.tryPayment'],
+                ['/admin/notices', 'demo.tryNotice'],
+              ].map(([path, label]) => (
+                <Button asChild variant="outline" key={path}>
+                  <Link to={dashboardPath(path)}>{t(label)}</Link>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : <Card className="mt-6">
         <CardHeader>
           <CardTitle>{t('overview.gettingStarted')}</CardTitle>
         </CardHeader>
@@ -115,32 +139,32 @@ function Overview() {
           <p className="text-foreground">
             {t('overview.newHerePrefix')}
             <Button asChild size="sm" className="mx-1 align-middle">
-              <Link to="/admin/setup">{t('overview.wizardLink')}</Link>
+              <Link to={dashboardPath('/admin/setup')}>{t('overview.wizardLink')}</Link>
             </Button>
             {t('overview.newHereSuffix')}
           </p>
           <p>
             {t('overview.step1Prefix')}
-            <Link to="/admin/society" className="text-foreground underline">{t('nav.society')}</Link>
+            <Link to={dashboardPath('/admin/society')} className="text-foreground underline">{t('nav.society')}</Link>
             {t('overview.step1Suffix')}
           </p>
           <p>
             {t('overview.step2Prefix')}
-            <Link to="/admin/apartments" className="text-foreground underline">{t('nav.apartments')}</Link>
+            <Link to={dashboardPath('/admin/apartments')} className="text-foreground underline">{t('nav.apartments')}</Link>
             {t('overview.step2Suffix')}
           </p>
           <p>
             {t('overview.step3Prefix')}
-            <Link to="/admin/residents" className="text-foreground underline">{t('nav.residents')}</Link>
+            <Link to={dashboardPath('/admin/residents')} className="text-foreground underline">{t('nav.residents')}</Link>
             {t('overview.step3Suffix')}
           </p>
           <p>
             {t('overview.step4Prefix')}
-            <Link to="/admin/guards" className="text-foreground underline">{t('nav.guards')}</Link>
+            <Link to={dashboardPath('/admin/guards')} className="text-foreground underline">{t('nav.guards')}</Link>
             {t('overview.step4Suffix')}
           </p>
         </CardContent>
-      </Card>
+      </Card>}
     </div>
   )
 }

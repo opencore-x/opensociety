@@ -28,6 +28,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { useT } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { useDashboardPath } from '@/lib/dashboard-path'
 
 export const Route = createFileRoute('/admin')({ component: AdminLayout })
 
@@ -51,7 +52,9 @@ const NAV: { to: string; tKey: string; icon: LucideIcon }[] = [
   { to: '/admin/notices', tKey: 'nav.notices', icon: Megaphone },
 ]
 
-function AdminLayout() {
+export function AdminLayout() {
+  const dashboardPath = useDashboardPath()
+  const demo = dashboardPath('/admin') === '/demo'
   const health = useQuery({ queryKey: ['health'], queryFn: apiClient.health, retry: false })
   const { t } = useT()
 
@@ -59,16 +62,16 @@ function AdminLayout() {
     <div className="bg-background text-foreground min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-7xl">
         <aside className="bg-card hidden w-60 shrink-0 flex-col border-r p-4 md:flex">
-          <Link to="/" className="mb-6 flex items-center gap-2 px-2">
+          <a href="/" className="mb-6 flex items-center gap-2 px-2">
             <span className="text-lg font-bold tracking-tight">
               Open<span className="text-cyan-500 dark:text-cyan-400">Society</span>
             </span>
-          </Link>
+          </a>
           <nav className="flex flex-col gap-1">
             {NAV.map(({ to, tKey, icon: Icon }) => (
               <Link
                 key={to}
-                to={to}
+                to={dashboardPath(to)}
                 activeOptions={{ exact: to === '/admin' }}
                 className={cn(
                   'text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
@@ -88,7 +91,7 @@ function AdminLayout() {
               {NAV.map(({ to, tKey }) => (
                 <Link
                   key={to}
-                  to={to}
+                  to={dashboardPath(to)}
                   activeOptions={{ exact: to === '/admin' }}
                   className="text-muted-foreground rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap"
                   activeProps={{ className: 'text-foreground' }}
@@ -98,12 +101,12 @@ function AdminLayout() {
               ))}
             </nav>
             <div className="ml-auto flex items-center gap-3">
-              <Badge variant={health.isSuccess ? 'default' : 'destructive'}>
+              {demo ? <Badge>{t('demo.badge')}</Badge> : <Badge variant={health.isSuccess ? 'default' : 'destructive'}>
                 {t('header.api')}{' '}
                 {health.isLoading ? '…' : health.isSuccess ? t('header.apiOnline') : t('header.apiOffline')}
-              </Badge>
+              </Badge>}
               <LanguageSwitcher />
-              {CLERK_ENABLED && <AuthControls />}
+              {CLERK_ENABLED && !demo && <AuthControls />}
               <ThemeToggle />
             </div>
           </header>
