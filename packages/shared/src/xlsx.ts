@@ -6,8 +6,6 @@
 export type Cell = string | number | null | undefined
 export type Sheet = { name: string; rows: Cell[][] }
 
-const enc = new TextEncoder()
-
 // ----- CRC32 (IEEE 802.3, poly 0xEDB88320) -----
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256)
@@ -95,6 +93,7 @@ function u32(n: number): number[] {
 }
 
 function zipStored(files: ZipFile[]): Uint8Array {
+  const enc = new TextEncoder()
   const chunks: number[] = []
   const central: number[] = []
   let offset = 0
@@ -156,6 +155,7 @@ function zipStored(files: ZipFile[]): Uint8Array {
 
 // Build a real .xlsx workbook from one or more named sheets of cell rows.
 export function buildXlsx(sheets: Sheet[]): Uint8Array {
+  const enc = new TextEncoder()
   const tabs = sheets.length ? sheets : [{ name: 'Sheet1', rows: [] }]
   const files: ZipFile[] = [
     { name: '[Content_Types].xml', data: enc.encode(contentTypesXml(tabs.length)) },

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { buildXlsx } from './lib/xlsx'
 
 describe('buildXlsx (dependency-free .xlsx writer)', () => {
@@ -38,5 +38,17 @@ describe('buildXlsx (dependency-free .xlsx writer)', () => {
   it('is non-empty and byte-aligned', () => {
     expect(buf.length).toBeGreaterThan(200)
     expect(buf).toBeInstanceOf(Uint8Array)
+  })
+
+  it('allows shared contracts to load without a browser text encoder', async () => {
+    vi.stubGlobal('TextEncoder', undefined)
+    vi.resetModules()
+    try {
+      const shared = await import('@opensociety/shared')
+      expect(typeof shared.buildXlsx).toBe('function')
+      expect(shared.visitorStatusSchema.parse('PENDING')).toBe('PENDING')
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })
