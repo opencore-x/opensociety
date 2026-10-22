@@ -257,6 +257,9 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.2.3(react@19.2.3)
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
       react-qr-code:
         specifier: ^2.2.0
         version: 2.2.0(react@19.2.3)
