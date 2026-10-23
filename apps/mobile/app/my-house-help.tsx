@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
 import type { Apartment } from '@opensociety/shared'
-import { apiClient, type HouseHelpWithRating } from '../api/client'
+import type { HouseHelpWithRating } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Text } from '../components/ui/text'
@@ -9,6 +10,7 @@ import { cn } from '../lib/utils'
 
 // Resident view: manage which registered house help serves each of their flats.
 export default function MyHouseHelp() {
+  const apiClient = useApiClient()
   const { t } = useT()
   const apts = useQuery({ queryKey: ['my-apartments'], queryFn: () => apiClient.listMyApartments() })
   const registry = useQuery({ queryKey: ['house-help'], queryFn: () => apiClient.listHouseHelp() })
@@ -47,6 +49,7 @@ export default function MyHouseHelp() {
 }
 
 function StarRating({ help, apartmentKey }: { help: HouseHelpWithRating; apartmentKey: string }) {
+  const apiClient = useApiClient()
   const { t } = useT()
   const qc = useQueryClient()
   const rate = useMutation({
@@ -77,6 +80,7 @@ function StarRating({ help, apartmentKey }: { help: HouseHelpWithRating; apartme
 }
 
 function ApartmentAssignments({ apartment, registry }: { apartment: Apartment; registry: HouseHelpWithRating[] }) {
+  const apiClient = useApiClient()
   const { t } = useT()
   const qc = useQueryClient()
   const assigned = useQuery({

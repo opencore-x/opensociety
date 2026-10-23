@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, ScrollView, View } from 'react-native'
 import type { Apartment, CreateVehicle, VehicleType } from '@opensociety/shared'
 import { vehicleTypeSchema } from '@opensociety/shared'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
@@ -13,6 +13,7 @@ import { cn } from '../lib/utils'
 
 // Resident view: register and manage the vehicles for their own flat(s).
 export default function MyVehicles() {
+  const apiClient = useApiClient()
   const qc = useQueryClient()
   const { t } = useT()
   const apts = useQuery({ queryKey: ['my-apartments'], queryFn: () => apiClient.listMyApartments() })

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, FlatList, View } from 'react-native'
 import { availableVisitorActions } from '@opensociety/shared'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
@@ -10,6 +10,7 @@ import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
 
 export default function Visitors() {
+  const apiClient = useApiClient()
   const qc = useQueryClient()
   const { t } = useT()
   const [denyingId, setDenyingId] = useState<string | null>(null)

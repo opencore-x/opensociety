@@ -3,7 +3,7 @@ import { ScrollView, View } from 'react-native'
 import { useMutation } from '@tanstack/react-query'
 import type { VehicleVerification } from '@opensociety/shared'
 
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -12,6 +12,7 @@ import { Text } from '../components/ui/text'
 // Guard gate tool: type an arriving vehicle's plate to see whether it's a
 // registered resident vehicle (with owner flat + parking slots) or unknown.
 export default function VehicleGate() {
+  const apiClient = useApiClient()
   const { t } = useT()
   const [plate, setPlate] = useState('')
   const verify = useMutation({ mutationFn: (p: string) => apiClient.verifyVehicle(p) })

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { ActivityIndicator, ScrollView, View } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Text } from '../components/ui/text'
 
@@ -15,6 +15,7 @@ function groupBy<T>(items: T[], key: (item: T) => string): Record<string, T[]> {
 // Resident profile: for each flat the user lives in, its co-residents and the
 // vehicles registered to it.
 export default function Profile() {
+  const apiClient = useApiClient()
   const { t } = useT()
   const apts = useQuery({ queryKey: ['my-apartments'], queryFn: () => apiClient.listMyApartments() })
   const residents = useQuery({ queryKey: ['my-residents'], queryFn: () => apiClient.listMyResidents() })

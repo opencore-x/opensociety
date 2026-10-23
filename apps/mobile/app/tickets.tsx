@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, ScrollView, View } from 'react-native'
 import type { TicketCategory, TicketPriority, TicketStatus } from '@opensociety/shared'
 import { ticketCategorySchema, ticketPrioritySchema } from '@opensociety/shared'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
@@ -20,6 +20,7 @@ const STATUS_COLOR: Record<TicketStatus, string> = {
 }
 
 export default function Tickets() {
+  const apiClient = useApiClient()
   const qc = useQueryClient()
   const { t } = useT()
   const [title, setTitle] = useState('')

@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, Share, View } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import { visitorStatusSchema, visitorEntriesToCsv, type VisitorStatus } from '@opensociety/shared'
 
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
@@ -30,6 +30,7 @@ function formatTime(iso: string): string {
 // Resident visitor history: their apartments' past + current visitor entries,
 // filterable by status and time range, exportable as CSV.
 export default function VisitorHistory() {
+  const apiClient = useApiClient()
   const { t } = useT()
   const [status, setStatus] = useState<VisitorStatus | 'ALL'>('ALL')
   // Compute the cutoff timestamp when a range is picked (an event), not during

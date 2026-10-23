@@ -4,7 +4,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import type { VisitorPreApproval } from '@opensociety/shared'
 import { preApprovalQrValue } from '@opensociety/shared'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Chip } from '../components/ui/chip'
@@ -12,6 +12,7 @@ import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
 
 export default function PreApprove() {
+  const apiClient = useApiClient()
   const qc = useQueryClient()
   const { t } = useT()
   const [name, setName] = useState('')

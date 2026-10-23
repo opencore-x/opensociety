@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ActivityIndicator, FlatList, Modal, Platform, View } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/shared'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
 import { useT } from '../lib/i18n'
 import { OfflineBanner } from '../components/offline-banner'
@@ -16,6 +16,7 @@ import { Text } from '../components/ui/text'
 // Guard gate view: the visitors a guard acts on — APPROVED (expected at the
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
 export default function Gate() {
+  const apiClient = useApiClient()
   const qc = useQueryClient()
   const { t } = useT()
   const { isOnline } = useSyncStatus()

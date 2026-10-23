@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, Linking, Pressable, View } from 'react-nat
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Notice } from '@opensociety/shared'
 import { noticeMatchesQuery } from '@opensociety/shared'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
@@ -20,16 +20,17 @@ function isUrgent(priority: Notice['priority']): boolean {
   return priority === 'HIGH' || priority === 'URGENT'
 }
 
-async function openAttachment(path: string) {
-  try {
-    const url = await apiClient.fetchUploadObjectUrl(path)
-    await Linking.openURL(url)
-  } catch {
-    // best-effort; the attachment simply won't open if the fetch fails
-  }
-}
-
 export default function Notices() {
+  const apiClient = useApiClient()
+  async function openAttachment(path: string) {
+    try {
+      const url = await apiClient.fetchUploadObjectUrl(path)
+      await Linking.openURL(url)
+    } catch {
+      // best-effort; the attachment simply won't open if the fetch fails
+    }
+  }
+
   const { t } = useT()
   const [search, setSearch] = useState('')
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['notices'], queryFn: () => apiClient.listNotices() })
