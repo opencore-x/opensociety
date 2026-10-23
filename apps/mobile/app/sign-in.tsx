@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
 import { useSignIn } from '@clerk/clerk-expo'
-import { View } from 'react-native'
+import { ScrollView } from 'react-native'
+import { DemoEntry } from '../components/demo-entry'
 
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
@@ -39,7 +40,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <View className="flex-1 justify-center gap-3 bg-background p-6">
+    <ScrollView className="flex-1 bg-background" contentContainerClassName="gap-3 p-6">
       <Input
         placeholder={t('signIn.email')}
         autoCapitalize="none"
@@ -56,6 +57,7 @@ export default function SignInScreen() {
         <Text>{pending ? t('signIn.signingIn') : t('nav.signIn')}</Text>
       </Button>
       {error && <Text className="text-sm text-destructive">{error}</Text>}
-    </View>
+      <DemoEntry />
+    </ScrollView>
   )
 }

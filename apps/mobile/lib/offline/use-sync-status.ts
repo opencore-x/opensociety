@@ -2,6 +2,8 @@ import { useCallback, useSyncExternalStore } from 'react'
 import { onlineManager, useMutationState, useQueryClient } from '@tanstack/react-query'
 import type { CreateVisitorEntry } from '@opensociety/shared'
 
+import { useSession } from '../session'
+
 import { CREATE_VISITOR_KEY } from './mutation-defaults'
 
 // Render-safe read of connectivity via React's external-store machinery, so a
@@ -18,7 +20,9 @@ function useOnline(): boolean {
 // `pending` counts queued-while-offline (paused) and in-flight createVisitor
 // mutations, so the UI can show "Offline — N queued" and "Syncing N…".
 export function useSyncStatus(): { isOnline: boolean; pending: number } {
-  const isOnline = useOnline()
+  const { mode } = useSession()
+  const deviceOnline = useOnline()
+  const isOnline = mode === 'demo' || deviceOnline
   const pending = useMutationState({
     filters: { mutationKey: [...CREATE_VISITOR_KEY], exact: true },
     select: (m) => m.state.isPaused || m.state.status === 'pending',

@@ -1,12 +1,17 @@
 import '../global.css'
 
 import { useEffect } from 'react'
-import { Stack } from 'expo-router'
+import { Stack, usePathname } from 'expo-router'
+import { View } from 'react-native'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo'
 
 import { tokenCache } from '../lib/token-cache'
-import { setAuthTokenGetter } from '../api/client'
+import { apiClient, setAuthTokenGetter } from '../api/client'
+import { ApiContext } from '../api/context'
+import { SessionProvider, useSession } from '../lib/session'
+import { DemoBanner } from '../components/demo-banner'
 import { queryClient, persistOptions } from '../lib/offline/query-client'
 import { setupOnlineManager } from '../lib/offline/network'
 import { registerOfflineMutationDefaults } from '../lib/offline/mutation-defaults'
@@ -33,51 +38,67 @@ function AuthBridge() {
 
 function Nav() {
   const { t } = useT()
+  const { mode, demo, revision } = useSession()
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ title: t('nav.appName') }} />
-      <Stack.Screen name="sign-in" options={{ title: t('nav.signIn') }} />
-      <Stack.Screen name="profile" options={{ title: t('nav.profile') }} />
-      <Stack.Screen name="visitors" options={{ title: t('nav.visitors') }} />
-      <Stack.Screen name="visitor-history" options={{ title: t('nav.visitorHistory') }} />
-      <Stack.Screen name="pre-approve" options={{ title: t('nav.preApproveVisitor') }} />
-      <Stack.Screen name="notices" options={{ title: t('nav.notices') }} />
-      <Stack.Screen name="tickets" options={{ title: t('nav.maintenance') }} />
-      <Stack.Screen name="gate" options={{ title: t('nav.gate') }} />
-      <Stack.Screen name="vehicle-gate" options={{ title: t('nav.vehicleGate') }} />
-      <Stack.Screen name="duty" options={{ title: t('nav.guardDuty') }} />
-      <Stack.Screen name="register" options={{ title: t('nav.registerVisitor') }} />
-      <Stack.Screen name="house-help" options={{ title: t('nav.houseHelp') }} />
-      <Stack.Screen name="my-house-help" options={{ title: t('nav.myHouseHelp') }} />
-      <Stack.Screen name="my-vehicles" options={{ title: t('nav.myVehicles') }} />
-      <Stack.Screen name="bills" options={{ title: t('nav.bills') }} />
-    </Stack>
+    <View className="flex-1 bg-background">
+      <Stack key={revision}>
+        <Stack.Screen name="index" options={{ title: t('nav.appName') }} />
+        <Stack.Protected guard={mode === 'live' && !!CLERK_PUBLISHABLE_KEY}>
+          <Stack.Screen name="sign-in" options={{ title: t('nav.signIn') }} />
+        </Stack.Protected>
+        <Stack.Protected guard={mode === 'live' || demo?.role === 'resident'}>
+          <Stack.Screen name="profile" options={{ title: t('nav.profile') }} />
+          <Stack.Screen name="visitors" options={{ title: t('nav.visitors') }} />
+          <Stack.Screen name="visitor-history" options={{ title: t('nav.visitorHistory') }} />
+          <Stack.Screen name="pre-approve" options={{ title: t('nav.preApproveVisitor') }} />
+          <Stack.Screen name="notices" options={{ title: t('nav.notices') }} />
+          <Stack.Screen name="tickets" options={{ title: t('nav.maintenance') }} />
+          <Stack.Screen name="my-house-help" options={{ title: t('nav.myHouseHelp') }} />
+          <Stack.Screen name="my-vehicles" options={{ title: t('nav.myVehicles') }} />
+          <Stack.Screen name="bills" options={{ title: t('nav.bills') }} />
+        </Stack.Protected>
+        <Stack.Protected guard={mode === 'live' || demo?.role === 'guard'}>
+          <Stack.Screen name="gate" options={{ title: t('nav.gate') }} />
+          <Stack.Screen name="vehicle-gate" options={{ title: t('nav.vehicleGate') }} />
+          <Stack.Screen name="duty" options={{ title: t('nav.guardDuty') }} />
+          <Stack.Screen name="register" options={{ title: t('nav.registerVisitor') }} />
+          <Stack.Screen name="house-help" options={{ title: t('nav.houseHelp') }} />
+        </Stack.Protected>
+      </Stack>
+      {mode === 'demo' && <DemoBanner />}
+    </View>
   )
 }
 
-export default function RootLayout() {
+function LiveApp() {
   const content = (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={persistOptions}
-      onSuccess={() => {
-        // Cache restored from disk — flush any writes that were queued offline
-        // in a previous session.
-        queryClient.resumePausedMutations()
-      }}
-    >
-      <I18nProvider>
+    <ApiContext.Provider value={apiClient}>
+      <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}
+        onSuccess={() => { void queryClient.resumePausedMutations() }}>
         <Nav />
-      </I18nProvider>
-    </PersistQueryClientProvider>
+      </PersistQueryClientProvider>
+    </ApiContext.Provider>
   )
-  // Clerk is optional: without a publishable key the app runs on the dev
-  // x-user-id fallback, mirroring the API's own conditional auth.
   if (!CLERK_PUBLISHABLE_KEY) return content
-  return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-      <AuthBridge />
-      {content}
-    </ClerkProvider>
+  return <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+    <AuthBridge />{content}
+  </ClerkProvider>
+}
+
+function SessionApp() {
+  const { mode, demo, revision } = useSession()
+  if (mode === 'live') return <LiveApp />
+  if (demo) return (
+    <ApiContext.Provider key={revision} value={demo.api}>
+      <QueryClientProvider client={demo.queryClient}><Nav /></QueryClientProvider>
+    </ApiContext.Provider>
   )
+  return <Nav />
+}
+
+export default function RootLayout() {
+  const pathname = usePathname()
+  return <I18nProvider>
+    <SessionProvider initialLive={pathname === '/sign-in'}><SessionApp /></SessionProvider>
+  </I18nProvider>
 }

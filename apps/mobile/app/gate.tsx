@@ -7,6 +7,7 @@ import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/s
 import { useApiClient } from '../api/context'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
 import { useT } from '../lib/i18n'
+import { useSession } from '../lib/session'
 import { OfflineBanner } from '../components/offline-banner'
 import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
@@ -17,6 +18,7 @@ import { Text } from '../components/ui/text'
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
 export default function Gate() {
   const apiClient = useApiClient()
+  const { demo } = useSession()
   const qc = useQueryClient()
   const { t } = useT()
   const { isOnline } = useSyncStatus()
@@ -75,6 +77,7 @@ export default function Gate() {
         <OfflineBanner className="-mx-4 -mt-4 mb-2 rounded-none" />
         <SyncErrorTray className="mb-2" />
         <View className="mb-1 gap-2">
+          {demo && <Text className="text-sm text-muted-foreground">{t('demo.gateHint')}</Text>}
           <View className="flex-row items-center gap-2">
             <Input
               className="flex-1 tracking-widest"
@@ -91,8 +94,8 @@ export default function Gate() {
               <Text>{redeem.isPending ? t('gate.redeeming') : t('gate.redeem')}</Text>
             </Button>
           </View>
-          <Button variant="outline" onPress={() => setScanning(true)} disabled={!isOnline}>
-            <Text>{t('gate.scanQr')}</Text>
+          <Button variant="outline" onPress={() => demo ? redeem.mutate('DEMO01') : setScanning(true)} disabled={!isOnline || redeem.isPending}>
+            <Text>{t(demo ? 'demo.scanSample' : 'gate.scanQr')}</Text>
           </Button>
           {redeem.isError && (
             <Text className="text-sm text-destructive">{String((redeem.error as Error)?.message ?? t('gate.invalidCode'))}</Text>

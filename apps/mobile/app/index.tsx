@@ -7,6 +7,9 @@ import { useT } from '../lib/i18n'
 import { cn } from '../lib/utils'
 import { Chip } from '../components/ui/chip'
 import { Text } from '../components/ui/text'
+import { Button } from '../components/ui/button'
+import { DemoEntry } from '../components/demo-entry'
+import { useSession } from '../lib/session'
 
 const RESIDENT = [
   { href: '/profile', key: 'nav.profile' },
@@ -64,6 +67,7 @@ function LanguageSwitcher() {
 }
 
 export default function Index() {
+  const { mode, demo, openLive } = useSession()
   const { t } = useT()
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="gap-6 p-4">
@@ -75,10 +79,20 @@ export default function Index() {
         </View>
       </View>
 
-      <NavGroup title={t('home.resident')} items={RESIDENT} />
-      <NavGroup title={t('home.guard')} items={GUARD} />
+      {mode === 'welcome' && <>
+        <DemoEntry />
+        <Button variant="outline" onPress={openLive}><Text>{t('demo.openLive')}</Text></Button>
+      </>}
+      {demo && <View className="gap-2 rounded-xl bg-secondary p-4">
+        <Text className="text-lg font-semibold">{demo.store.data.society.name}</Text>
+        <Text>{t(demo.role === 'resident' ? 'demo.residentIdentity' : 'demo.guardIdentity')}</Text>
+        <Text className="text-sm leading-5 text-muted-foreground">{t('demo.roleHint')}</Text>
+      </View>}
+      {(mode === 'live' || demo?.role === 'resident') && <NavGroup title={t('home.resident')} items={RESIDENT} />}
+      {(mode === 'live' || demo?.role === 'guard') && <NavGroup title={t('home.guard')} items={GUARD} />}
+      {mode === 'live' && <DemoEntry />}
 
-      {CLERK_ENABLED && (
+      {mode === 'live' && CLERK_ENABLED && (
         <View className="pt-2">
           <AuthStatus />
         </View>

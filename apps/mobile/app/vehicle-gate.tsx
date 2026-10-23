@@ -5,6 +5,7 @@ import type { VehicleVerification } from '@opensociety/shared'
 
 import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
+import { useSession } from '../lib/session'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
@@ -13,6 +14,7 @@ import { Text } from '../components/ui/text'
 // registered resident vehicle (with owner flat + parking slots) or unknown.
 export default function VehicleGate() {
   const apiClient = useApiClient()
+  const { demo } = useSession()
   const { t } = useT()
   const [plate, setPlate] = useState('')
   const verify = useMutation({ mutationFn: (p: string) => apiClient.verifyVehicle(p) })
@@ -20,6 +22,9 @@ export default function VehicleGate() {
 
   return (
     <ScrollView className="bg-background" contentContainerClassName="gap-4 p-4">
+      {demo && <Button variant="outline" onPress={() => { setPlate('DEMO2000'); verify.mutate('DEMO2000') }}>
+        <Text>{t('demo.sampleVehicle')}</Text>
+      </Button>}
       <View className="flex-row items-center gap-2">
         <Input
           className="flex-1 tracking-widest"
