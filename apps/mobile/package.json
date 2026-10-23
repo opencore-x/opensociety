@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "check-types": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",
@@ -55,7 +56,8 @@
     "lightningcss": "1.30.1",
     "postcss": "^8.5.19",
     "tailwindcss": "^4.1.18",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^3.0.5"
   },
   "private": true
 }
