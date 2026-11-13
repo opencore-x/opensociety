@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils'
 import { TextClassContext } from './text'
 
 const buttonVariants = cva(
-  'flex flex-row items-center justify-center gap-2 rounded-md active:opacity-90',
+  'flex flex-row items-center justify-center gap-2 rounded-md active:opacity-75',
   {
     variants: {
       variant: {
@@ -18,17 +18,17 @@ const buttonVariants = cva(
         link: '',
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3',
-        lg: 'h-11 rounded-md px-8',
-        icon: 'h-10 w-10',
+        default: 'min-h-[48px] px-5 py-3',
+        sm: 'min-h-[44px] rounded-md px-4 py-2.5',
+        lg: 'min-h-[56px] rounded-lg px-6 py-4',
+        icon: 'h-[48px] w-[48px]',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },
-  }
+  },
 )
 
-const buttonTextVariants = cva('text-sm font-medium', {
+const buttonTextVariants = cva('shrink text-center text-sm font-semibold', {
   variants: {
     variant: {
       default: 'text-primary-foreground',
@@ -44,12 +44,13 @@ const buttonTextVariants = cva('text-sm font-medium', {
 
 type ButtonProps = React.ComponentProps<typeof Pressable> & VariantProps<typeof buttonVariants>
 
-function Button({ className, variant, size, disabled, ...props }: ButtonProps) {
+function Button({ className, variant, size, disabled, accessibilityState, ...props }: ButtonProps) {
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant })}>
       <Pressable
         role="button"
         disabled={disabled}
+        accessibilityState={{ ...accessibilityState, disabled: !!disabled }}
         className={cn(buttonVariants({ variant, size }), disabled && 'opacity-50', className)}
         {...props}
       />

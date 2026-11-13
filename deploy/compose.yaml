@@ -1,0 +1,45 @@
+name: opensociety
+services:
+  api:
+    image: ${API_IMAGE:?Set API_IMAGE to a tested image tag or digest}
+    env_file: api.env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8787
+      NODE_OPTIONS: --max-old-space-size=256
+    ports:
+      - 127.0.0.1:${API_PORT:-8787}:8787
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs: [/tmp:size=32m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 384m
+    cpus: 0.5
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+  web:
+    image: ${WEB_IMAGE:?Set WEB_IMAGE to a tested image tag or digest}
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      NODE_OPTIONS: --max-old-space-size=256
+    ports:
+      - 127.0.0.1:${WEB_PORT:-3000}:3000
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs: [/tmp:size=32m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 384m
+    cpus: 0.5
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }

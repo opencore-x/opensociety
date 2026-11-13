@@ -801,3 +801,32 @@ Table audit_logs {
 
   Note: 'Audit trail for security-sensitive operations'
 }
+
+// ===== Push delivery (implemented in migration 0023) =====
+
+Table push_devices {
+  token text [pk]
+  user_id uuid [not null, ref: > users.id]
+  platform text [not null]
+  updated_at timestamp [not null, default: `now()`]
+  indexes { user_id }
+}
+
+Table push_deliveries {
+  id uuid [pk, default: `gen_random_uuid()`]
+  token text [not null, ref: > push_devices.token]
+  user_id uuid [not null, ref: > users.id]
+  event_key text [not null]
+  message jsonb [not null]
+  status text [not null, default: 'queued', note: 'queued, sending, receipt, delivered, failed']
+  ticket_id text
+  attempts integer [not null, default: 0]
+  next_attempt_at timestamp [not null, default: `now()`]
+  expires_at timestamp [not null]
+  last_error text
+  created_at timestamp [not null, default: `now()`]
+  indexes {
+    (event_key, token) [unique]
+    (status, next_attempt_at)
+  }
+}

@@ -1,6 +1,6 @@
 import type { Database } from '@opensociety/db'
 import { accounts, journalEntries, journalLines, maintenanceBills, billLineItems, payments } from '@opensociety/db'
-import { and, eq, inArray, ne, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
 import {
   ACCOUNT_CODES,
   postBillIssued as buildBillEntry,
@@ -23,11 +23,6 @@ import {
 // on (source_type, source_id)). If the chart of accounts hasn't been initialized
 // yet, posting is skipped until an admin runs POST /ledger/init.
 
-function isUniqueViolation(e: unknown): boolean {
-  const code = (e as { code?: string })?.code
-  return code === '23505' || /duplicate key value/i.test((e as Error)?.message ?? '')
-}
-
 function toDateStr(d: Date | string): string {
   return (d instanceof Date ? d.toISOString() : new Date(d).toISOString()).slice(0, 10)
 }
@@ -40,46 +35,46 @@ export async function resolveAccounts(db: Database, codes: string[]): Promise<Ma
   return new Map(rows.map((r) => [r.code, r.id]))
 }
 
-// Persist a balanced draft as one journal entry + its lines. Returns the entry
-// id, or null when the entry already exists (idempotent). Throws only on an
-// unbalanced draft — that is a programming error, not a data condition.
+// Persist headers and lines in the same statement. A failed line rolls back
+// its header, leaving the business event eligible for a subsequent retry.
+export async function insertJournalEntries(db: Database, drafts: JournalDraft[], createdBy?: string): Promise<string[]> {
+  if (!drafts.length) return []
+  const entries = drafts.map((draft) => {
+    const errors = validateEntryLines(draft.lines)
+    if (errors.length) throw new Error(`unbalanced journal entry: ${errors.join('; ')}`)
+    return {
+      id: crypto.randomUUID(), entry_date: draft.entryDate, narration: draft.narration,
+      source_type: draft.sourceType, source_id: draft.sourceId ?? null, period: draft.period,
+      is_reversal: draft.isReversal ?? false, reverses_id: draft.reversesId ?? null,
+      created_by: createdBy ?? null,
+    }
+  })
+  const lines = drafts.flatMap((draft, i) => draft.lines.map((line) => ({
+    entry_id: entries[i].id, account_id: line.accountId, debit: line.debit, credit: line.credit,
+    apartment_id: line.apartmentId ?? null, vendor_id: line.vendorId ?? null, memo: line.memo ?? null,
+  })))
+  const result = await db.execute<{ id: string }>(sql`
+    with created as (
+      insert into journal_entries (id, entry_date, narration, source_type, source_id, period, is_reversal, reverses_id, created_by)
+      select id, entry_date, narration, source_type, source_id, period, is_reversal, reverses_id, created_by
+      from jsonb_to_recordset(${JSON.stringify(entries)}::jsonb) as entry(
+        id uuid, entry_date date, narration text, source_type journal_source, source_id uuid,
+        period text, is_reversal boolean, reverses_id uuid, created_by uuid
+      ) on conflict (source_type, source_id) where source_type in ('BILL', 'PAYMENT', 'EXPENSE', 'INTEREST') do nothing
+      returning id
+    ), lines as (
+      insert into journal_lines (entry_id, account_id, debit, credit, apartment_id, vendor_id, memo)
+      select line.entry_id, line.account_id, line.debit, line.credit, line.apartment_id, line.vendor_id, line.memo
+      from jsonb_to_recordset(${JSON.stringify(lines)}::jsonb) as line(
+        entry_id uuid, account_id uuid, debit integer, credit integer, apartment_id uuid, vendor_id uuid, memo text
+      ) join created on created.id = line.entry_id
+    ) select id from created
+  `)
+  return result.rows.map((row) => row.id)
+}
+
 export async function insertJournalEntry(db: Database, draft: JournalDraft, createdBy?: string): Promise<string | null> {
-  const errors = validateEntryLines(draft.lines)
-  if (errors.length) throw new Error(`unbalanced journal entry: ${errors.join('; ')}`)
-
-  let entryId: string
-  try {
-    const [entry] = await db
-      .insert(journalEntries)
-      .values({
-        entryDate: draft.entryDate,
-        narration: draft.narration,
-        sourceType: draft.sourceType,
-        sourceId: draft.sourceId ?? null,
-        period: draft.period,
-        isReversal: draft.isReversal ?? false,
-        reversesId: draft.reversesId ?? null,
-        createdBy: createdBy ?? null,
-      })
-      .returning({ id: journalEntries.id })
-    entryId = entry.id
-  } catch (e) {
-    if (isUniqueViolation(e)) return null // already posted
-    throw e
-  }
-
-  await db.insert(journalLines).values(
-    draft.lines.map((l) => ({
-      entryId,
-      accountId: l.accountId,
-      debit: l.debit,
-      credit: l.credit,
-      apartmentId: l.apartmentId ?? null,
-      vendorId: l.vendorId ?? null,
-      memo: l.memo ?? null,
-    })),
-  )
-  return entryId
+  return (await insertJournalEntries(db, [draft], createdBy))[0] ?? null
 }
 
 // §6.1 — post the "bill issued" entry for a freshly created bill. Each line
@@ -131,6 +126,40 @@ export async function postBill(db: Database, billId: string, createdBy?: string)
     narration: 'Maintenance bill issued',
   })
   return insertJournalEntry(db, draft, createdBy)
+}
+
+// Fetch a month's unposted bills once, then persist bounded batches. Re-running
+// also repairs bills whose earlier posting failed after generation committed.
+export async function postMonthlyBills(db: Database, period: string, createdBy?: string): Promise<number> {
+  const acc = await resolveAccounts(db, [ACCOUNT_CODES.MEMBER_DUES_RECEIVABLE, ACCOUNT_CODES.GST_OUTPUT_PAYABLE, ACCOUNT_CODES.MAINTENANCE_INCOME])
+  const receivable = acc.get(ACCOUNT_CODES.MEMBER_DUES_RECEIVABLE)
+  const gst = acc.get(ACCOUNT_CODES.GST_OUTPUT_PAYABLE)
+  const income = acc.get(ACCOUNT_CODES.MAINTENANCE_INCOME)
+  if (!receivable || !gst || !income) return 0
+  const rows = await db.select({
+    billId: maintenanceBills.id, apartmentId: maintenanceBills.apartmentId, issuedAt: maintenanceBills.issuedAt,
+    amount: billLineItems.amount, tax: billLineItems.taxAmount, accountId: billLineItems.accountId,
+  }).from(maintenanceBills)
+    .innerJoin(billLineItems, eq(billLineItems.billId, maintenanceBills.id))
+    .leftJoin(journalEntries, and(eq(journalEntries.sourceType, 'BILL'), eq(journalEntries.sourceId, maintenanceBills.id)))
+    .where(and(eq(maintenanceBills.type, 'MONTHLY'), eq(maintenanceBills.periodMonth, period), ne(maintenanceBills.status, 'CANCELLED'), isNull(journalEntries.id)))
+  const groups = new Map<string, { apartmentId: string; entryDate: string; lines: BillPostingLine[] }>()
+  for (const row of rows) {
+    const group = groups.get(row.billId) ?? { apartmentId: row.apartmentId, entryDate: toDateStr(row.issuedAt), lines: [] }
+    group.lines.push({ accountId: row.accountId ?? income, net: row.amount, tax: row.tax })
+    groups.set(row.billId, group)
+  }
+  const drafts = [...groups].map(([billId, bill]) => buildBillEntry({
+    ...bill, billId, period, accounts: { memberDuesReceivable: receivable, gstOutputPayable: gst }, narration: 'Maintenance bill issued',
+  }))
+  let posted = 0
+  for (let i = 0; i < drafts.length; i += 100) posted += (await insertJournalEntries(db, drafts.slice(i, i + 100), createdBy)).length
+  return posted
+}
+
+export async function safePostMonthlyBills(db: Database, period: string, createdBy?: string): Promise<void> {
+  try { await postMonthlyBills(db, period, createdBy) }
+  catch { console.error('ledger: failed to post monthly bills', period) }
 }
 
 // §6.2 — post the "payment received" entry. Debits Bank/Cash; credits Member

@@ -28,6 +28,7 @@ export const noticeReadReceiptSchema = z.object({
 })
 
 export const createNoticeSchema = z.object({
+  notifyTower: z.string().trim().min(1).max(64).optional(),
   title: z.string().min(1),
   body: z.string().min(1),
   priority: noticePrioritySchema.default('NORMAL'),

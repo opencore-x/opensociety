@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+const notify = vi.hoisted(() => vi.fn())
+vi.mock('./lib/push-events', async (orig) => ({ ...(await orig<typeof import('./lib/push-events')>()), notifyEvent: notify }))
+
 // Route-level tests with a mocked Drizzle client (see visitors.route.test.ts).
 const { fakeDb, setQueue } = vi.hoisted(() => {
   let queue: unknown[][] = []
@@ -30,7 +33,39 @@ const GUARD = { id: 'g1', role: 'GUARD', status: 'APPROVED' }
 const RESIDENT = { id: 'r1', role: 'RESIDENT', status: 'APPROVED' }
 const get = (path: string, id?: string) => vehicleRoutes.request(path, { headers: id ? { 'x-user-id': id } : {} }, env)
 
-beforeEach(() => setQueue([]))
+beforeEach(() => { setQueue([]); notify.mockReset().mockResolvedValue(true) })
+
+describe('vehicle owner alerts', () => {
+  const alert = (kind = 'BLOCKED', enabled = true) => vehicleRoutes.request('/vehicle/alerts', {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-user-id': 'g1' }, body: JSON.stringify({ kind }),
+  }, { ...env, PUSH_ENABLED: enabled ? 'true' : 'false' })
+  it('prevents residents from sending gate alerts', async () => {
+    setQueue([[RESIDENT]])
+    expect((await alert()).status).toBe(403)
+    expect(notify).not.toHaveBeenCalled()
+  })
+  it('rejects invalid events and missing vehicles', async () => {
+    setQueue([[GUARD]])
+    expect((await alert('INVALID')).status).toBe(400)
+    setQueue([[GUARD], []])
+    expect((await alert()).status).toBe(404)
+  })
+  it('reports disabled push and enqueue failures instead of claiming success', async () => {
+    setQueue([[GUARD]])
+    expect((await alert('BLOCKED', false)).status).toBe(503)
+    setQueue([[GUARD], [{ id: 'vehicle', apartmentId: 'apt' }]])
+    notify.mockResolvedValueOnce(false)
+    expect((await alert()).status).toBe(503)
+  })
+  it('queues a towed alert for the vehicle apartment', async () => {
+    setQueue([[GUARD], [{ id: 'vehicle', apartmentId: 'apt' }], [{ userId: 'owner' }]])
+    expect((await alert('TOWED')).status).toBe(202)
+    expect(notify).toHaveBeenCalledWith(expect.anything(), expect.stringMatching(/^vehicle:vehicle:TOWED:/), expect.any(Function), {
+      title: 'Vehicle towed', body: 'Please contact the society gate about your vehicle.', data: { screen: 'my-vehicles' },
+    })
+    expect(await notify.mock.calls[0][2]()).toEqual(['owner'])
+  })
+})
 
 describe('GET /vehicles/verify', () => {
   it('401s an unauthenticated request', async () => {

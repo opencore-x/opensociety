@@ -1,0 +1,11 @@
+# Add these sites to the shared host's existing Caddy configuration.
+# Replace domains and adjust ports to match deploy/.env.
+society.example.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:3000
+}
+
+api.society.example.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:8787
+}

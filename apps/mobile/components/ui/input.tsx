@@ -3,17 +3,15 @@ import { TextInput } from 'react-native'
 
 import { cn } from '../../lib/utils'
 
-function Input({
-  className,
-  ...props
-}: React.ComponentProps<typeof TextInput>) {
+function Input({ className, ...props }: React.ComponentProps<typeof TextInput>) {
   return (
     <TextInput
-      placeholderTextColor="rgb(113,113,122)"
+      placeholderTextColor="#5D6C63"
+      selectionColor="#234F40"
       className={cn(
-        'h-10 w-full rounded-md border border-input bg-background px-3 text-base text-foreground',
+        'min-h-13 w-full rounded-md border border-input bg-card pl-4 pr-4 pt-3 pb-3 text-base font-normal tracking-normal text-foreground focus:border-primary',
         props.editable === false && 'opacity-50',
-        className
+        className,
       )}
       {...props}
     />

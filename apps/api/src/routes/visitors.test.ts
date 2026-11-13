@@ -35,6 +35,7 @@ function fakeDb(entry?: Entry, residencyRows: unknown[] = []): Database {
 // Minimal Context capturing the json(body, status) response.
 function fakeCtx(db: Database, id: string, auth: Auth = {}) {
   return {
+    env: {},
     get: (k: string) =>
       k === 'db' ? db : k === 'userId' ? auth.userId : k === 'userRole' ? auth.userRole : undefined,
     req: { param: () => id },

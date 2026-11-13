@@ -1,11 +1,12 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { and, count, desc, eq, gte, ilike, inArray, lte, or } from 'drizzle-orm'
-import { notices, noticeReads, users } from '@opensociety/db'
+import { and, count, desc, eq, gte, ilike, inArray, isNull, lte, or } from 'drizzle-orm'
+import { apartments, notices, noticeReads, residencies, users } from '@opensociety/db'
 import type { NoticeCategory } from '@opensociety/shared'
 import { createNoticeSchema, noticeCategorySchema } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import type { AppEnv } from '../types'
+import { notifyEvent, roleRecipients } from '../lib/push-events'
 
 export const noticeRoutes = new Hono<AppEnv>()
 noticeRoutes.use('*', withDb)
@@ -73,6 +74,18 @@ noticeRoutes.post('/', requireRole('ADMIN'), zValidator('json', createNoticeSche
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
     })
     .returning()
+  if (!created.expiresAt || created.expiresAt > new Date()) {
+    await notifyEvent(c, `notice:${created.id}`, async () => {
+      if (!input.notifyTower) return roleRecipients(c.get('db'), 'RESIDENT')
+      const rows = await c.get('db').select({ userId: residencies.userId }).from(residencies)
+        .innerJoin(apartments, eq(apartments.id, residencies.apartmentId))
+        .innerJoin(users, eq(users.id, residencies.userId))
+        .where(and(eq(apartments.tower, input.notifyTower), isNull(residencies.endDate), eq(users.role, 'RESIDENT')))
+      return rows.map((r) => r.userId)
+    }, {
+      title: input.title.slice(0, 100), body: input.body.slice(0, 150), data: { screen: 'notices' },
+    })
+  }
   return c.json(created, 201)
 })
 

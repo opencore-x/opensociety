@@ -17,8 +17,15 @@
       "dependsOn": ["^build"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interruptible": true,
+      "passThroughEnv": [
+        "DATABASE_URL", "CLERK_*", "WEB_ORIGINS", "R2_*", "S3_*",
+        "BILLING_ENABLED", "PUSH_ENABLED", "EXPO_ACCESS_TOKEN",
+        "BILL_REMINDER_DAYS", "SOCIETY_TIME_ZONE"
+      ]
     }
   }
 }

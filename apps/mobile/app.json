@@ -12,7 +12,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#234F40",
+        "monochromeImage": "./assets/monochrome-icon.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -23,7 +24,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow OpenSociety to use the camera to scan visitor pre-approval QR codes at the gate."
+          "cameraPermission": "Allow OpenSociety to use the camera to scan visitor pre-approval QR codes at the gate.",
+          "recordAudioAndroid": false,
+          "microphonePermission": false
         }
       ],
       "expo-router",
@@ -34,9 +37,25 @@
         {
           "image": "./assets/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#F6F7F2",
+          "imageWidth": 160
+        }
+      ],
+      "expo-status-bar",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#234F40"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8f52e8f5-da3c-4a16-ac82-1b5d10d75e07"
+      }
+    },
+    "owner": "ankitsejwal"
   }
 }

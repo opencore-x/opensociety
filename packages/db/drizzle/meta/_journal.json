@@ -162,6 +162,20 @@
       "when": 1784200007747,
       "tag": "0022_lyrical_corsair",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790936419384,
+      "tag": "0023_push_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790945943441,
+      "tag": "0024_monthly_bill_uniqueness",
+      "breakpoints": true
     }
   ]
 }

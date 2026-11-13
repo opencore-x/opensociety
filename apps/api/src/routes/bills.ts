@@ -17,7 +17,7 @@ import {
 } from '@opensociety/shared'
 import { withDb, withAuth, requireAuth, requireRole, actingUserId } from '../middleware'
 import { generateMonthlyBills } from '../lib/generate-bills'
-import { safePostBill, safeReverseBill, resolveAccounts } from '../lib/ledger-posting'
+import { safePostMonthlyBills, safePostBill, safeReverseBill, resolveAccounts } from '../lib/ledger-posting'
 import { tableExport } from '../lib/report-export'
 import { renderInvoicePdf } from '../lib/invoice-pdf'
 import type { AppEnv } from '../types'
@@ -63,8 +63,8 @@ billRoutes.post('/generate', requireRole('ADMIN'), zValidator('json', generateBi
     lineItems: input.lineItems,
     createdBy: actingUserId(c),
   })
-  // Auto-post each new bill to the ledger (best-effort, idempotent).
-  for (const billId of result.billIds) await safePostBill(db, billId, actingUserId(c))
+  // Reconcile this month, including bills from a previously interrupted run.
+  await safePostMonthlyBills(db, input.periodMonth, actingUserId(c))
   return c.json({ created: result.created, skipped: result.skipped }, result.created > 0 ? 201 : 200)
 })
 

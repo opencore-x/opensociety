@@ -134,6 +134,11 @@ export function createMobileDemoClient(store: MobileDemoStore, role: DemoRole): 
       } : null, parkingSlots: vehicle ? d.parking.filter(p => p.apartmentId === vehicle.apartmentId && p.isActive)
         .map(p => ({ slotNumber: p.slotNumber, type: p.type })) : [] }
     },
+    alertVehicle: id => {
+      access.requireRole('guard')
+      find(d.vehicles, id)
+      return { queued: true }
+    },
     listGuards: () => { access.requireRole('guard'); return d.guards.filter(g => g.id === store.guardId) },
     listActiveDuty: () => { access.requireRole('guard'); return d.duty.filter(duty => duty.guardId === store.guardId && !duty.clockOutAt) },
     clockInGuard: (guardId, coords = {}) => {
@@ -156,6 +161,8 @@ export function createMobileDemoClient(store: MobileDemoStore, role: DemoRole): 
       return Object.assign(row, { clockOutAt: nowIso(), clockOutLat: input.lat ?? null, clockOutLng: input.lng ?? null })
     },
     fetchUploadObjectUrl: () => { throw new Error('Attachments are not included in the phone demo.') },
+    registerPushToken: () => { throw new Error('Notifications are not included in the phone demo.') },
+    unregisterPushToken: () => { throw new Error('Notifications are not included in the phone demo.') },
   }
   return new Proxy(methods, {
     get(target, property: keyof MobileApi) {

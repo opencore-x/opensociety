@@ -42,7 +42,7 @@ export const withAuth = createMiddleware<AppEnv>(async (c, next) => {
     } catch {
       // invalid/expired token -> remain unauthenticated; guards enforce as needed.
     }
-  } else {
+  } else if (!secret) {
     const devUser = c.req.header('x-user-id')
     if (devUser) await loadActingUser(c, 'id', devUser)
   }
