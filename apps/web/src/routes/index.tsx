@@ -34,14 +34,13 @@ function App() {
             An open-source alternative to MyGate and NoBrokerHood for gated communities. You own your data and
             your deployment.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
+          <p className="text-muted-foreground mt-5 text-sm">Explore a sample society. No signup needed.</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg">
-              <Link to="/admin">Open Admin Dashboard</Link>
+              <a href="/demo">Try the demo</a>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <a href="https://tanstack.com/start" target="_blank" rel="noopener noreferrer">
-                Documentation
-              </a>
+              <Link to="/admin">Open your dashboard</Link>
             </Button>
           </div>
         </div>

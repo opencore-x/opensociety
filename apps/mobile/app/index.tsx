@@ -10,6 +10,9 @@ import { cn } from '../lib/utils'
 import { Chip } from '../components/ui/chip'
 import { Icon, type IconName } from '../components/ui/icon'
 import { Text } from '../components/ui/text'
+import { Button } from '../components/ui/button'
+import { DemoEntry } from '../components/demo-entry'
+import { useSession } from '../lib/session'
 
 type Destination = { href: string; key: string; detail: string; icon: IconName }
 
@@ -64,10 +67,12 @@ function DestinationLink({ item, tile }: { item: Destination; tile?: boolean }) 
 
 export default function Index() {
   const { t, language, setLanguage } = useT()
-  const [mode, setMode] = useState<'resident' | 'guard'>('resident')
+  const { mode, demo, openLive } = useSession()
+  const [view, setView] = useState<'resident' | 'guard'>('resident')
   const { fontScale, width } = useWindowDimensions()
   const singleColumn = fontScale > 1.3 || width < 350
-  const items = mode === 'resident' ? EVERYDAY : GATE
+  const role = demo?.role ?? view
+  const items = role === 'resident' ? EVERYDAY : GATE
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
@@ -80,28 +85,44 @@ export default function Index() {
         </View>
         <View className="gap-3">
           <Text role="heading" className="text-[36px] font-bold leading-[43px] tracking-tight">
-            {t(mode === 'resident' ? 'design.homeTitle' : 'design.guardTitle')}
+            {t(role === 'resident' ? 'design.homeTitle' : 'design.guardTitle')}
           </Text>
           <Text className="text-base leading-6 text-muted-foreground">
-            {t(mode === 'resident' ? 'design.homeSubtitle' : 'design.guardSubtitle')}
+            {t(role === 'resident' ? 'design.homeSubtitle' : 'design.guardSubtitle')}
           </Text>
         </View>
+        {mode === 'welcome' && (
+          <>
+            <DemoEntry />
+            <Button variant="outline" onPress={openLive}>
+              <Text>{t('demo.openLive')}</Text>
+            </Button>
+          </>
+        )}
+        {demo && (
+          <View className="gap-2 rounded-xl bg-secondary p-5">
+            <Text className="text-lg font-semibold">{demo.store.data.society.name}</Text>
+            <Text>{t(demo.role === 'resident' ? 'demo.residentIdentity' : 'demo.guardIdentity')}</Text>
+            <Text className="text-sm leading-5 text-muted-foreground">{t('demo.roleHint')}</Text>
+          </View>
+        )}
+        {mode === 'live' && (
         <View className="flex-row gap-1 rounded-full bg-secondary p-1">
           {(['resident', 'guard'] as const).map((value) => (
             <Pressable
               key={value}
               accessibilityRole="button"
-              accessibilityState={{ selected: mode === value }}
-              onPress={() => setMode(value)}
+              accessibilityState={{ selected: view === value }}
+              onPress={() => setView(value)}
               className={cn(
                 'min-h-[44px] flex-1 items-center justify-center rounded-full px-3 py-2',
-                mode === value && 'bg-card',
+                view === value && 'bg-card',
               )}
             >
               <Text
                 className={cn(
                   'self-stretch text-center text-sm font-semibold leading-6',
-                  mode !== value && 'text-muted-foreground',
+                  view !== value && 'text-muted-foreground',
                 )}
               >
                 {t(value === 'resident' ? 'design.myHome' : 'design.gateTools')}
@@ -109,14 +130,17 @@ export default function Index() {
             </Pressable>
           ))}
         </View>
-        <Link href={mode === 'resident' ? '/pre-approve' : '/register'} asChild>
+        )}
+        {mode !== 'welcome' && (
+        <>
+        <Link href={role === 'resident' ? '/pre-approve' : '/register'} asChild>
           <Pressable
             accessibilityRole="link"
             className="gap-5 rounded-3xl bg-primary p-6 active:opacity-90"
           >
             <View className="flex-row items-center gap-3">
               <View className="h-10 w-10 items-center justify-center rounded-full bg-white/15">
-                <Icon name={mode === 'resident' ? 'people' : 'shield'} color="#FFFFFF" size={20} />
+                <Icon name={role === 'resident' ? 'people' : 'shield'} color="#FFFFFF" size={20} />
               </View>
               <Text className="flex-1 text-xs font-semibold uppercase tracking-widest text-white/80">
                 {t('design.welcomeLabel')}
@@ -124,15 +148,15 @@ export default function Index() {
             </View>
             <View className="gap-2">
               <Text className="text-[25px] font-semibold leading-8 tracking-tight text-white">
-                {t(mode === 'resident' ? 'design.inviteTitle' : 'nav.registerVisitor')}
+                {t(role === 'resident' ? 'design.inviteTitle' : 'nav.registerVisitor')}
               </Text>
               <Text className="text-sm leading-6 text-white/80">
-                {t(mode === 'resident' ? 'design.inviteHint' : 'design.registerHint')}
+                {t(role === 'resident' ? 'design.inviteHint' : 'design.registerHint')}
               </Text>
             </View>
             <View className="flex-row items-center justify-between border-t border-white/20 pt-4">
               <Text className="flex-1 text-sm font-semibold text-white">
-                {t(mode === 'resident' ? 'design.createPass' : 'design.registerAction')}
+                {t(role === 'resident' ? 'design.createPass' : 'design.registerAction')}
               </Text>
               <Icon name="arrow" color="#FFFFFF" size={20} />
             </View>
@@ -150,7 +174,7 @@ export default function Index() {
             </View>
           ))}
         </View>
-        {mode === 'resident' && (
+        {role === 'resident' && (
           <View className="gap-3">
             <Text role="heading" className="text-lg font-semibold">
               {t('design.household')}
@@ -165,7 +189,10 @@ export default function Index() {
             </View>
           </View>
         )}
-        {CLERK_ENABLED && <AuthStatus />}
+        </>
+        )}
+        {mode === 'live' && <DemoEntry />}
+        {mode === 'live' && CLERK_ENABLED && <AuthStatus />}
         <View className="items-center gap-4 pt-1">
           <View className="flex-row flex-wrap justify-center gap-2">
             <Chip label="English" selected={language === 'en'} onPress={() => setLanguage('en')} />

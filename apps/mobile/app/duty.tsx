@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FlatList, View } from 'react-native'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Text } from '../components/ui/text'
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 // duty session marks a guard ON DUTY. (Location capture on native needs
 // expo-location — added as a follow-up; the API accepts optional coords.)
 export default function Duty() {
+  const apiClient = useApiClient()
   const qc = useQueryClient()
   const { t } = useT()
   const insets = useSafeAreaInsets()

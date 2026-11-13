@@ -5,6 +5,7 @@ import type { CreateApartment, UpdateSocietyConfig } from '@opensociety/shared'
 
 import { apiClient } from '../../lib/api'
 import { useT } from '@/lib/i18n'
+import { useDashboardPath } from '@/lib/dashboard-path'
 import { parseBulk } from '../../lib/apartments-csv'
 import {
   EMPTY_SOCIETY,
@@ -72,6 +73,7 @@ function Stepper({ current }: { current: number }) {
 }
 
 function SetupWizard() {
+  const dashboardPath = useDashboardPath()
   const { t } = useT()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
@@ -90,7 +92,7 @@ function SetupWizard() {
         await apiClient.createApartmentsBulk({ apartments: apartments as CreateApartment[] })
       }
     },
-    onSuccess: () => navigate({ to: '/admin' }),
+    onSuccess: () => navigate({ to: dashboardPath('/admin') }),
   })
 
   return (

@@ -3,8 +3,9 @@ import { Alert, View } from 'react-native'
 import { useMutation } from '@tanstack/react-query'
 import type { VehicleVerification } from '@opensociety/shared'
 
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
+import { useSession } from '../lib/session'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Text } from '../components/ui/text'
@@ -15,6 +16,8 @@ import { useSyncStatus } from '../lib/offline/use-sync-status'
 // Guard gate tool: type an arriving vehicle's plate to see whether it's a
 // registered resident vehicle (with owner flat + parking slots) or unknown.
 export default function VehicleGate() {
+  const apiClient = useApiClient()
+  const { demo } = useSession()
   const { t } = useT()
   const { isOnline } = useSyncStatus()
   const [plate, setPlate] = useState('')
@@ -24,6 +27,17 @@ export default function VehicleGate() {
   return (
     <Screen>
       <PageIntro title={t('nav.vehicleGate')} description={t('design.vehicleGateHint')} />
+      {demo && (
+        <Button
+          variant="outline"
+          onPress={() => {
+            setPlate('DEMO2000')
+            verify.mutate('DEMO2000')
+          }}
+        >
+          <Text>{t('demo.sampleVehicle')}</Text>
+        </Button>
+      )}
       <AdaptiveRow>
         <Input
           className="flex-1 tracking-widest"
@@ -47,6 +61,7 @@ export default function VehicleGate() {
 }
 
 function Result({ result }: { result: VehicleVerification }) {
+  const apiClient = useApiClient()
   const { t } = useT()
   const { isOnline } = useSyncStatus()
   const notify = useMutation({

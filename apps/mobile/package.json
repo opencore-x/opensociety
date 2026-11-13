@@ -10,7 +10,7 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
     "eas-build-post-install": "pnpm --filter @opensociety/shared build",
-    "test": "node --test scripts/*.test.cjs"
+    "test": "vitest run lib && node --test scripts/*.test.cjs"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",
@@ -60,7 +60,8 @@
     "lightningcss": "1.30.1",
     "postcss": "^8.5.19",
     "tailwindcss": "^4.1.18",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^3.0.5"
   },
   "private": true
 }

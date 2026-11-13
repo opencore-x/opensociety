@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FlatList, View } from 'react-native'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 // (no resident approval). Each active worker shows their in/out state and the
 // matching action; an open attendance entry means "currently inside".
 export default function HouseHelp() {
+  const apiClient = useApiClient()
   const qc = useQueryClient()
   const { t } = useT()
   const insets = useSafeAreaInsets()

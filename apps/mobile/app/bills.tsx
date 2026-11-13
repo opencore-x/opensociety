@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { View } from 'react-native'
 import type { BillStatus } from '@opensociety/shared'
 import { formatPaise } from '@opensociety/shared'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useT } from '../lib/i18n'
 import { cn } from '../lib/utils'
 import { Text } from '../components/ui/text'
@@ -26,6 +26,7 @@ function fmtDate(iso: string | null): string {
 }
 
 export default function Bills() {
+  const apiClient = useApiClient()
   const { t } = useT()
   const bills = useQuery({ queryKey: ['bills'], queryFn: () => apiClient.listBills() })
   const payments = useQuery({ queryKey: ['payments'], queryFn: () => apiClient.listPayments() })

@@ -9,7 +9,7 @@ import {
   type VisitorType
 } from '@opensociety/shared';
 
-import { apiClient } from '../api/client';
+import { useApiClient } from '../api/context';
 import { CREATE_VISITOR_KEY } from '../lib/offline/mutation-defaults';
 import { newClientId } from '../lib/offline/optimistic';
 import { useSyncStatus } from '../lib/offline/use-sync-status';
@@ -27,6 +27,7 @@ import { ApartmentPicker } from '../components/apartment-picker';
 const TYPES = visitorTypeSchema.options;
 
 export default function Register() {
+  const apiClient = useApiClient();
   const router = useRouter();
   const { t } = useT();
   const { isOnline } = useSyncStatus();

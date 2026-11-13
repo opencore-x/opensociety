@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { View } from 'react-native'
 import { useT } from '../lib/i18n'
 import { Button } from './ui/button'
@@ -17,6 +18,7 @@ type SignInFormProps = {
   disabled: boolean
   pending: boolean
   error: string | null
+  children?: ReactNode
 }
 
 export function SignInForm({
@@ -28,6 +30,7 @@ export function SignInForm({
   disabled,
   pending,
   error,
+  children,
 }: SignInFormProps) {
   const { t } = useT()
   const { isOnline } = useSyncStatus()
@@ -80,6 +83,7 @@ export function SignInForm({
           <Text>{pending ? t('signIn.signingIn') : t('nav.signIn')}</Text>
         </Button>
       </View>
+      {children}
       <Text className="text-center text-xs leading-5 text-muted-foreground">
         {t('design.promise')}
       </Text>

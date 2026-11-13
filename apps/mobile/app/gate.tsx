@@ -5,9 +5,10 @@ import { ActivityIndicator, FlatList, Modal, Platform, View, Linking } from 'rea
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { StatusBar } from 'expo-status-bar'
 import { availableVisitorActions, parsePreApprovalQrValue } from '@opensociety/shared'
-import { apiClient } from '../api/client'
+import { useApiClient } from '../api/context'
 import { useSyncStatus } from '../lib/offline/use-sync-status'
 import { useT } from '../lib/i18n'
+import { useSession } from '../lib/session'
 import { OfflineBanner } from '../components/offline-banner'
 import { SyncErrorTray } from '../components/sync-error-tray'
 import { Button } from '../components/ui/button'
@@ -22,6 +23,8 @@ import { palette } from '../lib/theme'
 // Guard gate view: the visitors a guard acts on — APPROVED (expected at the
 // gate) and ENTERED (currently inside) — with check-in / check-out actions.
 export default function Gate() {
+  const apiClient = useApiClient()
+  const { demo } = useSession()
   const qc = useQueryClient()
   const { t } = useT()
   const { isOnline } = useSyncStatus()
@@ -80,6 +83,7 @@ export default function Gate() {
             <SyncErrorTray className="mb-2" />
             <Section>
               {(checkIn.isError || checkOut.isError) && <Feedback />}
+              {demo && <Text className="text-sm text-muted-foreground">{t('demo.gateHint')}</Text>}
               <AdaptiveRow>
                 <Input
                   className="flex-1 tracking-widest"
@@ -97,8 +101,12 @@ export default function Gate() {
                   <Text>{redeem.isPending ? t('gate.redeeming') : t('gate.redeem')}</Text>
                 </Button>
               </AdaptiveRow>
-              <Button variant="outline" onPress={() => setScanning(true)} disabled={!isOnline}>
-                <Text>{t('gate.scanQr')}</Text>
+              <Button
+                variant="outline"
+                onPress={() => (demo ? redeem.mutate('DEMO01') : setScanning(true))}
+                disabled={!isOnline || redeem.isPending}
+              >
+                <Text>{t(demo ? 'demo.scanSample' : 'gate.scanQr')}</Text>
               </Button>
               {redeem.isError && <Feedback message={t('gate.invalidCode')} />}
               {!isOnline && (

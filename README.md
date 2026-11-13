@@ -6,7 +6,7 @@ OpenSociety is an ad-free, open-source app for apartment communities. Welcome gu
 
 Residents and gate staff use the iPhone and Android app. Community administrators manage the society from a web dashboard. Each society runs its own API and database, keeping its records separate and its deployment under its control.
 
-[Explore the app](#a-look-inside) · [Availability](#availability) · [Run locally](#run-locally) · [Deployment guide](deploy/README.md) · [Contribute](#contributing)
+[Explore the app](#a-look-inside) · [Availability](#availability) · [Try the demo](#try-the-demo) · [Run locally](#run-locally) · [Deployment guide](deploy/README.md) · [Contribute](#contributing)
 
 ## A look inside
 
@@ -45,6 +45,10 @@ The mobile app supports English and Hindi, system text scaling, and layouts for 
 **OpenSociety is preparing for its first pilot.** The mobile design is implemented and reviewed on iPhone and Android simulators. Public hosting and App Store / Google Play distribution are still pending, along with physical-device, screen-reader, and live-service acceptance checks.
 
 You can explore the code and run a development instance today. A society deployment needs its own database, authentication configuration, storage, and hosting; running those services can incur costs. Start with the [deployment guide](deploy/README.md) and [mobile release guide](docs/mobile.md) when preparing a pilot.
+
+## Try the demo
+
+The web dashboard has a no-signup demo at `/demo`, also reachable from **Try the demo** on the home page. The phone app offers **Try demo** on the sign-in screen, as a Resident or a Guard. Both show a fictional sample society and keep every change in the browser tab or on the device; they never call the society API or Clerk. **Reset demo** restores fresh sample data. [`apps/mobile/DEMO.md`](apps/mobile/DEMO.md) covers what the phone demo can and can't do.
 
 ## Run locally
 

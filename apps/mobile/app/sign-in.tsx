@@ -4,6 +4,7 @@ import { useSignIn } from '@clerk/clerk-expo'
 
 import { useT } from '../lib/i18n'
 import { SignInForm } from '../components/sign-in-form'
+import { DemoEntry } from '../components/demo-entry'
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn()
@@ -45,6 +46,8 @@ export default function SignInScreen() {
       disabled={!isLoaded || pending || !email.trim() || !password}
       pending={pending}
       error={error}
-    />
+    >
+      <DemoEntry />
+    </SignInForm>
   )
 }

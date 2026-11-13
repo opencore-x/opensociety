@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -10,6 +10,7 @@ import { setAuthTokenGetter } from '../lib/api'
 import { ThemeProvider, themeInitScript } from '../lib/theme'
 import { I18nProvider } from '../lib/i18n'
 import appCss from '../styles.css?url'
+import { isDemoPath } from '../lib/demo/mode'
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
 
@@ -27,6 +28,7 @@ function AuthBridge() {
 // Clerk is optional: without a publishable key the app runs on the dev
 // x-user-id fallback, mirroring the API's own conditional auth.
 function Providers({ children }: { children: React.ReactNode }) {
+  const publicPage = useLocation({ select: location => location.pathname === '/' || isDemoPath(location.pathname) })
   const tree = (
     <ThemeProvider>
       <I18nProvider>
@@ -34,7 +36,7 @@ function Providers({ children }: { children: React.ReactNode }) {
       </I18nProvider>
     </ThemeProvider>
   )
-  if (!CLERK_PUBLISHABLE_KEY) return tree
+  if (!CLERK_PUBLISHABLE_KEY || publicPage) return tree
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
       <AuthBridge />
